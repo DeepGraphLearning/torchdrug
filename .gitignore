@@ -1,0 +1,10 @@
+# PyCharm
+/.idea
+
+# Sphinx
+/doc/build
+
+# Python
+__pycache__
+*.pyc
+*.egg-info

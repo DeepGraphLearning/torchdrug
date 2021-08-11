@@ -1,0 +1,125 @@
+[![TorchDrug](asset/logo.svg)](https://deepgraphlearning.github.io/torchdrug-site-dev/)
+
+----------------------------
+
+[Docs] | [Tutorials] | [Benchmarks] | [Papers Implemented]
+
+[Docs]: https://deepgraphlearning.github.io/torchdrug-site/docs
+[Tutorials]: https://deepgraphlearning.github.io/torchdrug-site/docs/tutorials
+[Benchmarks]: https://deepgraphlearning.github.io/torchdrug-site/docs/benchmark
+[Papers Implemented]: https://deepgraphlearning.github.io/torchdrug-site/docs/paper
+
+TorchDrug is a [PyTorch]-based machine learning toolbox designed for several purposes.
+
+- Easy implementation of graph operations in a PyTorchic style with GPU support
+- Being friendly to practioners with minimal knowledge about drug discovery
+- Rapid prototyping of machine learning research
+
+[PyTorch]: https://pytorch.org/
+
+Installation
+------------
+
+TorchDrug is compatible with Python >= 3.5 and PyTorch >= 1.4.0.
+
+### From Conda ###
+
+```bash
+conda install -c milagraph -c conda-forge torchdrug
+```
+
+### From Source ###
+
+TorchDrug depends on rdkit, which is only available via conda.
+You can install rdkit with the following line.
+
+```bash
+conda install -c conda-forge rdkit
+```
+
+```
+git clone https://github.com/DeepGraphLearning/torchdrug
+cd torchdrug
+pip install -r requirements.txt
+python setup.py install
+```
+
+Quick Start
+-----------
+
+TorchDrug is designed for human and focused on graph structured data.
+It enables easy implementation of graph operations in machine learning models.
+All the operations in TorchDrug are backed by [PyTorch] framework, and support GPU acceleration and auto differentiation.
+
+```python
+from torchdrug import data
+
+edge_list = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0]]
+graph = data.Graph(edge_list, num_node=6)
+graph = graph.cuda()
+# the subgraph induced by nodes 2, 3 & 4
+subgraph = graph.subgraph([2, 3, 4])
+```
+
+Molecules are also supported in TorchDrug. You can get the desired molecule properties without any domain knowledge.
+
+```python
+mol = data.Molecule.from_smiles("CCOC(=O)N", node_feature="default", edge_feature="default")
+print(mol.node_feature)
+print(mol.atom_type)
+print(mol.to_scaffold())
+```
+
+You may also register custom node, edge or graph attributes. They will be automatically processed during indexing operations.
+
+```python
+with mol.edge():
+	mol.is_CC_bond = (mol.edge_list[:, :2] == td.CARBON).all(dim=-1)
+sub_mol = mol.subgraph(mol.atom_type != td.NITROGEN)
+print(sub_mol.is_CC_bond)
+```
+
+TorchDrug provides a wide range of common datasets and building blocks for drug discovery.
+With minimal code, you can apply standard models to solve your own problem.
+
+```python
+import torch
+from torchdrug import datasets
+
+dataset = datasets.Tox21()
+dataset[0].visualize()
+lengths = [int(0.8 * len(dataset)), int(0.1 * len(dataset))]
+lengths += [len(dataset) - sum(lengths)]
+train_set, valid_set, test_set = torch.utils.data.random_split(dataset, lengths)
+```
+
+```python
+from torchdrug import models, tasks
+
+model = models.GIN(dataset.node_feature_dim, hidden_dims=[256, 256, 256, 256])
+task = tasks.PropertyPrediction(model, task=dataset.tasks)
+```
+
+Training and inference are accelerated by multiple CPUs or GPUs.
+This can be seamlessly switched in TorchDrug by just a line of code.
+```python
+from torchdrug import core
+
+# CPU
+solver = core.Engine(task, train_set, valid_set, test_set, gpus=None)
+# Single GPU
+solver = core.Engine(task, train_set, valid_set, test_set, gpus=[0])
+# Multiple GPUs
+solver = core.Engine(task, train_set, valid_set, test_set, gpus=[0, 1, 2, 3])
+```
+
+Contributing
+------------
+
+Everyone is welcome to contribute to the developement of TorchDrug.
+Please refer to [contributing guidelines](CONTRIBUTING.md) for more details.
+
+License
+-------
+
+TorchDrug is released under [Apache-2.0 License](LICENSE).

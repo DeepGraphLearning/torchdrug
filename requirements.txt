@@ -1,0 +1,9 @@
+torch>=1.4.0
+torch-scatter>=1.4.0
+decorator
+numpy>=1.11
+matplotlib
+tqdm
+networkx
+ninja
+jinja2

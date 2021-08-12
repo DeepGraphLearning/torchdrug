@@ -1,4 +1,4 @@
-[![TorchDrug](asset/logo.svg)](https://deepgraphlearning.github.io/torchdrug-site-dev/)
+[![TorchDrug](asset/logo.svg)](https://torchdrug.ai/)
 
 ----------------------------
 

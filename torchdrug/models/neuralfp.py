@@ -1,5 +1,6 @@
+from collections.abc import Sequence
+
 import torch
-from torch._six import container_abcs
 from torch import nn
 from torch.nn import functional as F
 
@@ -31,7 +32,7 @@ class NeuralFingerprint(nn.Module, core.Configurable):
                  activation="relu", concat_hidden=False, readout="sum"):
         super(NeuralFingerprint, self).__init__()
 
-        if not isinstance(hidden_dims, container_abcs.Sequence):
+        if not isinstance(hidden_dims, Sequence):
             hidden_dims = [hidden_dims]
         self.input_dim = input_dim
         self.output_dim = output_dim * (len(hidden_dims) if concat_hidden else 1)

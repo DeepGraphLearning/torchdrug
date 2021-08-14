@@ -1,9 +1,9 @@
 import inspect
 import warnings
+from collections.abc import Sequence
 
 import torch
 from torch import nn
-from torch._six import container_abcs
 from torch.nn import functional as F
 from torch_scatter import scatter_mean
 
@@ -28,7 +28,7 @@ class MultiLayerPerceptron(nn.Module):
     def __init__(self, input_dim, hidden_dims, short_cut=False, batch_norm=False, activation="relu", dropout=0):
         super(MultiLayerPerceptron, self).__init__()
 
-        if not isinstance(hidden_dims, container_abcs.Sequence):
+        if not isinstance(hidden_dims, Sequence):
             hidden_dims = [hidden_dims]
         self.dims = [input_dim] + hidden_dims
         self.short_cut = short_cut
@@ -317,7 +317,7 @@ class Sequential(nn.Sequential):
             kwargs = {}
             if isinstance(output, dict):
                 kwargs.update(output)
-            elif isinstance(output, container_abcs.Sequence):
+            elif isinstance(output, Sequence):
                 args += list(output)
             else:
                 args.append(output)

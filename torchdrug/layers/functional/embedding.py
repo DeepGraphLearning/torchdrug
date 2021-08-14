@@ -175,7 +175,7 @@ def distmult_score(entity, relation, h_index, t_index, r_index):
         t = entity[t_index]
         score = (h * r * t).sum(dim=-1)
     elif backend == "fast":
-        score = DistMultFunction.apply(entity.weight, relation.weight, h_index, t_index, r_index)
+        score = DistMultFunction.apply(entity, relation, h_index, t_index, r_index)
     else:
         raise ValueError("Unknown embedding backend `%s`" % backend)
     return score

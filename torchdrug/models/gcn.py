@@ -1,5 +1,6 @@
+from collections.abc import Sequence
+
 import torch
-from torch._six import container_abcs
 from torch import nn
 
 from torchdrug import core, layers
@@ -29,7 +30,7 @@ class GraphConvolutionalNetwork(nn.Module, core.Configurable):
                  activation="relu", concat_hidden=False, readout="sum"):
         super(GraphConvolutionalNetwork, self).__init__()
 
-        if not isinstance(hidden_dims, container_abcs.Sequence):
+        if not isinstance(hidden_dims, Sequence):
             hidden_dims = [hidden_dims]
         self.input_dim = input_dim
         self.output_dim = hidden_dims[-1] * (len(hidden_dims) if concat_hidden else 1)
@@ -87,7 +88,7 @@ class GraphConvolutionalNetwork(nn.Module, core.Configurable):
 @R.register("models.RGCN")
 class RelationalGraphConvolutionalNetwork(nn.Module, core.Configurable):
     """
-    Relational graph convolutional Network proposed in `Modeling Relational Data with Graph Convolutional Networks?`_.
+    Relational Graph Convolutional Network proposed in `Modeling Relational Data with Graph Convolutional Networks?`_.
 
     .. _Modeling Relational Data with Graph Convolutional Networks?:
         https://arxiv.org/pdf/1703.06103.pdf
@@ -108,7 +109,7 @@ class RelationalGraphConvolutionalNetwork(nn.Module, core.Configurable):
                  activation="relu", concat_hidden=False, readout="sum"):
         super(RelationalGraphConvolutionalNetwork, self).__init__()
 
-        if not isinstance(hidden_dims, container_abcs.Sequence):
+        if not isinstance(hidden_dims, Sequence):
             hidden_dims = [hidden_dims]
         self.input_dim = input_dim
         self.output_dim = hidden_dims[-1] * (len(hidden_dims) if concat_hidden else 1)

@@ -1,5 +1,6 @@
+from collections import Mapping, Sequence
+
 from torch import nn
-from torch._six import container_abcs
 
 
 class Task(nn.Module):
@@ -11,9 +12,9 @@ class Task(nn.Module):
             x = {}
         elif isinstance(x, str):
             x = {x: 1}
-        elif isinstance(x, container_abcs.Sequence):
+        elif isinstance(x, Sequence):
             x = dict.fromkeys(x, 1)
-        elif not isinstance(x, container_abcs.Mapping):
+        elif not isinstance(x, Mapping):
             raise ValueError("Invalid value `%s` for option member `%s`" % (x, name))
         return x
 

@@ -12,9 +12,6 @@ from torchdrug import utils
 from torchdrug.layers import functional
 from torchdrug.core import Registry as R
 
-sys.path.append(os.path.join(RDConfig.RDContribDir, "SA_Score"))
-import sascorer
-
 
 @R.register("metrics.auroc")
 def area_under_roc(pred, target):
@@ -93,6 +90,10 @@ def penalized_logP(pred):
     Parameters:
         pred (PackedMolecule): molecules to evaluate
     """
+    if "sascorer" not in sys.modules:
+        sys.path.append(os.path.join(RDConfig.RDContribDir, "SA_Score"))
+        import sascorer
+
     # statistics from ZINC250k
     logp_mean = 2.4570953396190123
     logp_std = 1.434324401111988

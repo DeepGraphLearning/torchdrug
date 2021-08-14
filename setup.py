@@ -29,5 +29,5 @@ if __name__ == "__main__":
                 "networkx",
                 "jinja2",
             ],
-        python_requires=">=3.5,<3.9",
+        python_requires=">=3.7,<3.9",
     )

@@ -80,8 +80,9 @@ class Meter(object):
         eta = (self.time[-1] - self.time[self.start_epoch]) \
               / (self.epoch_id - self.start_epoch) * (self.end_epoch - self.epoch_id)
         logger.warning("ETA: %s" % pretty.time(eta))
-        logger.warning("max GPU memory: %.1f MiB" % (torch.cuda.max_memory_allocated() / 1e6))
-        torch.cuda.reset_peak_memory_stats()
+        if torch.cuda.is_available():
+            logger.warning("max GPU memory: %.1f MiB" % (torch.cuda.max_memory_allocated() / 1e6))
+            torch.cuda.reset_peak_memory_stats()
 
         logger.warning(pretty.line)
         for k in sorted(self.records.keys()):

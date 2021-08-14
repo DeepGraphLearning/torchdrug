@@ -1,7 +1,7 @@
 import math
+from collections.abc import Sequence
 
 import torch
-from torch._six import container_abcs
 from torch import nn
 
 
@@ -42,7 +42,7 @@ class IndependentGaussian(nn.Module):
         Parameters:
             size (tuple of int): shape of the samples
         """
-        if len(size) == 1 and isinstance(size[0], container_abcs.Sequence):
+        if len(size) == 1 and isinstance(size[0], Sequence):
             size = size[0]
         size = list(size) + [self.dim]
 

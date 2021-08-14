@@ -1,5 +1,6 @@
+from collections.abc import Sequence
+
 import torch
-from torch._six import container_abcs
 from torch import nn
 
 from torchdrug import core, layers
@@ -30,7 +31,7 @@ class SchNet(nn.Module, core.Configurable):
                  batch_norm=False, activation="shifted_softplus", concat_hidden=False):
         super(SchNet, self).__init__()
 
-        if not isinstance(hidden_dims, container_abcs.Sequence):
+        if not isinstance(hidden_dims, Sequence):
             hidden_dims = [hidden_dims]
         self.input_dim = input_dim
         self.output_dim = hidden_dims[-1] * (len(hidden_dims) if concat_hidden else 1)

@@ -20,7 +20,7 @@ TorchDrug is a [PyTorch]-based machine learning toolbox designed for several pur
 Installation
 ------------
 
-TorchDrug is compatible with Python >= 3.5 and PyTorch >= 1.4.0.
+TorchDrug is compatible with Python 3.7/3.8 and PyTorch >= 1.4.0.
 
 ### From Conda ###
 
@@ -105,12 +105,14 @@ This can be seamlessly switched in TorchDrug by just a line of code.
 ```python
 from torchdrug import core
 
-# CPU
-solver = core.Engine(task, train_set, valid_set, test_set, gpus=None)
+# Single CPU / Multiple CPUs / Distributed CPUs
+solver = core.Engine(task, train_set, valid_set, test_set, optimizer)
 # Single GPU
-solver = core.Engine(task, train_set, valid_set, test_set, gpus=[0])
+solver = core.Engine(task, train_set, valid_set, test_set, optimizer, gpus=[0])
 # Multiple GPUs
-solver = core.Engine(task, train_set, valid_set, test_set, gpus=[0, 1, 2, 3])
+solver = core.Engine(task, train_set, valid_set, test_set, optimizer, gpus=[0, 1, 2, 3])
+# Distributed GPUs
+solver = core.Engine(task, train_set, valid_set, test_set, optimizer, gpus=[0, 1, 2, 3, 0, 1, 2, 3])
 ```
 
 Contributing

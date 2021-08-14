@@ -1,7 +1,7 @@
 from collections import deque
+from collections.abc import Mapping, Sequence
 
 import torch
-from torch._six import container_abcs, string_classes, int_classes
 
 from torchdrug import data
 
@@ -26,15 +26,15 @@ def graph_collate(batch):
         return torch.stack(batch, 0, out=out)
     elif isinstance(elem, float):
         return torch.tensor(batch, dtype=torch.float)
-    elif isinstance(elem, int_classes):
+    elif isinstance(elem, int):
         return torch.tensor(batch)
-    elif isinstance(elem, string_classes):
+    elif isinstance(elem, (str, bytes)):
         return batch
     elif isinstance(elem, data.Graph):
         return elem.pack(batch)
-    elif isinstance(elem, container_abcs.Mapping):
+    elif isinstance(elem, Mapping):
         return {key: graph_collate([d[key] for d in batch]) for key in elem}
-    elif isinstance(elem, container_abcs.Sequence):
+    elif isinstance(elem, Sequence):
         it = iter(batch)
         elem_size = len(next(it))
         if not all(len(elem) == elem_size for elem in it):

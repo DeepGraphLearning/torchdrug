@@ -35,18 +35,18 @@ class KnowledgeBaseGraphAttentionNetwork(models.GraphAttentionNetwork, core.Conf
         self.linear = nn.Linear(self.output_dim, embedding_dim)
         self.output_dim = embedding_dim
 
-        self.entity = nn.Parameter(torch.zeros(self.num_entity, embedding_dim))
-        self.relation = nn.Parameter(torch.zeros(self.num_relation, embedding_dim))
+        self.entity = nn.Parameter(torch.zeros(num_entity, embedding_dim))
+        self.relation = nn.Parameter(torch.zeros(num_relation, embedding_dim))
 
-        nn.init.uniform_(self.entity, -self.max_score / embedding_dim, self.max_score / embedding_dim)
-        nn.init.uniform_(self.relation, -self.max_score / embedding_dim, self.max_score / embedding_dim)
+        nn.init.uniform_(self.entity, -max_score / embedding_dim, max_score / embedding_dim)
+        nn.init.uniform_(self.relation, -max_score / embedding_dim, max_score / embedding_dim)
 
     def forward(self, graph, h_index, t_index, r_index, all_loss=None, metric=None):
         """
         Compute the score for triplets.
 
         Parameters:
-            graph (Tensor): fact graph
+            graph (Graph): fact graph
             h_index (Tensor): indexes of head entities
             t_index (Tensor): indexes of tail entities
             r_index (Tensor): indexes of relations

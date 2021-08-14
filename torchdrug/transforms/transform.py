@@ -127,6 +127,7 @@ class Shuffle(object):
 class VirtualNode(object):
     """
     Add a virtual node and connect it with every node in the graph.
+
     Parameters:
         relation (int, optional): relation of virtual edges.
             By default, use the maximal relation in the graph plus 1.

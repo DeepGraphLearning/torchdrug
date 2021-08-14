@@ -1,7 +1,7 @@
 import os
+from collections.abc import Mapping, Sequence
 
 import torch
-from torch._six import container_abcs
 from torch.utils import cpp_extension
 
 from torchdrug import data
@@ -51,9 +51,9 @@ def cpu(obj, *args, **kwargs):
     """
     if hasattr(obj, "cpu"):
         return obj.cpu(*args, **kwargs)
-    elif isinstance(obj, container_abcs.Mapping):
+    elif isinstance(obj, Mapping):
         return type(obj)({k: cpu(v, *args, **kwargs) for k, v in obj.items()})
-    elif isinstance(obj, container_abcs.Sequence):
+    elif isinstance(obj, Sequence):
         return type(obj)(cpu(x, *args, **kwargs) for x in obj)
 
     raise TypeError("Can't transfer object type `%s`" % type(obj))
@@ -65,9 +65,9 @@ def cuda(obj, *args, **kwargs):
     """
     if hasattr(obj, "cuda"):
         return obj.cuda(*args, **kwargs)
-    elif isinstance(obj, container_abcs.Mapping):
+    elif isinstance(obj, Mapping):
         return type(obj)({k: cuda(v, *args, **kwargs) for k, v in obj.items()})
-    elif isinstance(obj, container_abcs.Sequence):
+    elif isinstance(obj, Sequence):
         return type(obj)(cuda(x, *args, **kwargs) for x in obj)
 
     raise TypeError("Can't transfer object type `%s`" % type(obj))
@@ -79,9 +79,9 @@ def detach(obj):
     """
     if hasattr(obj, "detach"):
         return obj.detach()
-    elif isinstance(obj, container_abcs.Mapping):
+    elif isinstance(obj, Mapping):
         return type(obj)({k: detach(v) for k, v in obj.items()})
-    elif isinstance(obj, container_abcs.Sequence):
+    elif isinstance(obj, Sequence):
         return type(obj)(detach(x) for x in obj)
 
     raise TypeError("Can't perform detach over object type `%s`" % type(obj))
@@ -93,9 +93,9 @@ def clone(obj, *args, **kwargs):
     """
     if hasattr(obj, "clone"):
         return obj.clone(*args, **kwargs)
-    elif isinstance(obj, container_abcs.Mapping):
+    elif isinstance(obj, Mapping):
         return type(obj)({k: clone(v, *args, **kwargs) for k, v in obj.items()})
-    elif isinstance(obj, container_abcs.Sequence):
+    elif isinstance(obj, Sequence):
         return type(obj)(clone(x, *args, **kwargs) for x in obj)
 
     raise TypeError("Can't perform detach over object type `%s`" % type(obj))
@@ -107,9 +107,9 @@ def mean(obj, *args, **kwargs):
     """
     if hasattr(obj, "mean"):
         return obj.mean(*args, **kwargs)
-    elif isinstance(obj, container_abcs.Mapping):
+    elif isinstance(obj, Mapping):
         return type(obj)({k: mean(v, *args, **kwargs) for k, v in obj.items()})
-    elif isinstance(obj, container_abcs.Sequence):
+    elif isinstance(obj, Sequence):
         return type(obj)(mean(x, *args, **kwargs) for x in obj)
 
     raise TypeError("Can't perform mean over object type `%s`" % type(obj))
@@ -124,9 +124,9 @@ def cat(objs, *args, **kwargs):
         return torch.cat(objs, *args, **kwargs)
     elif isinstance(obj, data.PackedGraph):
         return data.cat(objs)
-    elif isinstance(obj, container_abcs.Mapping):
+    elif isinstance(obj, Mapping):
         return {k: cat([x[k] for x in objs], *args, **kwargs) for k in obj}
-    elif isinstance(obj, container_abcs.Sequence):
+    elif isinstance(obj, Sequence):
         return type(obj)(cat(xs, *args, **kwargs) for xs in zip(*objs))
 
     raise TypeError("Can't perform concatenation over object type `%s`" % type(obj))
@@ -139,9 +139,9 @@ def stack(objs, *args, **kwargs):
     obj = objs[0]
     if isinstance(obj, torch.Tensor):
         return torch.stack(objs, *args, **kwargs)
-    elif isinstance(obj, container_abcs.Mapping):
+    elif isinstance(obj, Mapping):
         return {k: stack([x[k] for x in objs], *args, **kwargs) for k in obj}
-    elif isinstance(obj, container_abcs.Sequence):
+    elif isinstance(obj, Sequence):
         return type(obj)(stack(xs, *args, **kwargs) for xs in zip(*objs))
 
     raise TypeError("Can't perform stack over object type `%s`" % type(obj))

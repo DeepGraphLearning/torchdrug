@@ -12,7 +12,7 @@
 TorchDrug is a [PyTorch]-based machine learning toolbox designed for several purposes.
 
 - Easy implementation of graph operations in a PyTorchic style with GPU support
-- Being friendly to practioners with minimal knowledge about drug discovery
+- Being friendly to practitioners with minimal knowledge about drug discovery
 - Rapid prototyping of machine learning research
 
 [PyTorch]: https://pytorch.org/
@@ -47,7 +47,7 @@ python setup.py install
 Quick Start
 -----------
 
-TorchDrug is designed for human and focused on graph structured data.
+TorchDrug is designed for humans and focused on graph structured data.
 It enables easy implementation of graph operations in machine learning models.
 All the operations in TorchDrug are backed by [PyTorch] framework, and support GPU acceleration and auto differentiation.
 
@@ -118,7 +118,7 @@ solver = core.Engine(task, train_set, valid_set, test_set, optimizer, gpus=[0, 1
 Contributing
 ------------
 
-Everyone is welcome to contribute to the developement of TorchDrug.
+Everyone is welcome to contribute to the development of TorchDrug.
 Please refer to [contributing guidelines](CONTRIBUTING.md) for more details.
 
 License

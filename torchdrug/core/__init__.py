@@ -1,4 +1,4 @@
-from .core import _MetaContainer, Registry, Configurable
+from .core import _MetaContainer, Registry, Configurable, make_configurable
 from .engine import Engine
 from .meter import Meter
 

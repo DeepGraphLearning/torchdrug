@@ -1,4 +1,5 @@
 import os
+import sys
 import inspect
 
 import torch
@@ -12,16 +13,14 @@ from torch import distributed as dist
 from torchdrug import core, data
 from torchdrug.core import Registry as R
 
-
-def make_configurable(cls, ignore_args=()):
-    ignore_args = set(ignore_args)
-    return type(cls.__name__, (cls, core.Configurable), {"_ignore_args": ignore_args})
+module = sys.modules[__name__]
 
 
 class PatchedModule(nn.Module):
 
     def __init__(self):
         super(PatchedModule, self).__init__()
+        # TODO: these hooks are bugged.
         # self._register_state_dict_hook(PatchedModule.graph_state_dict)
         # self._register_load_state_dict_pre_hook(PatchedModule.load_graph_state_dict)
 
@@ -54,7 +53,6 @@ class PatchedModule(nn.Module):
                 print("successfully assigned %s" % (prefix + name))
             except:
                 error_msgs.append("Can't construct Graph `%s` from tensors in the state dict" % key)
-        raise ValueError
         return state_dict
 
     @property
@@ -137,7 +135,7 @@ Optimizer = optim.Optimizer
 for name, cls in inspect.getmembers(optim):
     if inspect.isclass(cls) and issubclass(cls, Optimizer):
         setattr(optim, "_%s" % name, cls)
-        cls = make_configurable(cls, ignore_args=("params",))
+        cls = core.make_configurable(cls, ignore_args=("params",))
         cls = R.register("optim.%s" % name)(cls)
         setattr(optim, name, cls)
 
@@ -145,7 +143,7 @@ Scheduler = scheduler._LRScheduler
 for name, cls in inspect.getmembers(scheduler):
     if inspect.isclass(cls) and issubclass(cls, Scheduler):
         setattr(scheduler, "_%s" % name, cls)
-        cls = make_configurable(cls, ignore_args=("optimizer",))
+        cls = core.make_configurable(cls, ignore_args=("optimizer",))
         cls = R.register("scheduler.%s" % name)(cls)
         setattr(optim, name, cls)
 
@@ -153,6 +151,6 @@ Dataset = dataset.Dataset
 for name, cls in inspect.getmembers(dataset):
     if inspect.isclass(cls) and issubclass(cls, Dataset):
         setattr(dataset, "_%s" % name, cls)
-        cls = make_configurable(cls)
+        cls = core.make_configurable(cls)
         cls = R.register("dataset.%s" % name)(cls)
         setattr(dataset, name, cls)

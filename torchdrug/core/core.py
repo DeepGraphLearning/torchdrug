@@ -187,7 +187,6 @@ class Registry(object):
             for key in keys[:-1]:
                 entry = entry[key]
             if keys[-1] in entry:
-                return obj
                 raise KeyError("`%s` has already been registered by %s" % (name, entry[keys[-1]]))
 
             entry[keys[-1]] = obj
@@ -304,7 +303,7 @@ class _Configurable(type):
 class Configurable(metaclass=_Configurable):
     """
     Class for load/save configuration.
-    It will automatically record every argument passed to ``__init__`` function.
+    It will automatically record every argument passed to the ``__init__`` function.
 
     This class is inspired by :meth:`state_dict()` in PyTorch, but designed for hyperparameters.
 
@@ -334,3 +333,26 @@ class Configurable(metaclass=_Configurable):
     >>> gcn = Configurable.load_config_dict(config)
     """
     pass
+
+
+def make_configurable(cls, module=None, ignore_args=()):
+    """
+    Make a configurable class out of an existing class.
+    The configurable class will automatically record every argument passed to its ``__init__`` function.
+
+    Parameters:
+        cls (type): input class
+        module (str, optional): bind the output class to this module.
+            By default, bind to the original module of the input class.
+        ignore_args (set of str, optional): arguments to ignore in the ``__init__`` function
+    """
+    ignore_args = set(ignore_args)
+    module = module or cls.__module__
+    Metaclass = type(cls)
+    if issubclass(Metaclass, _Configurable): # already a configurable class
+        return cls
+    if Metaclass != type: # already have a meta class
+        MetaClass = type(_Configurable.__name__, (Metaclass, _Configurable), {})
+    else:
+        MetaClass = _Configurable
+    return MetaClass(cls.__name__, (cls,), {"_ignore_args": ignore_args, "__module__": module})

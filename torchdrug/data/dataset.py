@@ -171,16 +171,16 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
     def atom_types(self):
         """All atom types."""
         atom_types = set()
-        for graph in self.data:
-            atom_types.update(graph.atom_type.tolist())
+        for i in range(len(self.data)):
+            atom_types.update(self.get_item(i)["graph"].atom_type.tolist())
         return sorted(atom_types)
 
     @utils.cached_property
     def bond_types(self):
         """All bond types."""
         bond_types = set()
-        for graph in self.data:
-            bond_types.update(graph.edge_list[:, 2].tolist())
+        for i in range(len(self.data)):
+            bond_types.update(self.get_item(i)["graph"].edge_list[:, 2].tolist())
         return sorted(bond_types)
 
     def __len__(self):

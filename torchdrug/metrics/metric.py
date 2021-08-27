@@ -92,7 +92,7 @@ def penalized_logP(pred):
     """
     if "sascorer" not in sys.modules:
         sys.path.append(os.path.join(RDConfig.RDContribDir, "SA_Score"))
-        import sascorer
+    import sascorer
 
     # statistics from ZINC250k
     logp_mean = 2.4570953396190123

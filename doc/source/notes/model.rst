@@ -22,7 +22,7 @@ Node Representation Model
 In VGAE, the node representation model is a variational graph convolutional network
 (VGCN). This can be implemented via standard graph convolution layers, plus a
 variational regularization loss. We define our model as a subclass of `nn.Module`
-and `core.Configurable <torchdrug.core.Configurable>`.
+and :class:`core.Configurable <torchdrug.core.Configurable>`.
 
 .. code:: python
 

@@ -1,6 +1,6 @@
 import torch
 from torch_scatter import scatter_add, scatter_mean, scatter_max
-from torch_scatter.composite import scatter_log_softmax
+from torch_scatter.composite import scatter_log_softmax, scatter_softmax
 from torch.nn import functional as F
 
 
@@ -112,9 +112,9 @@ def _size_to_index(size):
     # special case 1: size[-1] = 0
     index = cum_size[cum_size < cum_size[-1]]
     # special case 2: size[i] = size[i+1] = 0
-    index2graph = scatter_add(torch.ones_like(index), index, dim_size=cum_size[-1])
-    index2graph = index2graph.cumsum(0)
-    return index2graph
+    index2sample = scatter_add(torch.ones_like(index), index, dim_size=cum_size[-1])
+    index2sample = index2sample.cumsum(0)
+    return index2sample
 
 
 def _extend(data, size, input, input_size):
@@ -165,11 +165,11 @@ def variadic_sum(input, size):
     Returns
         Tensor: sum
     """
-    index2graph = _size_to_index(size)
-    index2graph = index2graph.view([-1] + [1] * (input.ndim - 1))
-    index2graph = index2graph.expand_as(input)
+    index2sample = _size_to_index(size)
+    index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
+    index2sample = index2sample.expand_as(input)
 
-    value = scatter_add(input, index2graph, dim=0)
+    value = scatter_add(input, index2sample, dim=0)
     return value
 
 
@@ -186,11 +186,11 @@ def variadic_mean(input, size):
     Returns
         Tensor: mean
     """
-    index2graph = _size_to_index(size)
-    index2graph = index2graph.view([-1] + [1] * (input.ndim - 1))
-    index2graph = index2graph.expand_as(input)
+    index2sample = _size_to_index(size)
+    index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
+    index2sample = index2sample.expand_as(input)
 
-    value = scatter_mean(input, index2graph, dim=0)
+    value = scatter_mean(input, index2sample, dim=0)
     return value
 
 
@@ -207,11 +207,11 @@ def variadic_max(input, size):
     Returns
         (Tensor, LongTensor): max values and indexes
     """
-    index2graph = _size_to_index(size)
-    index2graph = index2graph.view([-1] + [1] * (input.ndim - 1))
-    index2graph = index2graph.expand_as(input)
+    index2sample = _size_to_index(size)
+    index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
+    index2sample = index2sample.expand_as(input)
 
-    value, index = scatter_max(input, index2graph, dim=0)
+    value, index = scatter_max(input, index2sample, dim=0)
     index = index - size.cumsum(0) + size
     return value, index
 
@@ -224,13 +224,31 @@ def variadic_log_softmax(input, size):
 
     Parameters:
         input (Tensor): input of shape :math:`(B, ...)`
-        size (LongTensor): size of sets of shape :math:`(N,)`
+        size (LongTensor): number of categories of shape :math:`(N,)`
     """
-    index2graph = _size_to_index(size)
-    index2graph = index2graph.view([-1] + [1] * (input.ndim - 1))
-    index2graph = index2graph.expand_as(input)
+    index2sample = _size_to_index(size)
+    index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
+    index2sample = index2sample.expand_as(input)
 
-    log_likelihood = scatter_log_softmax(input, index2graph, dim=0)
+    log_likelihood = scatter_log_softmax(input, index2sample, dim=0)
+    return log_likelihood
+
+
+def variadic_softmax(input, size):
+    """
+    Compute softmax over categories with variadic sizes.
+
+    Suppose there are :math:`N` samples, and the numbers of categories in all samples are summed to :math:`B`.
+
+    Parameters:
+        input (Tensor): input of shape :math:`(B, ...)`
+        size (LongTensor): number of categories of shape :math:`(N,)`
+    """
+    index2sample = _size_to_index(size)
+    index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
+    index2sample = index2sample.expand_as(input)
+
+    log_likelihood = scatter_softmax(input, index2sample, dim=0)
     return log_likelihood
 
 
@@ -247,11 +265,11 @@ def variadic_cross_entropy(input, target, size, reduction="mean"):
         reduction (string, optional): reduction to apply to the output.
             Available reductions are ``none``, ``sum`` and ``mean``.
     """
-    index2graph = _size_to_index(size)
-    index2graph = index2graph.view([-1] + [1] * (input.ndim - 1))
-    index2graph = index2graph.expand_as(input)
+    index2sample = _size_to_index(size)
+    index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
+    index2sample = index2sample.expand_as(input)
 
-    log_likelihood = scatter_log_softmax(input, index2graph, dim=0)
+    log_likelihood = scatter_log_softmax(input, index2sample, dim=0)
     size = size.view([-1] + [1] * (input.ndim - 1))
     assert (target >= 0).all() and (target < size).all()
     target_index = target + size.cumsum(0) - size
@@ -315,6 +333,53 @@ def variadic_topk(input, size, k, largest=True):
     index = index - (size.cumsum(0) - size).view([-1] + [1] * (index.ndim - 1))
 
     return value, index
+
+
+def variadic_sort(input, size, descending=False):
+    """
+    Sort elements in sets with variadic sizes.
+
+    Suppose there are :math:`N` sets, and the sizes of all sets are summed to :math:`B`.
+
+    Parameters:
+        input (Tensor): input of shape :math:`(B, ...)`
+        size (LongTensor): size of sets of shape :math:`(N,)`
+        descending (bool, optional): return ascending or descending order
+    """
+    index2sample = _size_to_index(size)
+    index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
+
+    mask = ~torch.isinf(input)
+    max = input[mask].max().item()
+    min = input[mask].min().item()
+    safe_input = input.clamp(2 * min - max, 2 * max - min)
+    offset = (max - min) * 4
+    if descending:
+        offset = -offset
+    input_ext = safe_input + offset * index2sample
+    index = input_ext.argsort(dim=0, descending=descending)
+    value = input.gather(0, index)
+    index = index - (size.cumsum(0) - size)[index2sample]
+    return value, index
+
+
+def variadic_arange(size, device=None):
+    """
+    Return a 1-D tensor that contains integer intervals of variadic sizes.
+    This is a variadic variant of ``torch.arange(stop).expand(batch_size, -1)``.
+
+    Suppose there are :math:`N` intervals.
+
+    Parameters:
+        size (LongTensor): size of intervals of shape :math:`(N,)`
+        device (torch.device, optional): device of the tensor
+    """
+    index2sample = _size_to_index(size)
+    starts = size.cumsum(0) - size
+
+    range = torch.arange(size.sum(), device=device)
+    range = range - starts[index2sample]
+    return range
 
 
 def one_hot(index, size):

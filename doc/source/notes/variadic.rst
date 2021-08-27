@@ -108,6 +108,8 @@ Naturally, the prediction over nodes also forms a variadic tensor with ``num_nod
     :func:`variadic_sum <torchdrug.layers.functional.variadic_sum>`,
     :func:`variadic_mean <torchdrug.layers.functional.variadic_mean>`,
     :func:`variadic_max <torchdrug.layers.functional.variadic_max>`,
+    :func:`variadic_arange <torchdrug.layers.functional.variadic_arange>`,
+    :func:`variadic_sort <torchdrug.layers.functional.variadic_sort>`,
     :func:`variadic_topk <torchdrug.layers.functional.variadic_topk>`,
     :func:`variadic_log_softmax <torchdrug.layers.functional.variadic_log_softmax>`,
     :func:`variadic_cross_entropy <torchdrug.layers.functional.variadic_cross_entropy>`,

@@ -85,6 +85,12 @@ pygments_style = None
 #
 html_theme = "furo"
 
+html_logo = "../../asset/logo.svg"
+
+# Theme options are theme-specific and customize the look and feel of a theme
+# further.  For a list of options available for each theme, see the
+# documentation.
+#
 html_theme_options = {
     "sidebar_hide_name": True,
     "light_css_variables": {
@@ -97,14 +103,6 @@ html_theme_options = {
         "font-size--small--2": "var(--font-size--small)",
     },
 }
-
-html_logo = "../../asset/logo.svg"
-
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#
-# html_theme_options = {}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

@@ -202,7 +202,11 @@ Variadic
 
 .. autofunction:: variadic_log_softmax
 
+.. autofunction:: variadic_sort
+
 .. autofunction:: variadic_topk
+
+.. autofunction:: variadic_arange
 
 Tensor Reduction
 ^^^^^^^^^^^^^^^^

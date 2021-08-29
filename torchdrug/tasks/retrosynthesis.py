@@ -352,7 +352,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
             dataset = train_set.dataset
         else:
             dataset = train_set
-        self.dataset_kwargs = dataset.config_dict()["kwargs"]
+        self.dataset_kwargs = dataset.config_dict().get("kwargs")
 
         node_dim = self.model.output_dim
         edge_dim = 0

@@ -32,7 +32,11 @@ class MUV(data.MoleculeDataset):
             os.makedirs(path)
         self.path = path
 
-        zip_file = utils.download(self.url, path, md5=self.md5)
+        if not os.path.exists(os.path.join(self.path, os.path.basename(self.url))):
+            zip_file = utils.download(self.url, self.path, md5=self.md5)
+        else:
+            zip_file = os.path.join(self.path, os.path.basename(self.url))
+
         csv_file = utils.extract(zip_file)
 
         self.load_csv(csv_file, smiles_field="smiles", target_fields=self.target_fields,

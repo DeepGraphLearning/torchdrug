@@ -36,8 +36,13 @@ class ChEMBLFiltered(data.MoleculeDataset):
         if not os.path.exists(path):
             os.makedirs(path)
         self.path = path
-        zip_file_name = utils.download(self.url, path, md5=self.md5)
-        utils.extract(zip_file_name)
+
+        if not os.path.exists(os.path.join(self.path, os.path.basename(self.url))):
+            zip_file = utils.download(self.url, self.path, md5=self.md5)
+        else:
+            zip_file = os.path.join(self.path, os.path.basename(self.url))
+
+        utils.extract(zip_file)
 
         file_name = preprocess('./temp/chem_dataset')
         print('file_name is {}'.format(file_name))

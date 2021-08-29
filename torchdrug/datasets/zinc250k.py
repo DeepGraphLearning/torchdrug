@@ -32,7 +32,10 @@ class ZINC250k(data.MoleculeDataset):
             os.makedirs(path)
         self.path = path
 
-        file_name = utils.download(self.url, path, md5=self.md5)
+        if not os.path.exists(os.path.join(self.path, os.path.basename(self.url))):
+            file_name = utils.download(self.url, self.path, md5=self.md5)
+        else:
+            file_name = os.path.join(self.path, os.path.basename(self.url))
 
         self.load_csv(file_name, smiles_field="smiles", target_fields=self.target_fields,
                       verbose=verbose, **kwargs)

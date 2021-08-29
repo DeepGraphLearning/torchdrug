@@ -72,9 +72,21 @@ class OPV(data.MoleculeDataset):
             os.makedirs(path)
         self.path = path
 
-        train_zip_file = utils.download(self.train_url, path, save_file="mol_train.csv.gz", md5=self.train_md5)
-        valid_zip_file = utils.download(self.valid_url, path, save_file="mol_valid.csv.gz", md5=self.valid_md5)
-        test_zip_file = utils.download(self.test_url, path, save_file="mol_test.csv.gz", md5=self.test_md5)
+        if not os.path.exists(os.path.join(self.path, "mol_train.csv.gz")):
+            train_zip_file = utils.download(self.train_url, self.path, save_file="mol_train.csv.gz", md5=self.train_md5)
+        else:
+            train_zip_file = os.path.join(self.path, "mol_train.csv.gz")
+
+        if not os.path.exists(os.path.join(self.path, "mol_valid.csv.gz")):
+            valid_zip_file = utils.download(self.valid_url, self.path, save_file="mol_valid.csv.gz", md5=self.md5)
+        else:
+            valid_zip_file = os.path.join(self.path, "mol_valid.csv.gz")
+
+        if not os.path.exists(os.path.join(self.path, "mol_test.csv.gz")):
+            test_zip_file = utils.download(self.url, self.path, save_file="mol_test.csv.gz", md5=self.md5)
+        else:
+            test_zip_file = os.path.join(self.path, "mol_test.csv.gz")
+
         train_file = utils.extract(train_zip_file)
         valid_file = utils.extract(valid_zip_file)
         test_file = utils.extract(test_zip_file)

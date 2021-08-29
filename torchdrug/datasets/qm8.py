@@ -44,7 +44,11 @@ class QM8(data.MoleculeDataset):
             os.makedirs(path)
         self.path = path
 
-        zip_file = utils.download(self.url, path, md5=self.md5)
+        if not os.path.exists(os.path.join(self.path, os.path.basename(self.url))):
+            zip_file = utils.download(self.url, self.path, md5=self.md5)
+        else:
+            zip_file = os.path.join(self.path, os.path.basename(self.url))
+
         sdf_file = utils.extract(zip_file, "qm8.sdf")
         csv_file = utils.extract(zip_file, "qm8.sdf.csv")
         csv_file2 = os.path.join(path, "qm8.sdf.clean.csv")

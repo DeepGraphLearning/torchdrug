@@ -41,7 +41,10 @@ class WN18(data.KnowledgeGraphDataset):
         txt_files = []
         for url, md5 in zip(self.urls, self.md5s):
             save_file = "wn18_%s" % os.path.basename(url)
-            txt_file = utils.download(url, self.path, save_file=save_file, md5=md5)
+            if not os.path.exists(os.path.join(self.path, save_file)):
+                txt_file = utils.download(self.url, self.path, save_file=save_file, md5=self.md5)
+            else:
+                txt_file = os.path.join(self.path, save_file)
             txt_files.append(txt_file)
 
         self.load_tsvs(txt_files, verbose=verbose)

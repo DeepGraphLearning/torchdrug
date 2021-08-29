@@ -28,7 +28,11 @@ class CiteSeer(data.NodeClassificationDataset):
             os.makedirs(path)
         self.path = path
 
-        zip_file = utils.download(self.url, path, md5=self.md5)
+        if not os.path.exists(os.path.join(self.path, os.path.basename(self.url))):
+            zip_file = utils.download(self.url, self.path, md5=self.md5)
+        else:
+            zip_file = os.path.join(self.path, os.path.basename(self.url))
+
         node_file = utils.extract(zip_file, "citeseer/citeseer.content")
         edge_file = utils.extract(zip_file, "citeseer/citeseer.cites")
 

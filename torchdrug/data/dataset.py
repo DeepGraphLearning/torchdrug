@@ -126,7 +126,7 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
         return index
 
     def get_item(self, index):
-        if self.lazy:
+        if hasattr(self, 'lazy') and self.lazy:
             item = {"graph": data.Molecule.from_smiles(self.smiles_list[index], **self.kwargs)}
         else:
             item = {"graph": self.data[index]}

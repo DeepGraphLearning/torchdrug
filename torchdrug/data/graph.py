@@ -182,7 +182,7 @@ class Graph(core._MetaContainer):
             step = index.step or 1
             index = torch.arange(start, stop, step, device=self.device)
         else:
-            index = torch.as_tensor(index)
+            index = torch.as_tensor(index, device=self.device)
             if index.ndim == 0:
                 index = index.unsqueeze(0)
             if index.dtype == torch.bool:
@@ -636,12 +636,20 @@ class Graph(core._MetaContainer):
 
     @utils.cached_property
     def degree_out(self):
-        """Out degree of nodes."""
+        """
+        Weighted number of edges containing each node as output.
+
+        Note this is the **in-degree** in graph theory.
+        """
         return scatter_add(self.edge_weight, self.edge_list[:, 1], dim_size=self.num_node)
 
     @utils.cached_property
     def degree_in(self):
-        """In degree of nodes."""
+        """
+        Weighted number of edges containing each node as input.
+
+        Note this is the **out-degree** in graph theory.
+        """
         return scatter_add(self.edge_weight, self.edge_list[:, 0], dim_size=self.num_node)
 
     @property
@@ -692,7 +700,7 @@ class Graph(core._MetaContainer):
         """
         Copy data from ``src`` into ``self`` and return ``self``.
 
-        The ``src`` graph must have the same shape and the same set of attributes as ``self``.
+        The ``src`` graph must have the same set of attributes as ``self``.
         """
         self.edge_list.copy_(src.edge_list)
         self.edge_weight.copy_(src.edge_weight)
@@ -704,7 +712,7 @@ class Graph(core._MetaContainer):
         keys = set(self.data_dict.keys())
         src_keys = set(src.data_dict.keys())
         if keys != src_keys:
-            raise RuntimeError("Attributes mismatch. Trying to assign attributes %s,"
+            raise RuntimeError("Attributes mismatch. Trying to assign attributes %s, "
                                "but current graph has attributes %s" % (src_keys, keys))
         for k, v in self.data_dict.items():
             v.copy_(src.data_dict[k])

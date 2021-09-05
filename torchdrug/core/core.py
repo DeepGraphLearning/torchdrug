@@ -237,7 +237,7 @@ class _Configurable(type):
         config = {"class": cls}
 
         for k, v in self._config.items():
-            if isinstance(v, Configurable):
+            if isinstance(type(v), _Configurable):
                 v = v.config_dict()
             config[k] = v
         return config

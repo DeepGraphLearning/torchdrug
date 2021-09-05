@@ -595,14 +595,15 @@ class ContinuousFilterConv(MessagePassingBase):
     def message_and_aggregate(self, graph, input):
         node_in, node_out = graph.edge_list.t()[:2]
         position = graph.node_position
-        edge_weight = graph.edge_weight * self.rbf_layer(self.rbf(position[node_in], position[node_out]))
-        adjacency = utils.sparse_coo_tensor(graph.edge_list.t()[:2], edge_weight, (graph.num_node, graph.num_node))
-        update = torch.sparse.mm(adjacency.t(), self.input_layer(input))
+        rbf_weight = self.rbf_layer(self.rbf(position[node_in], position[node_out]))
+        indices = torch.stack([node_out, node_in, torch.arange(graph.num_edge, device=graph.device)])
+        adjacency = utils.sparse_coo_tensor(indices, graph.edge_weight, (graph.num_node, graph.num_node, graph.num_edge))
+        update = functional.generalized_rspmm(adjacency, rbf_weight, self.input_layer(input))
         if self.edge_linear:
             edge_input = graph.edge_feature.float()
             if self.edge_linear.in_features > self.edge_linear.out_features:
                 edge_input = self.edge_linear(edge_input)
-            edge_weight = edge_weight.unsqueeze(-1)
+            edge_weight = graph.edge_weight.unsqueeze(-1) * rbf_weight
             edge_update = scatter_add(edge_input * edge_weight, graph.edge_list[:, 1], dim=0,
                                       dim_size=graph.num_node)
             if self.edge_linear.in_features <= self.edge_linear.out_features:
@@ -778,3 +779,19 @@ class ChebyshevConv(MessagePassingBase):
     def combine(self, input, update):
         output = input + update
         return output
+
+if __name__ == "__main__":
+    edge_list = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0]]
+    node_position = torch.randn(6, 3)
+    graph = data.Graph(edge_list, num_node=6)
+    with graph.node():
+        graph.node_position = node_position
+    layer = ContinuousFilterConv(16, 16)
+
+    for i in range(100):
+        input = torch.randn(6, 16)
+        
+        message = layer.message(graph, input)
+        output1 = layer.aggregate(graph, message)
+        output2 = layer.message_and_aggregate(graph, input)
+        assert torch.allclose(output1, output2)

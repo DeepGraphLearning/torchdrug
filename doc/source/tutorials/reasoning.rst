@@ -20,10 +20,11 @@ graph embedding method. The basic idea is to learn an embedding vector for each
 entity and relation in a knowledge graph based on existing (h,r,t)-links. Then
 these embeddings are further used to predict missing links.
 
-Next, we will introduce how to use knowledge graph embedding models for knowledge graph reasoning.
+Next, we will introduce how to use knowledge graph embedding models for knowledge
+graph reasoning.
 
 Prepare the Dataset
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 We use the `FB15k-237`_ dataset for illustration. `FB15k-237`_ is constructed from
 Freebase, and the dataset has 14,541 entities as well as 237 relations. For the
@@ -39,7 +40,7 @@ the dataset using the following code:
     train_set, valid_set, test_set = dataset.split()
 
 Define our Model
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 Once we load the dataset, we are ready to build the model. Let's take the RotatE
 model as an example, we can use the following code for model construction.
@@ -68,7 +69,7 @@ Here, ``num_negative`` is the number of negative examples used for training, and
 ``adversarial_temperature`` is the temperature for sampling negative examples.
 
 Train and Test
-~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^
 
 Afterwards, we can now train and test our model. For model training, we need to
 set up an optimizer and put everything together into an Engine instance with the
@@ -93,16 +94,25 @@ following code.
 Neural Inductive Logic Programming
 ----------------------------------
 
-The other kind of popular method is neural inductive logic programming. The idea of neural inductive logic programming is to learn logic rules from training data. Once the logic rules are learned, they can be further used to predict missing links.
+The other kind of popular method is neural inductive logic programming. The idea
+of neural inductive logic programming is to learn logic rules from training data.
+Once the logic rules are learned, they can be further used to predict missing links.
 
-One popular method of neural inductive logic programming is NeuralLP. NeuralLP considers all the chain-like rules (e.g., nationality = born_in + city_of) up to a maximum length. Also, an attention mechanism is used to assign a scalar weight to each logic rule. During training, the attention module is trained, so that we can learn a proper weight for each rule. During testing, the logic rules and their weights are used together to predict missing links.
+One popular method of neural inductive logic programming is NeuralLP. NeuralLP
+considers all the chain-like rules (e.g., nationality = born_in + city_of) up to a
+maximum length. Also, an attention mechanism is used to assign a scalar weight to
+each logic rule. During training, the attention module is trained, so that we can
+learn a proper weight for each rule. During testing, the logic rules and their
+weights are used together to predict missing links.
 
 Next, we will introduce how to deploy a NeuralLP model for knowledge graph reasoning.
 
 Prepare the Dataset
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
-We start with loading the dataset. Similar to the tutorial of knowledge graph embedding, the `FB15k-237`_ dataset is used for illustration. We can load the dataset by running the following commands:
+We start with loading the dataset. Similar to the tutorial of knowledge graph
+embedding, the `FB15k-237`_ dataset is used for illustration. We can load the
+dataset by running the following commands:
 
 .. code:: python
 
@@ -113,7 +123,7 @@ We start with loading the dataset. Similar to the tutorial of knowledge graph em
     train_set, valid_set, test_set = dataset.split()
 
 Define our Model
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 Afterwards, we can now define the NeuralLP model with the following codes:
 
 .. code:: python
@@ -125,9 +135,14 @@ Afterwards, we can now define the NeuralLP model with the following codes:
                                    num_step=3,
                                    num_lstm_layer=1)
 
-Here, ``embedding_dim`` is the dimension of entity and relation embeddings used in NeuralLP. ``num_step`` is the maximum length of the chain-like rules (i.e., the maximum number of relations in the body of a chain-like rule), which is typically set to 3. ``num_lstm_layer`` is the number of LSTM layers used in NeuralLP.
+Here, ``embedding_dim`` is the dimension of entity and relation embeddings used in
+NeuralLP. ``num_step`` is the maximum length of the chain-like rules (i.e., the
+maximum number of relations in the body of a chain-like rule), which is typically
+set to 3. ``num_lstm_layer`` is the number of LSTM layers used in NeuralLP.
 
-Once we define our model, we are ready to define the task. As training NeuralLP shares similar ideas to training knowledge graph embedding, we also use the following knowledge graph embedding task:
+Once we define our model, we are ready to define the task. As training NeuralLP
+shares similar ideas to training knowledge graph embedding, we also use the following
+knowledge graph embedding task:
 
 .. code:: python
 
@@ -135,12 +150,17 @@ Once we define our model, we are ready to define the task. As training NeuralLP 
                                          num_negative=256,
                                          sample_weight=False)
 
-The difference is that we need to specify the ``fact_ratio``, which tells the code how many facts are used to construct the background knowledge graph on which we perform reasoning, and this hyperparameter is typically set to 0.75.
+The difference is that we need to specify the ``fact_ratio``, which tells the code
+how many facts are used to construct the background knowledge graph on which we
+perform reasoning, and this hyperparameter is typically set to 0.75.
 
 Train and Test
-~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^
 
-With the model and task we have defined, we can not perform model training and testing. Model training is similar to that of knowledge graph embedding models, where we need to create an optimizer and feed every component into an Engine instance by running the following code:
+With the model and task we have defined, we can not perform model training and
+testing. Model training is similar to that of knowledge graph embedding models,
+where we need to create an optimizer and feed every component into an Engine instance
+by running the following code:
 
 .. code:: python
 
@@ -149,9 +169,12 @@ With the model and task we have defined, we can not perform model training and t
                          gpus=[0, 1, 2, 3], batch_size=64)
     solver.train(num_epoch=10)
 
-Here, ``gpus`` specifies the GPUs on which we would like to train the model. We may specify multiple GPUs by using the form as above. For ``num_epoch``, we can reduce the value for efficiency purpose.
+Here, ``gpus`` specifies the GPUs on which we would like to train the model. We may
+specify multiple GPUs by using the form as above. For ``num_epoch``, we can reduce
+the value for efficiency purpose.
 
-After model training, we can further use the following codes to evaluate the model on the validation set:
+After model training, we can further use the following codes to evaluate the model
+on the validation set
 
 .. code:: python
 

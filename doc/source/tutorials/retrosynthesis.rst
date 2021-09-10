@@ -21,8 +21,8 @@ their synthesis pathways.
 First, let's download and load the dataset. This may take a while.
 
 There are two modes to load the dataset. The reaction mode loads the dataset as
-`(reactant, product)` pairs, which is used for center identification. The synthon
-mode loads the dataset as `(reactant, synthon)` pairs, which is used for synthon
+``(reactants, product)`` pairs, which is used for center identification. The synthon
+mode loads the dataset as ``(reactant, synthon)`` pairs, which is used for synthon
 completion.
 
 .. code:: python
@@ -30,7 +30,7 @@ completion.
     from torchdrug import datasets
 
     reaction_dataset = datasets.USPTO50k("~/molecule-datasets/",
-                                         node_feature="reaction_reaction_identification",
+                                         node_feature="center_identification",
                                          kekulize=True)
     synthon_dataset = datasets.USPTO50k("~/molecule-dataset/", as_synthon=True,
                                         node_feature="synthon_completion",
@@ -98,7 +98,7 @@ other graph representation learning models can also be used here.
                         hidden_dims=[256, 256, 256, 256, 256, 256],
                         num_relation=dataset.num_bond_type,
                         concat_hidden=True)
-    reaction_task = tasks.CenterIdentification(model, feature=("graph", "atom", "bond"))
+    reaction_task = tasks.CenterIdentification(reaction_model, feature=("graph", "atom", "bond"))
 
 .. code:: python
 

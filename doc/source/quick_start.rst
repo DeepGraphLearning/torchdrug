@@ -201,7 +201,7 @@ Let's save our trained model. We dump our model into two parts, where
 ``clintox_gin.json`` contains the hyperparameters, and ``clintox_gin.pth`` contains
 the trained weights.
 
-.. code::python
+.. code:: python
 
     import json
 

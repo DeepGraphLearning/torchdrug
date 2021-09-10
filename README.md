@@ -44,6 +44,20 @@ pip install -r requirements.txt
 python setup.py install
 ```
 
+### From Pip (Not Recommended) ###
+
+This is not a recommended way to install TorchDrug, since we have noticed some bugs
+in RDKit installed via pip.
+
+```bash
+pip3 install torch==1.9.0
+pip3 install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.9.0+cu102.html
+pip3 install rdkit-pypi torchdrug
+```
+
+To install `torch-scatter` for other PyTorch or CUDA versions, please see the
+instructions in https://github.com/rusty1s/pytorch_scatter
+
 Quick Start
 -----------
 

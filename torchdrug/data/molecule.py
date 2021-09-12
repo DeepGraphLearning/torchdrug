@@ -323,12 +323,14 @@ class Molecule(Graph):
         if ignore_error:
             try:
                 with utils.no_rdkit_log():
+                    mol.UpdatePropertyCache()
                     Chem.AssignStereochemistry(mol)
                     mol.ClearComputedProps()
                     mol.UpdatePropertyCache()
             except:
                 mol = None
         else:
+            mol.UpdatePropertyCache()
             Chem.AssignStereochemistry(mol)
             mol.ClearComputedProps()
             mol.UpdatePropertyCache()
@@ -523,7 +525,7 @@ class PackedMolecule(PackedGraph, Molecule):
     def is_valid(self):
         """A coarse implementation of valence check."""
         # TODO: cross-check by any domain expert
-        atom2valence = torch.tensor(float("nan")).repeat(118)
+        atom2valence = torch.tensor(float("nan")).repeat(constant.NUM_ATOM)
         for k, v in self.atom2valence.items():
             atom2valence[k] = v
         atom2valence = torch.as_tensor(atom2valence, device=self.device)
@@ -790,11 +792,15 @@ class PackedMolecule(PackedGraph, Molecule):
                     with utils.no_rdkit_log():
                         mol.UpdatePropertyCache()
                         Chem.AssignStereochemistry(mol)
+                        mol.ClearComputedProps()
+                        mol.UpdatePropertyCache()
                 except:
                     mol = None
             else:
                 mol.UpdatePropertyCache()
                 Chem.AssignStereochemistry(mol)
+                mol.ClearComputedProps()
+                mol.UpdatePropertyCache()
             mols.append(mol)
 
         return mols

@@ -1,4 +1,3 @@
-#define AT_PARALLEL_OPENMP true
 #include <ATen/Parallel.h>
 
 #include "embedding.h"

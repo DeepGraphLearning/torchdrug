@@ -1,6 +1,5 @@
 #include <mutex>
 
-#define AT_PARALLEL_OPENMP true
 #include <ATen/Parallel.h>
 
 #include "operator.cuh"

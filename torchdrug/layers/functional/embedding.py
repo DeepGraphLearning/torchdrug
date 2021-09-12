@@ -8,15 +8,8 @@ from torchdrug import utils
 backend = "fast"
 
 path = os.path.join(os.path.dirname(__file__), "extension")
-
-
-if torch.cuda.is_available():
-    embedding = utils.load_extension("embedding",
-                                     [os.path.join(path, "embedding.cpp"), os.path.join(path, "embedding.cu")],
-                                     extra_cflags=["-g", "-Ofast", "-fopenmp", "-DCUDA_OP"], extra_cuda_cflags=["-O3"])
-else:
-    embedding = utils.load_extension("embedding", [os.path.join(path, "embedding.cpp")],
-                                     extra_cflags=["-g", "-Ofast", "-fopenmp"])
+embedding = utils.load_extension("embedding",
+                                 [os.path.join(path, "embedding.cpp"), os.path.join(path, "embedding.cu")])
 
 
 class TransEFunction(autograd.Function):

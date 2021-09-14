@@ -33,11 +33,11 @@ Replace the versions in the above url according to your case. If you don't have 
 or CUDA installed, treat the CUDA version in the url as ``cpu``. See
 https://github.com/rusty1s/pytorch_scatter for more details about installation.
 
-Finally, install RDKit and TorchDrug via
+Finally, install TorchDrug via
 
 .. code:: bash
 
-    pip3 install rdkit-pypi torchdrug
+    pip3 install torchdrug
 
 From Source
 -----------

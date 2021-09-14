@@ -33,7 +33,7 @@ conda install -c milagraph -c conda-forge torchdrug
 ```bash
 pip3 install torch==1.9.0
 pip3 install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.9.0+cu102.html
-pip3 install rdkit-pypi torchdrug
+pip3 install torchdrug
 ```
 
 To install `torch-scatter` for other PyTorch or CUDA versions, please see the

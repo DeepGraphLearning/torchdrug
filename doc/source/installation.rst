@@ -10,29 +10,8 @@ From Conda
 
     conda install -c milagraph -c conda-forge torchdrug
 
-From Source
------------
-
-TorchDrug depends on rdkit, which is only available via conda.
-We can install rdkit with the following line.
-
-.. code:: bash
-
-    conda install -c conda-forge rdkit
-
-.. code:: bash
-
-    git clone https://github.com/DeepGraphLearning/torchdrug
-    cd torchdrug
-    pip install -r requirements.txt
-    python setup.py install
-
-
-From Pip (Not Recommended)
---------------------------
-
-This is not a recommended way to install TorchDrug, since we have noticed some
-bugs in RDKit installed via pip.
+From Pip
+--------
 
 First, let's install PyTorch.
 
@@ -59,3 +38,13 @@ Finally, install RDKit and TorchDrug via
 .. code:: bash
 
     pip3 install rdkit-pypi torchdrug
+
+From Source
+-----------
+
+.. code:: bash
+
+    git clone https://github.com/DeepGraphLearning/torchdrug
+    cd torchdrug
+    pip install -r requirements.txt
+    python setup.py install

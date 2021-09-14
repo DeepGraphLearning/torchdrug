@@ -28,26 +28,7 @@ TorchDrug is compatible with Python 3.7/3.8 and PyTorch >= 1.4.0.
 conda install -c milagraph -c conda-forge torchdrug
 ```
 
-### From Source ###
-
-TorchDrug depends on rdkit, which is only available via conda.
-You can install rdkit with the following line.
-
-```bash
-conda install -c conda-forge rdkit
-```
-
-```
-git clone https://github.com/DeepGraphLearning/torchdrug
-cd torchdrug
-pip install -r requirements.txt
-python setup.py install
-```
-
-### From Pip (Not Recommended) ###
-
-This is not a recommended way to install TorchDrug, since we have noticed some bugs
-in RDKit installed via pip.
+### From Pip ###
 
 ```bash
 pip3 install torch==1.9.0
@@ -57,6 +38,15 @@ pip3 install rdkit-pypi torchdrug
 
 To install `torch-scatter` for other PyTorch or CUDA versions, please see the
 instructions in https://github.com/rusty1s/pytorch_scatter
+
+### From Source ###
+
+```
+git clone https://github.com/DeepGraphLearning/torchdrug
+cd torchdrug
+pip install -r requirements.txt
+python setup.py install
+```
 
 Quick Start
 -----------

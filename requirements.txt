@@ -2,6 +2,7 @@ torch>=1.4.0
 torch-scatter>=1.4.0
 decorator
 numpy>=1.11
+rdkit-pypi
 matplotlib
 tqdm
 networkx

@@ -2,6 +2,8 @@
 
 ----------------------------
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1rutJkuYH3zaxBsMROWMvAu5LQCRcKcOg?usp=sharing#forceEdit=true&sandboxMode=true)
+
 [Docs] | [Tutorials] | [Benchmarks] | [Papers Implemented]
 
 [Docs]: https://deepgraphlearning.github.io/torchdrug-site/docs

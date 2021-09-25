@@ -187,13 +187,10 @@ class CenterIdentification(tasks.Task, core.Configurable):
         with graph.graph():
             graph.product_id = torch.arange(len(graph), device=self.device)
 
-        graph = graph.repeat(k)
-        order = torch.arange(len(graph), device=self.device)
-        order = order.view(k, -1).t().flatten()
-        graph = graph[order]
+        graph = graph.repeat_interleave(k)
+        reaction = batch["reaction"].repeat_interleave(k)
         with graph.graph():
             graph.split_id = torch.arange(k, device=self.device).repeat(len(graph) // k)
-        reaction = batch["reaction"].repeat(k)[order]
 
         logp, center_topk = functional.variadic_topk(logp, size, k)
         logp = logp.flatten()
@@ -796,10 +793,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         assert len(graph) == len(action)
         num_action = action.shape[1]
 
-        graph = graph.repeat(num_action)
-        order = torch.arange(len(graph), device=self.device)
-        order = order.view(num_action, -1).t().flatten()
-        graph = graph[order]
+        graph = graph.repeat_interleave(num_action)
 
         action = action.flatten(0, 1) # (num_graph * k, 4)
         logp = logp.flatten(0, 1) # (num_graph * k)

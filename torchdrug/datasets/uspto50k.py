@@ -79,6 +79,8 @@ class USPTO50k(data.ReactionDataset):
         invalid = 0
         for i in indexes:
             reactant, product = data[i]
+            reactant.bond_stereo[:] = 0
+            product.bond_stereo[:] = 0
 
             reactants, products = process_fn(reactant, product)
             if not reactants:
@@ -100,14 +102,16 @@ class USPTO50k(data.ReactionDataset):
         prod2react = id2reactant[product2id]
 
         # check edges in the product
-        edge_added = []
-        edge_modified = []
-        mask = product.edge_list[:, 0] < product.edge_list[:, 1]
-        for h, t, r in product.edge_list[mask]:
-            if (prod2react[h], prod2react[t]) not in reactant:
-                edge_added.append((h, t))
-            elif (prod2react[h], prod2react[t], r) not in reactant:
-                edge_modified.append((h, t))
+        product = product.directed()
+        mapped_edge = product.edge_list.clone()
+        mapped_edge[:, :2] = prod2react[mapped_edge[:, :2]]
+        is_same_index = mapped_edge.unsqueeze(0) == reactant.edge_list.unsqueeze(1)
+        has_typed_edge = is_same_index.all(dim=-1).any(dim=0)
+        has_edge = is_same_index[:, :, :2].all(dim=-1).any(dim=0)
+        is_added = ~has_edge
+        is_modified = has_edge & ~has_typed_edge
+        edge_added = product.edge_list[is_added, :2]
+        edge_modified = product.edge_list[is_modified, :2]
 
         return edge_added, edge_modified, prod2react
 
@@ -117,7 +121,7 @@ class USPTO50k(data.ReactionDataset):
         edge_label = torch.zeros(product.num_edge, dtype=torch.long)
         node_label = torch.zeros(product.num_node, dtype=torch.long)
 
-        if edge_added:
+        if len(edge_added) > 0:
             if len(edge_added) == 1: # add a single edge
                 index = product.index(edge_added[0])
                 assert len(index) == 1
@@ -164,10 +168,10 @@ class USPTO50k(data.ReactionDataset):
         reactants = []
         synthons = []
 
-        if edge_added:
+        if len(edge_added) > 0:
             if len(edge_added) == 1:  # add a single edge
                 edge = edge_added[0]
-                reverse_edge = edge[::-1]
+                reverse_edge = edge.flip(0)
                 index = torch.cat([product.index(edge), product.index(reverse_edge)])
                 edge_mask = torch.ones(product.num_edge, dtype=torch.bool)
                 edge_mask[index] = 0

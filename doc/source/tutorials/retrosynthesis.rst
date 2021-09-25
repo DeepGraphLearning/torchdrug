@@ -32,7 +32,7 @@ completion.
     reaction_dataset = datasets.USPTO50k("~/molecule-datasets/",
                                          node_feature="center_identification",
                                          kekulize=True)
-    synthon_dataset = datasets.USPTO50k("~/molecule-dataset/", as_synthon=True,
+    synthon_dataset = datasets.USPTO50k("~/molecule-datasets/", as_synthon=True,
                                         node_feature="synthon_completion",
                                         kekulize=True)
 
@@ -98,13 +98,15 @@ other graph representation learning models can also be used here.
                         hidden_dims=[256, 256, 256, 256, 256, 256],
                         num_relation=dataset.num_bond_type,
                         concat_hidden=True)
-    reaction_task = tasks.CenterIdentification(reaction_model, feature=("graph", "atom", "bond"))
+    reaction_task = tasks.CenterIdentification(reaction_model,
+                                               feature=("graph", "atom", "bond"))
 
 .. code:: python
 
     reaction_optimizer = torch.optim.Adam(reaction_task.parameters(), lr=1e-3)
     reaction_solver = core.Engine(reaction_task, reaction_train, reaction_valid,
-                                  reaction_test, optimizer, gpus=[0], batch_size=128)
+                                  reaction_test, reaction_optimizer,
+                                  gpus=[0], batch_size=128)
     reaction_solver.train(num_epoch=50)
     reaction_solver.evaluate("valid")
 
@@ -208,7 +210,8 @@ Similarly, we train a synthon completion model on the synthon dataset.
 
     synthon_optimizer = torch.optim.Adam(synthon_task.parameters(), lr=1e-3)
     synthon_solver = core.Engine(synthon_task, synthon_train, synthon_valid,
-                                 synthon_test, optimizer, gpus=[0], batch_size=128)
+                                 synthon_test, synthon_optimizer,
+                                 gpus=[0], batch_size=128)
     synthon_solver.train(num_epoch=10)
     synthon_solver.evaluate("valid")
 

@@ -860,7 +860,7 @@ class PackedGraph(Graph):
             self._get_cumulative(edge_list, num_nodes, num_edges, offsets)
 
         if offsets is None:
-            offsets = self._get_offsets(num_nodes, num_cum_edges)
+            offsets = self._get_offsets(num_nodes, num_edges, num_cum_nodes)
             edge_list = edge_list.clone()
             edge_list[:, :2] += offsets.unsqueeze(-1)
 
@@ -878,17 +878,18 @@ class PackedGraph(Graph):
         super(PackedGraph, self).__init__(edge_list, edge_weight=edge_weight, num_node=num_node,
                                           num_relation=num_relation, **kwargs)
 
-    def _get_offsets(self, num_nodes, num_cum_edges):
-        if num_cum_edges.numel():
-            num_edge = num_cum_edges[-1]
-        else:
-            num_edge = 0
-        # special case 1: graphs[-1] has no edge
-        index = num_cum_edges < num_edge
-        # special case 2: graphs[i] and graphs[i + 1] both have no edge
-        offsets = scatter_add(num_nodes[index], num_cum_edges[index], dim_size=num_edge)
-        offsets = offsets.cumsum(0)
-        return offsets
+    def _get_offsets(self, num_nodes=None, num_edges=None, num_cum_nodes=None, num_cum_edges=None):
+        if num_nodes is None:
+            num_cum_nodes_shifted = torch.cat(
+                [torch.zeros(1, dtype=torch.long, device=self.device), num_cum_nodes[:-1]])
+            num_nodes = num_cum_nodes - num_cum_nodes_shifted
+        if num_edges is None:
+            num_cum_edges_shifted = torch.cat(
+                [torch.zeros(1, dtype=torch.long, device=self.device), num_cum_edges[:-1]])
+            num_edges = num_cum_edges - num_cum_edges_shifted
+        if num_cum_nodes is None:
+            num_cum_nodes = num_nodes.cumsum(0)
+        return (num_cum_nodes - num_nodes).repeat_interleave(num_edges)
 
     def merge(self, graph2graph):
         """
@@ -909,8 +910,7 @@ class PackedGraph(Graph):
         num_graph = graph2graph[-1] + 1
         num_nodes = scatter_add(graph.num_nodes, graph2graph, dim_size=num_graph)
         num_edges = scatter_add(graph.num_edges, graph2graph, dim_size=num_graph)
-        num_cum_edges = num_edges.cumsum(0)
-        offsets = graph._get_offsets(num_nodes, num_cum_edges)
+        offsets = self._get_offsets(num_nodes, num_edges)
 
         data_dict, meta_dict = graph.data_mask(exclude="graph")
 
@@ -1025,12 +1025,14 @@ class PackedGraph(Graph):
             https://pytorch.org/docs/stable/generated/torch.repeat_interleave.html
 
         Parameters:
-            repeats (Tensor): number of repetitions for each graph
+            repeats (Tensor or int): number of repetitions for each graph
 
         Returns:
             PackedGraph
         """
         repeats = torch.as_tensor(repeats, dtype=torch.long, device=self.device)
+        if repeats.numel() == 1:
+            repeats = repeats * torch.ones(self.batch_size, dtype=torch.long, device=self.device)
         num_nodes = self.num_nodes.repeat_interleave(repeats)
         num_edges = self.num_edges.repeat_interleave(repeats)
         num_cum_nodes = num_nodes.cumsum(0)
@@ -1159,7 +1161,16 @@ class PackedGraph(Graph):
         if len(index) > 1:
             raise ValueError("Complex indexing is not supported for PackedGraph")
 
-        return self.subbatch(index[0])
+        index = self._standarize_index(index[0], self.batch_size)
+        count = index.bincount(minlength=self.batch_size)
+        if count.max() > 1:
+            graph = self.repeat_interleave(count)
+            index_order = index.argsort()
+            order = torch.zeros_like(index)
+            order[index_order] = torch.arange(len(index), dtype=torch.long, device=self.device)
+            return graph.subbatch(order)
+
+        return self.subbatch(index)
 
     def __len__(self):
         return len(self.num_nodes)
@@ -1182,21 +1193,15 @@ class PackedGraph(Graph):
     @utils.cached_property
     def node2graph(self):
         """Node id to graph id mapping."""
-        # special case 1: graphs[-1] has no node
-        node_index = self.num_cum_nodes[self.num_cum_nodes < self.num_node]
-        # special case 2: graphs[i] and graphs[i + 1] both have no node
-        node2graph = scatter_add(torch.ones_like(node_index), node_index, dim_size=self.num_node)
-        node2graph = node2graph.cumsum(0)
+        range = torch.arange(self.batch_size, device=self.device)
+        node2graph = range.repeat_interleave(self.num_nodes)
         return node2graph
 
     @utils.cached_property
     def edge2graph(self):
         """Edge id to graph id mapping."""
-        # special case 1: graphs[-1] has no edge
-        edge_index = self.num_cum_edges[self.num_cum_edges < self.num_edge]
-        # special case 2: graphs[i] and graphs[i + 1] both have no edge
-        edge2graph = scatter_add(torch.ones_like(edge_index), edge_index, dim_size=self.num_edge)
-        edge2graph = edge2graph.cumsum(0)
+        range = torch.arange(self.batch_size, device=self.device)
+        edge2graph = range.repeat_interleave(self.num_edges)
         return edge2graph
 
     @property
@@ -1223,9 +1228,7 @@ class PackedGraph(Graph):
         if compact:
             mapping[index] = torch.arange(len(index), device=self.device)
             num_nodes = self._get_num_xs(index, self.num_cum_nodes)
-            graph_index = self.num_cum_edges < self.num_edge
-            offsets = scatter_add(num_nodes[graph_index], self.num_cum_edges[graph_index], dim_size=self.num_edge)
-            offsets = offsets.cumsum(0)
+            offsets = self._get_offsets(num_nodes, self.num_edges)
         else:
             mapping[index] = index
             num_nodes = self.num_nodes
@@ -1306,12 +1309,7 @@ class PackedGraph(Graph):
         else:
             num_edges = torch.zeros_like(self.num_edges)
             num_edges[index] = self.num_edges[index]
-        num_cum_edges = num_edges.cumsum(0)
-
-        num_edge = num_edges.sum()
-        graph_index = num_cum_edges < num_edge
-        offsets = scatter_add(num_nodes[graph_index], num_cum_edges[graph_index], dim_size=num_edge)
-        offsets = offsets.cumsum(0)
+        offsets = self._get_offsets(num_nodes, num_edges)
 
         if compact:
             data_dict, meta_dict = self.data_mask(node_index, edge_index, index)

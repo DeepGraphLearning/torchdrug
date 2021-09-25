@@ -27,7 +27,7 @@ completion.
 
 .. code:: python
 
-    from torchdrug import datasets
+    from torchdrug import data, datasets, utils
 
     reaction_dataset = datasets.USPTO50k("~/molecule-datasets/",
                                          node_feature="center_identification",
@@ -79,8 +79,11 @@ before calling :meth:`split() <torchdrug.datasets.USPTO50k.split>`.
 
 .. code::
 
+    import torch
+
     torch.manual_seed(1)
     reaction_train, reaction_valid, reaction_test = reaction_dataset.split()
+    torch.manual_seed(1)
     synthon_train, synthon_valid, synthon_test = synthon_dataset.split()
 
 Center Identification
@@ -94,9 +97,9 @@ other graph representation learning models can also be used here.
 
     from torchdrug import core, models, tasks
 
-    reaction_model = models.RGCN(input_dim=dataset.node_feature_dim,
+    reaction_model = models.RGCN(input_dim=reaction_dataset.node_feature_dim,
                         hidden_dims=[256, 256, 256, 256, 256, 256],
-                        num_relation=dataset.num_bond_type,
+                        num_relation=reaction_dataset.num_bond_type,
                         concat_hidden=True)
     reaction_task = tasks.CenterIdentification(reaction_model,
                                                feature=("graph", "atom", "bond"))
@@ -202,9 +205,9 @@ Similarly, we train a synthon completion model on the synthon dataset.
 
 .. code:: python
 
-    synthon_model = models.RGCN(input_dim=dataset.node_feature_dim,
+    synthon_model = models.RGCN(input_dim=synthon_dataset.node_feature_dim,
                                 hidden_dims=[256, 256, 256, 256, 256, 256],
-                                num_relation=dataset.num_bond_type,
+                                num_relation=synthon_dataset.num_bond_type,
                                 concat_hidden=True)
     synthon_task = tasks.SynthonCompletion(synthon_model, feature=("graph",))
 
@@ -284,12 +287,14 @@ if we give more budget to the beam search.
 
 .. code:: python
 
+    from torch.utils import data as torch_data
+
     lengths = [len(reaction_valid) // 10,
                len(reaction_valid) - len(reaction_valid) // 10]
     reaction_valid_small = torch_data.random_split(reaction_valid, lengths)[0]
 
-    task = tasks.Retrosynthesis(reaction_task, synthon_task, center_topk=2, num_beam=5,
-                                max_prediction=10)
+    task = tasks.Retrosynthesis(reaction_task, synthon_task, center_topk=2,
+                                num_synthon_beam=5, max_prediction=10)
     optimizer = torch.optim.Adam(task.parameters(), lr=1e-3)
     solver = core.Engine(task, reaction_train, reaction_valid_small, reaction_test,
                          optimizer, gpus=[0], batch_size=32)

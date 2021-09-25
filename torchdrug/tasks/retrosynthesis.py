@@ -733,7 +733,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         starts = num_cum_nodes_ext - num_nodes_ext + graph.num_nodes
         ends = num_cum_nodes_ext
         is_new_node = functional.multi_slice_mask(starts, ends, num_cum_nodes_ext[-1])
-        infinity = torch.tensor(float("inf"), device=self.device)
+        infinity = float("inf")
 
         node_in_pred = self.node_in_mlp(node_feature).squeeze(-1)
         stop_pred = self.stop_mlp(graph_feature).squeeze(-1)

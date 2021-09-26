@@ -9,15 +9,8 @@ from torchdrug import utils
 module = sys.modules[__name__]
 
 path = os.path.join(os.path.dirname(__file__), "extension")
-
-
-if torch.cuda.is_available():
-    spmm = utils.load_extension("spmm", [os.path.join(path, "spmm.cpp"), os.path.join(path, "rspmm.cpp"),
-                                         os.path.join(path, "spmm.cu"), os.path.join(path, "rspmm.cu")],
-                                extra_cflags=["-g", "-Ofast", "-fopenmp", "-DCUDA_OP"], extra_cuda_cflags=["-O3"])
-else:
-    spmm = utils.load_extension("spmm", [os.path.join(path, "spmm.cpp"), os.path.join(path, "rspmm.cpp")],
-                                extra_cflags=["-g", "-Ofast", "-fopenmp"])
+spmm = utils.load_extension("spmm", [os.path.join(path, "spmm.cpp"), os.path.join(path, "rspmm.cpp"),
+                                     os.path.join(path, "spmm.cu"), os.path.join(path, "rspmm.cu")])
 
 
 class SPMMAddMulFunction(autograd.Function):

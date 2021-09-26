@@ -2,6 +2,8 @@
 
 ----------------------------
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1rutJkuYH3zaxBsMROWMvAu5LQCRcKcOg?usp=sharing#forceEdit=true&sandboxMode=true)
+
 [Docs] | [Tutorials] | [Benchmarks] | [Papers Implemented]
 
 [Docs]: https://deepgraphlearning.github.io/torchdrug-site/docs
@@ -28,14 +30,18 @@ TorchDrug is compatible with Python 3.7/3.8 and PyTorch >= 1.4.0.
 conda install -c milagraph -c conda-forge torchdrug
 ```
 
-### From Source ###
-
-TorchDrug depends on rdkit, which is only available via conda.
-You can install rdkit with the following line.
+### From Pip ###
 
 ```bash
-conda install -c conda-forge rdkit
+pip3 install torch==1.9.0
+pip3 install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.9.0+cu102.html
+pip3 install torchdrug
 ```
+
+To install `torch-scatter` for other PyTorch or CUDA versions, please see the
+instructions in https://github.com/rusty1s/pytorch_scatter
+
+### From Source ###
 
 ```
 git clone https://github.com/DeepGraphLearning/torchdrug

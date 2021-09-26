@@ -126,7 +126,7 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
         return index
 
     def get_item(self, index):
-        if hasattr(self, 'lazy') and self.lazy:
+        if getattr(self, "lazy", False):
             item = {"graph": data.Molecule.from_smiles(self.smiles_list[index], **self.kwargs)}
         else:
             item = {"graph": self.data[index]}
@@ -187,7 +187,10 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
         return len(self.data)
 
     def __repr__(self):
-        lines = ["#sample: %d" % len(self), "#task: %d" % len(self.tasks)]
+        lines = [
+            "#sample: %d" % len(self),
+            "#task: %d" % len(self.tasks),
+        ]
         return "%s(\n  %s\n)" % (self.__class__.__name__, "\n  ".join(lines))
 
 
@@ -396,8 +399,11 @@ class NodeClassificationDataset(torch_data.Dataset, core.Configurable):
         return self.num_labeled_node
 
     def __repr__(self):
-        lines = ["#node: %d" % self.graph.num_node, "#edge: %d" % self.graph.num_edge,
-                 "#class: %d" % len(self.label_vocab)]
+        lines = [
+            "#node: %d" % self.num_node,
+            "#edge: %d" % self.num_edge,
+            "#class: %d" % len(self.label_vocab),
+        ]
         return "%s(\n  %s\n)" % (self.__class__.__name__, "\n  ".join(lines))
 
 
@@ -537,8 +543,11 @@ class KnowledgeGraphDataset(torch_data.Dataset, core.Configurable):
         return self.graph.num_edge
 
     def __repr__(self):
-        lines = ["#entity: %d" % self.graph.num_node, "#relation: %d" % self.graph.num_relation,
-                 "#triplet: %d" % self.graph.num_edge]
+        lines = [
+            "#entity: %d" % self.num_entity,
+            "#relation: %d" % self.num_relation,
+            "#triplet: %d" % self.num_triplet,
+        ]
         return "%s(\n  %s\n)" % (self.__class__.__name__, "\n  ".join(lines))
 
 

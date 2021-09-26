@@ -156,7 +156,7 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
             r_index = pos_r_index.unsqueeze(-1).repeat(1, self.num_negative + 1)
             t_index[:batch_size // 2, 1:] = neg_index[:batch_size // 2]
             h_index[batch_size // 2:, 1:] = neg_index[batch_size // 2:]
-            pred = self.model(self.fact_graph, h_index, t_index, r_index, all_loss, metric)
+            pred = self.model(self.fact_graph, h_index, t_index, r_index, all_loss=all_loss, metric=metric)
 
         return pred
 

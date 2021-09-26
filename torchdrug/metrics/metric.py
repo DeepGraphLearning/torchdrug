@@ -11,6 +11,7 @@ from rdkit.Chem import RDConfig, Descriptors
 from torchdrug import utils
 from torchdrug.layers import functional
 from torchdrug.core import Registry as R
+from torchdrug.metrics.rdkit import sascorer
 
 
 @R.register("metrics.auroc")
@@ -82,7 +83,7 @@ def logP(pred):
     return torch.tensor(logp, dtype=torch.float, device=pred.device)
 
 
-@R.register("metrics.penalized_logp")
+@R.register("metrics.plogp")
 def penalized_logP(pred):
     """
     Logarithm of partition coefficient, penalized by cycle length and synthetic accessibility.
@@ -90,10 +91,6 @@ def penalized_logP(pred):
     Parameters:
         pred (PackedMolecule): molecules to evaluate
     """
-    if "sascorer" not in sys.modules:
-        sys.path.append(os.path.join(RDConfig.RDContribDir, "SA_Score"))
-    import sascorer
-
     # statistics from ZINC250k
     logp_mean = 2.4570953396190123
     logp_std = 1.434324401111988

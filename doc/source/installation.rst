@@ -10,86 +10,41 @@ From Conda
 
     conda install -c milagraph -c conda-forge torchdrug
 
+From Pip
+--------
+
+First, let's install PyTorch.
+
+.. code:: bash
+
+    pip3 install torch
+
+To install ``torch-scatter``, we need to check the version of PyTorch and CUDA.
+
+We can get the version of PyTorch by ``python3 -c "import torch; print(torch.__version__")``.
+The version of CUDA can be get by ``nvcc -V``. For example, if our PyTorch is ``1.8.0``
+and CUDA is ``10.2``, the command should be
+
+.. code:: bash
+
+    pip3 install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.8.0+cu102.html
+
+Replace the versions in the above url according to your case. If you don't have GPUs
+or CUDA installed, treat the CUDA version in the url as ``cpu``. See
+https://github.com/rusty1s/pytorch_scatter for more details about installation.
+
+Finally, install TorchDrug via
+
+.. code:: bash
+
+    pip3 install torchdrug
+
 From Source
 -----------
 
-TorchDrug depends on rdkit, which is only available via conda.
-You can install rdkit with the following line.
-
-.. code:: bash
-
-    conda install -c conda-forge rdkit
-
 .. code:: bash
 
     git clone https://github.com/DeepGraphLearning/torchdrug
     cd torchdrug
     pip install -r requirements.txt
-    python setup.py install
-
-
-From Pip (Not Recommended)
------------------------------------
-
-This is not a recommended way to install TorchDrug, since we have noticed some
-bugs in RDKit installed via pip.
-
-Create venv
-^^^^^^^^^^^
-
-.. code:: bash
-
-    mkdir ~/.venv
-    /usr/bin/python3 -m venv ~/.venv/torchdrug
-    source ~/.venv/torchdrug/bin/activate
-
-Install requirements
-^^^^^^^^^^^^^^^^^^^^
-
-.. code:: bash
-
-    # Contents in requirements.txt
-    torch>=1.4.0
-    decorator<5,>=4.3
-    numpy>=1.11
-    matplotlib
-    tqdm
-    networkx
-    ninja
-    jinja2
-    rdkit-pypi
-
-.. code:: bash
-
-    pip install -r requirements.txt
-
-Install PyTorch Scatter
-^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code:: bash
-
-    # PyTorch 1.9.0
-    pip install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.9.0+${CUDA}.html
-    pip install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.9.0+cpu.html
-
-
-.. code:: bash
-
-    # PyTorch 1.8.0/1.8.1
-    pip install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.8.0+${CUDA}.html
-    pip install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.8.0+cpu.html
-
-
-**Note:** Binaries of older versions are also provided for PyTorch 1.4.0, PyTorch 1.5.0,
-PyTorch 1.6.0 and PyTorch 1.7.0/1.7.1 (following the same procedure).
-
-See https://github.com/rusty1s/pytorch_scatter for more details.
-
-Install TorchDrug
-^^^^^^^^^^^^^^^^^
-
-.. code:: bash
-
-    git clone https://github.com/DeepGraphLearning/torchdrug
-    cd torchdrug
     python setup.py install

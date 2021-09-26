@@ -11,6 +11,7 @@
 .. _BACE: https://arxiv.org/pdf/1703.00564.pdf
 .. _ChEMBL: https://pubmed.ncbi.nlm.nih.gov/30155234/
 .. _ZINC250k: https://pubs.acs.org/doi/pdfplus/10.1021/ci3001277
+.. _ZINC2M: https://pubs.acs.org/doi/10.1021/acs.jcim.5b00559
 .. _ZINC15: https://pubs.acs.org/doi/10.1021/acs.jcim.5b00559
 .. _USPTO50k: https://aspace.repository.cam.ac.uk/bitstream/handle/1810/244727/lowethesis.pdf
 .. _FB15k: http://papers.nips.cc/paper/5071-translating-embeddings-for-modeling-multi-relational-data.pdf

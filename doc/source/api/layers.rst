@@ -208,6 +208,8 @@ Variadic
 
 .. autofunction:: variadic_arange
 
+.. autofunction:: variadic_randperm
+
 Tensor Reduction
 ^^^^^^^^^^^^^^^^
 .. autofunction:: masked_mean

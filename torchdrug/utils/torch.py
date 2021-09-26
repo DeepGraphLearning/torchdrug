@@ -5,7 +5,7 @@ import torch
 from torch.utils import cpp_extension
 
 from torchdrug import data
-from torchdrug.utils import comm
+from . import decorator, comm
 
 
 class LazyExtensionLoader(object):
@@ -24,16 +24,19 @@ class LazyExtensionLoader(object):
         self.kwargs = kwargs
 
     def __getattr__(self, key):
-        if "module" not in self.__dict__:
-            self.module = cpp_extension.load(self.name, self.sources, self.extra_cflags, self.extra_cuda_cflags,
-                                             self.extra_ldflags, self.extra_include_paths, self.build_directory,
-                                             self.verbose, **self.kwargs)
         return getattr(self.module, key)
 
+    @decorator.cached_property
+    def module(self):
+        return cpp_extension.load(self.name, self.sources, self.extra_cflags, self.extra_cuda_cflags,
+                                  self.extra_ldflags, self.extra_include_paths, self.build_directory,
+                                  self.verbose, **self.kwargs)
 
-def load_extension(name, sources, **kwargs):
+
+def load_extension(name, sources, extra_cflags=None, extra_cuda_cflags=None, **kwargs):
     """
     Load a PyTorch C++ extension just-in-time (JIT).
+    Automatically decide the compilation flags if not specified.
 
     This function performs lazy evaluation and is multi-process-safe.
 
@@ -42,7 +45,24 @@ def load_extension(name, sources, **kwargs):
     .. _torch.utils.cpp_extension.load:
         https://pytorch.org/docs/stable/cpp_extension.html#torch.utils.cpp_extension.load
     """
-    return LazyExtensionLoader(name, sources, **kwargs)
+    if extra_cflags is None:
+        extra_cflags = ["-Ofast"]
+        if torch.backends.openmp.is_available():
+            extra_cflags += ["-fopenmp", "-DAT_PARALLEL_OPENMP"]
+        else:
+            extra_cflags.append("-DAT_PARALLEL_NATIVE")
+    if extra_cuda_cflags is None:
+        if torch.cuda.is_available():
+            extra_cuda_cflags = ["-O3"]
+            extra_cflags.append("-DCUDA_OP")
+        else:
+            new_sources = []
+            for source in sources:
+                if not cpp_extension._is_cuda_file(source):
+                    new_sources.append(source)
+            sources = new_sources
+
+    return LazyExtensionLoader(name, sources, extra_cflags, extra_cuda_cflags, **kwargs)
 
 
 def cpu(obj, *args, **kwargs):
@@ -164,4 +184,4 @@ def sparse_coo_tensor(indices, values, size):
 
 path = os.path.join(os.path.dirname(__file__), "extension")
 
-torch_ext = load_extension("torch_ext", [os.path.join(path, "torch_ext.cpp")], extra_cflags=["-Ofast"])
+torch_ext = load_extension("torch_ext", [os.path.join(path, "torch_ext.cpp")])

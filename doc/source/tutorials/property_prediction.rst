@@ -53,7 +53,7 @@ optimized through multi-task training by the task-specific module.
 
 .. code:: python
 
-    from torchdrug import core, models, tasks
+    from torchdrug import core, models, tasks, utils
 
     model = models.GIN(input_dim=dataset.node_feature_dim,
                        hidden_dims=[256, 256, 256, 256],
@@ -91,11 +91,12 @@ model. The following code selects one sample for each category, and plots the re
 
 .. code:: python
 
+    from torch.nn import functional as F
+
     samples = []
     categories = set()
     for sample in valid_set:
-        sample.pop("graph")
-        category = tuple(sample.values())
+        category = tuple([v for k, v in sample.items() if k != "graph"])
         if category not in categories:
             categories.add(category)
             samples.append(sample)

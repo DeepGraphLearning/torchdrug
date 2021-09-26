@@ -382,6 +382,22 @@ def variadic_arange(size, device=None):
     return range
 
 
+def variadic_randperm(size, device=None):
+    """
+    Return random permutations for sets with variadic sizes.
+    The ``i``-th permutation contains integers from 0 to ``size[i] - 1``.
+
+    Suppose there are :math:`N` sets.
+
+    Parameters:
+        size (LongTensor): size of sets of shape :math:`(N,)`
+        device (torch.device, optional): device of the tensor
+    """
+    rand = torch.rand(size.sum(), device=device)
+    perm = variadic_sort(rand, size)[1]
+    return perm
+
+
 def one_hot(index, size):
     """
     Expand indexes into one-hot vectors.

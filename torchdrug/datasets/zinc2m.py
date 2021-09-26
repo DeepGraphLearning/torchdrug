@@ -43,7 +43,7 @@ class ZINC2m(data.MoleculeDataset):
         with open(neo_save_file, "r") as fin:
             reader = csv.reader(fin)
             if verbose:
-                reader = iter(tqdm(reader, "Loading %s" % path, utils.get_line_count(path)))
+                reader = iter(tqdm(reader, "Loading %s" % path, utils.get_line_count(neo_save_file)))
             smiles_list = []
 
             for idx, values in enumerate(reader):

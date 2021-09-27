@@ -112,6 +112,7 @@ other graph representation learning models can also be used here.
                                   gpus=[0], batch_size=128)
     reaction_solver.train(num_epoch=50)
     reaction_solver.evaluate("valid")
+    reaction_solver.save("g2gs_reaction_model.pth")
 
 The evaluation result on the validation set may look like
 
@@ -211,12 +212,15 @@ Similarly, we train a synthon completion model on the synthon dataset.
                                 concat_hidden=True)
     synthon_task = tasks.SynthonCompletion(synthon_model, feature=("graph",))
 
+.. code:: python
+
     synthon_optimizer = torch.optim.Adam(synthon_task.parameters(), lr=1e-3)
     synthon_solver = core.Engine(synthon_task, synthon_train, synthon_valid,
                                  synthon_test, synthon_optimizer,
                                  gpus=[0], batch_size=128)
     synthon_solver.train(num_epoch=10)
     synthon_solver.evaluate("valid")
+    synthon_solver.save("g2gs_synthon_model.pth")
 
 We may obtain some results like
 
@@ -280,6 +284,17 @@ Retrosynthesis
 Given the trained models, we can combine them into an end2end pipeline for
 retrosynthesis. This is done by wrapping the two sub tasks with a retrosynthesis task.
 
+Note if you never declare the solvers for ``reaction_task`` and ``synthon_task``,
+you need to manually call their ``preprocess()`` method before combining them into a
+pipeline.
+
+.. code:: python
+
+    # reaction_task.preprocess(reaction_train, None, None)
+    # synthon_task.preprocess(synthon_train, None, None)
+    task = tasks.Retrosynthesis(reaction_task, synthon_task, center_topk=2,
+                                num_synthon_beam=5, max_prediction=10)
+
 The pipeline will perform beam search over all possible combinations between the
 predictions from two sub tasks. For demonstration, we use a small beam size and
 only evaluate on a subset of the validation set. Note the results will be better
@@ -293,8 +308,6 @@ if we give more budget to the beam search.
                len(reaction_valid) - len(reaction_valid) // 10]
     reaction_valid_small = torch_data.random_split(reaction_valid, lengths)[0]
 
-    task = tasks.Retrosynthesis(reaction_task, synthon_task, center_topk=2,
-                                num_synthon_beam=5, max_prediction=10)
     optimizer = torch.optim.Adam(task.parameters(), lr=1e-3)
     solver = core.Engine(task, reaction_train, reaction_valid_small, reaction_test,
                          optimizer, gpus=[0], batch_size=32)
@@ -304,11 +317,6 @@ should be set to ``False`` to avoid conflicts.
 
 .. code:: python
 
-    reaction_solver.save("g2gs_reaction_model.pth")
-    synthon_solver.save("g2gs_synthon_model.pth")
-
-    reaction_task.preprocess(reaction_train)
-    synthon_task.preprocess(synthon_train)
     solver.load("g2gs_reaction_model.pth", load_optimizer=False)
     solver.load("g2gs_synthon_model.pth", load_optimizer=False)
     solver.evaluate("valid")
@@ -338,6 +346,7 @@ Here are the top-1 predictions for samples in the validation set.
     batch = utils.cuda(batch)
     predictions, num_prediction = task.predict(batch)
 
+    products = batch["graph"][1]
     top1_index = num_prediction.cumsum(0) - num_prediction
     for i in range(len(products)):
         reactant = predictions[top1_index[i]].connected_components()[0]

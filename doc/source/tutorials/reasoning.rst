@@ -62,8 +62,8 @@ task, we can simply use the following code.
 
 .. code:: python
 
-    task = tasks.KnowledgeGraphEmbedding(model, num_negative=256,
-                                         adversarial_temperature=1)
+    task = tasks.KnowledgeGraphCompletion(model, num_negative=256,
+                                          adversarial_temperature=1)
 
 Here, ``num_negative`` is the number of negative examples used for training, and
 ``adversarial_temperature`` is the temperature for sampling negative examples.
@@ -146,9 +146,9 @@ knowledge graph embedding task:
 
 .. code:: python
 
-    task = tasks.KnowledgeGraphEmbedding(model, fact_ratio=0.75,
-                                         num_negative=256,
-                                         sample_weight=False)
+    task = tasks.KnowledgeGraphCompletion(model, fact_ratio=0.75,
+                                          num_negative=256,
+                                          sample_weight=False)
 
 The difference is that we need to specify the ``fact_ratio``, which tells the code
 how many facts are used to construct the background knowledge graph on which we

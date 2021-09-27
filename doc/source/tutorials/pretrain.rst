@@ -36,6 +36,7 @@ We use GIN as our graph represenation model, and wrap it with InfoGraph.
 
 .. code:: python
 
+    import torch
     from torch import nn
     from torch.utils import data as torch_data
 
@@ -76,6 +77,7 @@ Again, we use GIN as our graph representation model.
 
 .. code:: python
 
+    import torch
     from torch import nn, optim
     from torch.utils import data as torch_data
 

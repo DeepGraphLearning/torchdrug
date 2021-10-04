@@ -12,7 +12,7 @@ class PCQM4M(data.MoleculeDataset):
     Quantum chemistry dataset originally curated under the PubChemQC of molecules.
 
     Statistics:
-        - #Molecule: 1,128
+        - #Molecule: 3,803,453
         - #Regression task: 1
 
     Parameters:

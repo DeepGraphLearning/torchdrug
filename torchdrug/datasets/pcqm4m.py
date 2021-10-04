@@ -22,7 +22,7 @@ class PCQM4M(data.MoleculeDataset):
     """
 
     url = "https://dgl-data.s3-accelerate.amazonaws.com/dataset/OGB-LSC/pcqm4m_kddcup2021.zip"
-   
+    md5 = "5144ebaa7c67d24da1a2acbe41f57f6a"
     target_fields = ["homolumogap"]
 
     def __init__(self, path, verbose=1, **kwargs):
@@ -31,9 +31,9 @@ class PCQM4M(data.MoleculeDataset):
             os.makedirs(path)
         self.path = path
         
-        zip_file = utils.download(self.url, path)
-        folder_name = utils.extract(zip_file)
-        file_name = utils.extract(os.path.join(folder_name, 'pcqm4m_kddcup2021/raw/data.csv.gz'))
+        zip_file = utils.download(self.url, self.path, md5=self.md5)
+        zip_file = utils.extract(zip_file, "pcqm4m_kddcup2021/raw/data.csv.gz")
+        file_name = utils.extract(zip_file)
 
         self.load_csv(file_name, smiles_field="smiles", target_fields=self.target_fields,
                       verbose=verbose, **kwargs)

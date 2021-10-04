@@ -9,7 +9,7 @@ from torchdrug.utils import doc
 @doc.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
 class PCQM4M(data.MoleculeDataset):
     """
-    Log-scale water solubility of molecules.
+    Quantum chemistry dataset originally curated under the PubChemQC of molecules.
 
     Statistics:
         - #Molecule: 1,128

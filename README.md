@@ -3,6 +3,8 @@
 ----------------------------
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1rutJkuYH3zaxBsMROWMvAu5LQCRcKcOg?usp=sharing#forceEdit=true&sandboxMode=true)
+[![Contributions](https://img.shields.io/badge/contributions-welcome-blue)](https://github.com/DeepGraphLearning/torchdrug/blob/master/CONTRIBUTING.md)
+[![License Apache-2.0](https://img.shields.io/github/license/DeepGraphLearning/torchdrug?color=blue)](https://github.com/DeepGraphLearning/torchdrug/blob/master/LICENSE)
 
 [Docs] | [Tutorials] | [Benchmarks] | [Papers Implemented]
 

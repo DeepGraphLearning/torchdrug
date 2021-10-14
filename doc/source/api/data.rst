@@ -26,6 +26,11 @@ PackedMolecule
 .. autoclass:: PackedMolecule
     :members:
 
+Dictionary
+^^^^^^^^^^
+.. autoclass:: Dictionary
+    :members:
+
 Datasets
 --------
 .. currentmodule:: torchdrug.data

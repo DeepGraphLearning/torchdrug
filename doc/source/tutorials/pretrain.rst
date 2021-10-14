@@ -30,7 +30,7 @@ and node-level representations. It learns the model by distinguishing whether a
 node-graph pair comes from a single graph or two different graphs. The following
 figure illustrates the high-level idea of InfoGraph.
 
-.. image:: ../../../asset/graph/infograph.png
+.. image:: ../../../asset/model/infograph.png
 
 We use GIN as our graph represenation model, and wrap it with InfoGraph.
 
@@ -71,7 +71,7 @@ The aim of `Attribute Masking`_ (AM) is to capture domain knowledge by learning 
 regularities of the node/edge attributes distributed over graph structure. The high-level
 idea is to predict atom types in molecular graphs from randomly masked node features.
 
-.. image:: ../../../asset/graph/attrmasking.png
+.. image:: ../../../asset/model/attribute_masking.png
 
 Again, we use GIN as our graph representation model.
 

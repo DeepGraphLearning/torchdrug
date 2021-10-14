@@ -86,9 +86,9 @@ Readout Layers
 
 1. `Order Matters: Sequence to sequence for sets <Set2Set_>`_
 
-    Oriol Vinyals, Samy Bengio, Manjunath Kudlur
+   Oriol Vinyals, Samy Bengio, Manjunath Kudlur
 
-    :class:`Set2Set <torchdrug.layers.Set2Set>`
+   :class:`Set2Set <torchdrug.layers.Set2Set>`
 
 Normalization Layers
 ^^^^^^^^^^^^^^^^^^^^

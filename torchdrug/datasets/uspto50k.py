@@ -103,6 +103,7 @@ class USPTO50k(data.ReactionDataset):
 
         # check edges in the product
         product = product.directed()
+        # O(n^2) brute-force match is faster than O(nlogn) data.Graph.match for small molecules
         mapped_edge = product.edge_list.clone()
         mapped_edge[:, :2] = prod2react[mapped_edge[:, :2]]
         is_same_index = mapped_edge.unsqueeze(0) == reactant.edge_list.unsqueeze(1)
@@ -123,8 +124,10 @@ class USPTO50k(data.ReactionDataset):
 
         if len(edge_added) > 0:
             if len(edge_added) == 1: # add a single edge
-                index = product.index(edge_added[0])
-                assert len(index) == 1
+                any = -torch.ones(1, 1, dtype=torch.long)
+                pattern = torch.cat([edge_added, any], dim=-1)
+                index, num_match = product.match(pattern)
+                assert num_match.item() == 1
                 edge_label[index] = 1
                 h, t = edge_added[0]
                 reaction_center = torch.tensor([product.atom_map[h], product.atom_map[t]])
@@ -172,7 +175,10 @@ class USPTO50k(data.ReactionDataset):
             if len(edge_added) == 1:  # add a single edge
                 edge = edge_added[0]
                 reverse_edge = edge.flip(0)
-                index = torch.cat([product.index(edge), product.index(reverse_edge)])
+                any = -torch.ones(2, 1, dtype=torch.long)
+                pattern = torch.cat([edge, reverse_edge])
+                pattern = torch.cat([pattern, any], dim=-1)
+                index, num_match = product.match(pattern)
                 edge_mask = torch.ones(product.num_edge, dtype=torch.bool)
                 edge_mask[index] = 0
                 product = product.edge_mask(edge_mask)

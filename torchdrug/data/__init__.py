@@ -1,3 +1,4 @@
+from .dictionary import PerfectHash, Dictionary
 from .graph import Graph, PackedGraph, cat
 from .molecule import Molecule, PackedMolecule
 from .dataset import MoleculeDataset, ReactionDataset, NodeClassificationDataset, KnowledgeGraphDataset, \
@@ -7,7 +8,7 @@ from . import constant
 from . import feature
 
 __all__ = [
-    "Graph", "PackedGraph", "Molecule", "PackedMolecule",
+    "Graph", "PackedGraph", "Molecule", "PackedMolecule", "PerfectHash", "Dictionary",
     "MoleculeDataset", "ReactionDataset", "NodeClassificationDataset", "KnowledgeGraphDataset", "SemiSupervised",
     "semisupervised", "key_split", "scaffold_split", "ordered_scaffold_split",
     "DataLoader", "graph_collate", "feature", "constant",

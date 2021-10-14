@@ -147,7 +147,7 @@ def reduce(obj, op="sum", dst=None):
             Available operators are ``sum``, ``mean``, ``min``, ``max``, ``product``.
         dst (int, optional): rank of destination worker. If not specified, broadcast the result to all workers.
 
-    Examples::
+    Example::
 
         >>> # assume 4 workers
         >>> rank = comm.get_rank()
@@ -190,7 +190,7 @@ def stack(obj, dst=None):
         obj (Object): any container object. Can be nested list, tuple or dict.
         dst (int, optional): rank of destination worker. If not specified, broadcast the result to all workers.
 
-    Examples::
+    Example::
 
         >>> # assume 4 workers
         >>> rank = comm.get_rank()
@@ -229,7 +229,7 @@ def cat(obj, dst=None):
         obj (Object): any container object. Can be nested list, tuple or dict.
         dst (int, optional): rank of destination worker. If not specified, broadcast the result to all workers.
 
-    Examples::
+    Example::
 
         >>> # assume 4 workers
         >>> rank = comm.get_rank()

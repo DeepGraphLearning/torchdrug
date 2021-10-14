@@ -104,7 +104,7 @@ class NeuralLogicProgramming(nn.Module, core.Configurable):
 
         h_index, t_index, r_index = self.negative_sample_to_tail(h_index, t_index, r_index)
         hr_index = h_index * graph.num_relation + r_index
-        hr_index_set, hr_inverse = torch.unique(hr_index, return_inverse=True)
+        hr_index_set, hr_inverse = hr_index.unique(return_inverse=True)
         h_index_set = hr_index_set // graph.num_relation
         r_index_set = hr_index_set % graph.num_relation
 

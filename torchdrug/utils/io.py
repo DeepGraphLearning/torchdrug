@@ -77,7 +77,7 @@ def capture_rdkit_log():
     """
     Context manager to capture all rdkit loggings.
 
-    Examples::
+    Example::
 
         >>> with utils.capture_rdkit_log() as log:
         >>>     ...

@@ -803,7 +803,7 @@ class GCPNGeneration(tasks.Task, core.Configurable):
         self.batch_id += 1
 
         # generation takes less time when early_stop=True
-        graph = self.generate(len(batch["graph"]), max_resample=5, off_policy=True, max_step=40 * 2, verbose=1)
+        graph = self.generate(len(batch["graph"]), max_resample=20, off_policy=True, max_step=40 * 2, verbose=1)
         if graph.num_nodes.max() == 1:
             raise ValueError("Generation results collapse to singleton molecules")
 
@@ -1338,7 +1338,7 @@ class GCPNGeneration(tasks.Task, core.Configurable):
         self.best_results[task] = best_results
 
     @torch.no_grad()
-    def generate(self, num_sample, max_resample=10, off_policy=False, max_step=30 * 2, initial_smiles="C", verbose=0):
+    def generate(self, num_sample, max_resample=20, off_policy=False, max_step=30 * 2, initial_smiles="C", verbose=0):
         is_training = self.training
         self.eval()
 

@@ -173,10 +173,9 @@ class USPTO50k(data.ReactionDataset):
 
         if len(edge_added) > 0:
             if len(edge_added) == 1:  # add a single edge
-                edge = edge_added[0]
-                reverse_edge = edge.flip(0)
+                reverse_edge = edge_added.flip(1)
                 any = -torch.ones(2, 1, dtype=torch.long)
-                pattern = torch.cat([edge, reverse_edge])
+                pattern = torch.cat([edge_added, reverse_edge])
                 pattern = torch.cat([pattern, any], dim=-1)
                 index, num_match = product.match(pattern)
                 edge_mask = torch.ones(product.num_edge, dtype=torch.bool)
@@ -186,7 +185,7 @@ class USPTO50k(data.ReactionDataset):
                 _synthons = product.connected_components()[0]
                 assert len(_synthons) >= len(_reactants) # because a few samples contain multiple products
 
-                h, t = edge
+                h, t = edge_added[0]
                 reaction_center = torch.tensor([product.atom_map[h], product.atom_map[t]])
                 with _reactants.graph():
                     _reactants.reaction_center = reaction_center.expand(len(_reactants), -1)

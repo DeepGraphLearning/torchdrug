@@ -779,19 +779,3 @@ class ChebyshevConv(MessagePassingBase):
     def combine(self, input, update):
         output = input + update
         return output
-
-if __name__ == "__main__":
-    edge_list = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0]]
-    node_position = torch.randn(6, 3)
-    graph = data.Graph(edge_list, num_node=6)
-    with graph.node():
-        graph.node_position = node_position
-    layer = ContinuousFilterConv(16, 16)
-
-    for i in range(100):
-        input = torch.randn(6, 16)
-        
-        message = layer.message(graph, input)
-        output1 = layer.aggregate(graph, message)
-        output2 = layer.message_and_aggregate(graph, input)
-        assert torch.allclose(output1, output2)

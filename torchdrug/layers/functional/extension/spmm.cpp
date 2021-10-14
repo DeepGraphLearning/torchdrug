@@ -212,6 +212,9 @@ DECLARE_BACKWARD_IMPL(min, mul, NaryMin, BinaryMul)
 DECLARE_FORWARD_IMPL(max, mul, NaryMax, BinaryMul)
 DECLARE_BACKWARD_IMPL(max, mul, NaryMax, BinaryMul)
 
+DECLARE_FORWARD_IMPL(add, add, NaryAdd, BinaryAdd)
+DECLARE_BACKWARD_IMPL(add, add, NaryAdd, BinaryAdd)
+
 DECLARE_FORWARD_IMPL(min, add, NaryMin, BinaryAdd)
 DECLARE_BACKWARD_IMPL(min, add, NaryMin, BinaryAdd)
 
@@ -227,6 +230,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("spmm_min_mul_backward_cpu", &at::spmm_min_mul_backward_cpu);
     m.def("spmm_max_mul_forward_cpu", &at::spmm_max_mul_forward_cpu);
     m.def("spmm_max_mul_backward_cpu", &at::spmm_max_mul_backward_cpu);
+    m.def("spmm_add_add_forward_cpu", &at::spmm_add_add_forward_cpu);
+    m.def("spmm_add_add_backward_cpu", &at::spmm_add_add_backward_cpu);
     m.def("spmm_min_add_forward_cpu", &at::spmm_min_add_forward_cpu);
     m.def("spmm_min_add_backward_cpu", &at::spmm_min_add_backward_cpu);
     m.def("spmm_max_add_forward_cpu", &at::spmm_max_add_forward_cpu);
@@ -237,6 +242,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("rspmm_min_mul_backward_cpu", &at::rspmm_min_mul_backward_cpu);
     m.def("rspmm_max_mul_forward_cpu", &at::rspmm_max_mul_forward_cpu);
     m.def("rspmm_max_mul_backward_cpu", &at::rspmm_max_mul_backward_cpu);
+    m.def("rspmm_add_add_forward_cpu", &at::rspmm_add_add_forward_cpu);
+    m.def("rspmm_add_add_backward_cpu", &at::rspmm_add_add_backward_cpu);
     m.def("rspmm_min_add_forward_cpu", &at::rspmm_min_add_forward_cpu);
     m.def("rspmm_min_add_backward_cpu", &at::rspmm_min_add_backward_cpu);
     m.def("rspmm_max_add_forward_cpu", &at::rspmm_max_add_forward_cpu);
@@ -248,6 +255,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("spmm_min_mul_backward_cuda", &at::spmm_min_mul_backward_cuda);
     m.def("spmm_max_mul_forward_cuda", &at::spmm_max_mul_forward_cuda);
     m.def("spmm_max_mul_backward_cuda", &at::spmm_max_mul_backward_cuda);
+    m.def("spmm_add_add_forward_cuda", &at::spmm_add_add_forward_cuda);
+    m.def("spmm_add_add_backward_cuda", &at::spmm_add_add_backward_cuda);
     m.def("spmm_min_add_forward_cuda", &at::spmm_min_add_forward_cuda);
     m.def("spmm_min_add_backward_cuda", &at::spmm_min_add_backward_cuda);
     m.def("spmm_max_add_forward_cuda", &at::spmm_max_add_forward_cuda);
@@ -258,6 +267,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("rspmm_min_mul_backward_cuda", &at::rspmm_min_mul_backward_cuda);
     m.def("rspmm_max_mul_forward_cuda", &at::rspmm_max_mul_forward_cuda);
     m.def("rspmm_max_mul_backward_cuda", &at::rspmm_max_mul_backward_cuda);
+    m.def("rspmm_add_add_forward_cuda", &at::rspmm_add_add_forward_cuda);
+    m.def("rspmm_add_add_backward_cuda", &at::rspmm_add_add_backward_cuda);
     m.def("rspmm_min_add_forward_cuda", &at::rspmm_min_add_forward_cuda);
     m.def("rspmm_min_add_backward_cuda", &at::rspmm_min_add_backward_cuda);
     m.def("rspmm_max_add_forward_cuda", &at::rspmm_max_add_forward_cuda);

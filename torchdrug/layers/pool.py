@@ -13,7 +13,7 @@ class DiffPool(nn.Module):
     .. _Hierarchical Graph Representation Learning with Differentiable Pooling:
         https://papers.nips.cc/paper/7729-hierarchical-graph-representation-learning-with-differentiable-pooling.pdf
 
-    Parameters:
+    Parameter
         input_dim (int): input dimension
         output_node (int): number of nodes after pooling
         feature_layer (Module, optional): graph convolution layer for embedding

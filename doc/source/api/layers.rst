@@ -202,6 +202,8 @@ Variadic
 
 .. autofunction:: variadic_log_softmax
 
+.. autofunction:: variadic_softmax
+
 .. autofunction:: variadic_sort
 
 .. autofunction:: variadic_topk
@@ -209,6 +211,8 @@ Variadic
 .. autofunction:: variadic_arange
 
 .. autofunction:: variadic_randperm
+
+.. autofunction:: variadic_sample
 
 Tensor Reduction
 ^^^^^^^^^^^^^^^^
@@ -221,6 +225,8 @@ Tensor Construction
 .. autofunction:: as_mask
 
 .. autofunction:: one_hot
+
+.. autofunction:: multi_slice
 
 .. autofunction:: multi_slice_mask
 

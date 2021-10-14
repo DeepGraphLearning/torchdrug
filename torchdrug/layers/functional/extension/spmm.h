@@ -35,6 +35,11 @@ Tensor spmm_max_mul_forward_cpu(const SparseTensor &sparse, const Tensor &input)
 std::tuple<SparseTensor, Tensor> spmm_max_mul_backward_cpu(
         const SparseTensor &sparse, const Tensor &input, const Tensor &output, const Tensor &output_grad);
 
+Tensor spmm_add_add_forward_cpu(const SparseTensor &sparse, const Tensor &input);
+
+std::tuple<SparseTensor, Tensor> spmm_add_add_backward_cpu(
+        const SparseTensor &sparse, const Tensor &input, const Tensor &output, const Tensor &output_grad);
+
 Tensor spmm_min_add_forward_cpu(const SparseTensor &sparse, const Tensor &input);
 
 std::tuple<SparseTensor, Tensor> spmm_min_add_backward_cpu(
@@ -59,6 +64,11 @@ std::tuple<SparseTensor, Tensor> spmm_min_mul_backward_cuda(
 Tensor spmm_max_mul_forward_cuda(const SparseTensor &sparse, const Tensor &input);
 
 std::tuple<SparseTensor, Tensor> spmm_max_mul_backward_cuda(
+        const SparseTensor &sparse, const Tensor &input, const Tensor &output, const Tensor &output_grad);
+
+Tensor spmm_add_add_forward_cuda(const SparseTensor &sparse, const Tensor &input);
+
+std::tuple<SparseTensor, Tensor> spmm_add_add_backward_cuda(
         const SparseTensor &sparse, const Tensor &input, const Tensor &output, const Tensor &output_grad);
 
 Tensor spmm_min_add_forward_cuda(const SparseTensor &sparse, const Tensor &input);

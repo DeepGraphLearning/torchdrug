@@ -321,6 +321,9 @@ DECLARE_BACKWARD_IMPL(min, mul, NaryMin, BinaryMul)
 DECLARE_FORWARD_IMPL(max, mul, NaryMax, BinaryMul)
 DECLARE_BACKWARD_IMPL(max, mul, NaryMax, BinaryMul)
 
+DECLARE_FORWARD_IMPL(add, add, NaryAdd, BinaryAdd)
+DECLARE_BACKWARD_IMPL(add, add, NaryAdd, BinaryAdd)
+
 DECLARE_FORWARD_IMPL(min, add, NaryMin, BinaryAdd)
 DECLARE_BACKWARD_IMPL(min, add, NaryMin, BinaryAdd)
 

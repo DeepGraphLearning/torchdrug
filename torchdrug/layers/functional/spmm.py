@@ -88,6 +88,31 @@ class SPMMMaxMulFunction(autograd.Function):
         return sparse_grad, input_grad
 
 
+class SPMMAddAddFunction(autograd.Function):
+
+    @staticmethod
+    def forward(ctx, sparse, input):
+        assert sparse.is_coalesced()
+        if input.device.type == "cuda":
+            forward = spmm.spmm_add_add_forward_cuda
+        else:
+            forward = spmm.spmm_add_add_forward_cpu
+        output = forward(sparse, input)
+        ctx.save_for_backward(sparse, input, output)
+        return output
+
+    @staticmethod
+    def backward(ctx, output_grad):
+        if output_grad.device.type == "cuda":
+            backward = spmm.spmm_add_add_backward_cuda
+        else:
+            backward = spmm.spmm_add_add_backward_cpu
+        sparse_grad, input_grad = backward(*ctx.saved_tensors, output_grad)
+        if not ctx.saved_tensors[0].requires_grad:
+            sparse_grad = None
+        return sparse_grad, input_grad
+
+
 class SPMMMinAddFunction(autograd.Function):
 
     @staticmethod
@@ -207,6 +232,31 @@ class RSPMMMaxMulFunction(autograd.Function):
             backward = spmm.rspmm_max_mul_backward_cuda
         else:
             backward = spmm.rspmm_max_mul_backward_cpu
+        sparse_grad, relation_grad, input_grad = backward(*ctx.saved_tensors, output_grad)
+        if not ctx.saved_tensors[0].requires_grad:
+            sparse_grad = None
+        return sparse_grad, relation_grad, input_grad
+
+
+class RSPMMAddAddFunction(autograd.Function):
+
+    @staticmethod
+    def forward(ctx, sparse, relation, input):
+        assert sparse.is_coalesced()
+        if input.device.type == "cuda":
+            forward = spmm.rspmm_add_add_forward_cuda
+        else:
+            forward = spmm.rspmm_add_add_forward_cpu
+        output = forward(sparse, relation, input)
+        ctx.save_for_backward(sparse, relation, input, output)
+        return output
+
+    @staticmethod
+    def backward(ctx, output_grad):
+        if output_grad.device.type == "cuda":
+            backward = spmm.rspmm_add_add_backward_cuda
+        else:
+            backward = spmm.rspmm_add_add_backward_cpu
         sparse_grad, relation_grad, input_grad = backward(*ctx.saved_tensors, output_grad)
         if not ctx.saved_tensors[0].requires_grad:
             sparse_grad = None

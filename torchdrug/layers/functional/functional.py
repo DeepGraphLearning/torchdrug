@@ -60,13 +60,41 @@ def shifted_softplus(input):
     return F.softplus(input) - F.softplus(torch.zeros(1, device=input.device))
 
 
+def multi_slice(starts, ends):
+    """
+    Compute the union of indexes in multiple slices.
+
+    Example::
+
+        >>> mask = multi_slice(torch.tensor([0, 1, 4]), torch.tensor([2, 3, 6]), 6)
+        >>> assert (mask == torch.tensor([0, 1, 2, 4, 5]).all()
+
+    Parameters:
+        starts (LongTensor): start indexes of slices
+        ends (LongTensor): end indexes of slices
+    """
+    values = torch.cat([torch.ones_like(starts), -torch.ones_like(ends)])
+    slices = torch.cat([starts, ends])
+    slices, order = slices.sort()
+    values = values[order]
+    depth = values.cumsum(0)
+    valid = (values == 1 & depth == 0) | (values == -1 & depth == 1)
+    slices = slices[valid]
+
+    starts, ends = slices.view(-1, 2).t()
+    size = ends - starts
+    indexes = variadic_arange(size)
+    indexes = indexes + starts.repeat_interleave(size)
+    return indexes
+
+
 def multi_slice_mask(starts, ends, length):
     """
     Compute the union of multiple slices into a binary mask.
 
     Example::
 
-        >>> mask = F.multi_slice_mask(torch.tensor([0, 1, 4]), torch.tensor([2, 3, 6]), 6)
+        >>> mask = multi_slice_mask(torch.tensor([0, 1, 4]), torch.tensor([2, 3, 6]), 6)
         >>> assert (mask == torch.tensor([1, 1, 1, 0, 1, 1])).all()
 
     Parameters:
@@ -75,10 +103,10 @@ def multi_slice_mask(starts, ends, length):
         length (int): length of mask
     """
     values = torch.cat([torch.ones_like(starts), -torch.ones_like(ends)])
-    indexes = torch.cat([starts, ends])
-    if indexes.numel():
-        assert indexes.min() >= 0 and indexes.max() <= length
-    mask = scatter_add(values, indexes, dim_size=length + 1)[:-1]
+    slices = torch.cat([starts, ends])
+    if slices.numel():
+        assert slices.min() >= 0 and slices.max() <= length
+    mask = scatter_add(values, slices, dim_size=length + 1)[:-1]
     mask = mask.cumsum(0).bool()
     return mask
 
@@ -108,12 +136,8 @@ def _size_to_index(size):
     Parameters:
         size (LongTensor): size of each sample
     """
-    cum_size = size.cumsum(0)
-    # special case 1: size[-1] = 0
-    index = cum_size[cum_size < cum_size[-1]]
-    # special case 2: size[i] = size[i+1] = 0
-    index2sample = scatter_add(torch.ones_like(index), index, dim_size=cum_size[-1])
-    index2sample = index2sample.cumsum(0)
+    range = torch.arange(len(size), device=size.device)
+    index2sample = range.repeat_interleave(size)
     return index2sample
 
 
@@ -363,7 +387,7 @@ def variadic_sort(input, size, descending=False):
     return value, index
 
 
-def variadic_arange(size, device=None):
+def variadic_arange(size):
     """
     Return a 1-D tensor that contains integer intervals of variadic sizes.
     This is a variadic variant of ``torch.arange(stop).expand(batch_size, -1)``.
@@ -372,17 +396,15 @@ def variadic_arange(size, device=None):
 
     Parameters:
         size (LongTensor): size of intervals of shape :math:`(N,)`
-        device (torch.device, optional): device of the tensor
     """
-    index2sample = _size_to_index(size)
     starts = size.cumsum(0) - size
 
-    range = torch.arange(size.sum(), device=device)
-    range = range - starts[index2sample]
+    range = torch.arange(size.sum(), device=size.device)
+    range = range - starts.repeat_interleave(size)
     return range
 
 
-def variadic_randperm(size, device=None):
+def variadic_randperm(size):
     """
     Return random permutations for sets with variadic sizes.
     The ``i``-th permutation contains integers from 0 to ``size[i] - 1``.
@@ -393,9 +415,17 @@ def variadic_randperm(size, device=None):
         size (LongTensor): size of sets of shape :math:`(N,)`
         device (torch.device, optional): device of the tensor
     """
-    rand = torch.rand(size.sum(), device=device)
+    rand = torch.rand(size.sum(), device=size.device)
     perm = variadic_sort(rand, size)[1]
     return perm
+
+
+def variadic_sample(input, size, k):
+    rand = torch.rand(len(size), k, device=size.device)
+    index = (rand * size.unsqueeze(-1)).long()
+    index = index + (size.cumsum(0) - size).unsqueeze(-1)
+    sample = input[index]
+    return sample
 
 
 def one_hot(index, size):

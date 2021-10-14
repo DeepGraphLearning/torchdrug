@@ -1,5 +1,6 @@
 import math
 import warnings
+from functools import reduce
 from collections import defaultdict
 
 import networkx as nx
@@ -9,6 +10,7 @@ import torch
 from torch_scatter import scatter_add, scatter_min
 
 from torchdrug import core, utils
+from torchdrug.data import PerfectHash, Dictionary
 from torchdrug.utils import pretty
 
 plt.switch_backend("agg")
@@ -34,7 +36,7 @@ class Graph(core._MetaContainer):
     You may register dynamic attributes for each graph.
     The registered attributes will be automatically processed during packing.
 
-    Examples::
+    Example::
 
         >>> graph = data.Graph(torch.randint(10, (30, 2)))
         >>> with graph.node():
@@ -224,7 +226,7 @@ class Graph(core._MetaContainer):
         Split this graph into connected components.
 
         Returns:
-            (PackedGraph, Tensor): connected components, number of connected components per graph
+            (PackedGraph, LongTensor): connected components, number of connected components per graph
         """
         node_in, node_out = self.edge_list.t()[:2]
         range = torch.arange(self.num_node, device=self.device)
@@ -251,7 +253,7 @@ class Graph(core._MetaContainer):
         Returns:
             PackedGraph
         """
-        node2graph = torch.as_tensor(node2graph)
+        node2graph = torch.as_tensor(node2graph, dtype=torch.long, device=self.device)
         # coalesce arbitrary graph IDs to [0, n)
         _, node2graph = torch.unique(node2graph, return_inverse=True)
         num_graph = node2graph.max() + 1
@@ -365,50 +367,94 @@ class Graph(core._MetaContainer):
             raise ValueError("Incorrect edge index. Expect %d axes but got %d axes"
                              % (self.edge_list.shape[1], len(edge)))
 
-        edge = torch.as_tensor(edge, device=self.device)
-        edge_index = (self.edge_list == edge).all(dim=-1)
+        edge_index = self.match(edge)
         return self.edge_weight[edge_index].sum()
 
-    def __contains__(self, edge):
+    def match(self, pattern):
         """
-        Check whether an edge exists. Support partial match with wildcard `None`.
+        Return all matched indexes for each pattern. Support patterns with ``-1`` as the wildcard.
 
         Parameters:
-            edge (array_like): queried edge
+            pattern (array_like): index of shape :math:`(N, 2)` or :math:`(N, 3)`
 
         Returns:
-            bool: whether the edge exists
-        """
-        return len(self.index(edge)) > 0
-
-    def index(self, edge):
-        """
-        Return all indexes of the edge. Support partial match with wildcard `None`.
+            (LongTensor, LongTensor): matched indexes, number of matches per edge
 
         Examples::
 
-            >>> graph = data.Graph([[0, 1, 0], [0, 2, 1], [1, 2, 1]])
-            >>> assert graph.index([0, 1, 2]).tolist() == []
-            >>> assert graph.index([0, 1]).tolist() == [0]
-            >>> assert graph.index([None, 2, None]).tolist() == [1, 2]
+            >>> graph = data.Graph([[0, 1], [1, 0], [1, 2], [2, 1], [2, 0], [0, 2]])
+            >>> index, num_match = graph.match([[0, -1], [1, 2]])
+            >>> assert (index == torch.tensor([0, 5, 2])).all()
+            >>> assert (num_match == torch.tensor([2, 1])).all()
 
-        Parameters:
-            edge (array_like): queried edge
-
-        Returns:
-            Tensor: indexes of the edge
         """
-        if isinstance(edge, torch.Tensor):
-            index = slice(None, len(edge))
-        else:
-            index = [x is not None for x in edge] + [False] * (self.edge_list.shape[1] - len(edge))
-            edge = [x for x in edge if x is not None]
-            index = torch.tensor(index, device=self.device)
+        if len(pattern) == 0:
+            index = num_match = torch.zeros(0, dtype=torch.long, device=self.device)
+            return index, num_match
 
-        edge_list = self.edge_list[:, index]
-        edge = torch.as_tensor(edge, device=self.device)
-        match = (edge_list == edge).all(dim=-1)
-        return match.nonzero().flatten()
+        if not hasattr(self, "inverted_index"):
+            self.inverted_index = {}
+        pattern = torch.as_tensor(pattern, dtype=torch.long, device=self.device)
+        mask = pattern != -1
+        scale = 2 ** torch.arange(pattern.shape[-1], device=self.device)
+        query_type = (mask * scale).sum(dim=-1)
+        query_index = query_type.argsort()
+        num_query = query_type.unique(return_counts=True)[1]
+        query_ends = num_query.cumsum(0)
+        query_starts = query_ends - num_query
+        mask_set = mask[query_index[query_starts]].tolist()
+
+        type_ranges = []
+        type_orders = []
+        # get matched range for each query type
+        for i, mask in enumerate(mask_set):
+            query_type = tuple(mask)
+            type_index = query_index[query_starts[i]: query_ends[i]]
+            type_edge = pattern[type_index][:, mask]
+            if query_type not in self.inverted_index:
+                self.inverted_index[query_type] = self._build_inverted_index(mask)
+            inverted_range, order = self.inverted_index[query_type]
+            ranges = inverted_range.get(type_edge, default=0)
+            type_ranges.append(ranges)
+            type_orders.append(order)
+        ranges = torch.cat(type_ranges)
+        orders = torch.stack(type_orders)
+        types = torch.arange(len(mask_set), device=self.device)
+        types = types.repeat_interleave(num_query)
+
+        # reorder matched ranges according to the query order
+        ranges = scatter_add(ranges, query_index, dim=0, dim_size=len(pattern))
+        types = scatter_add(types, query_index, dim_size=len(pattern))
+        # convert range to indexes
+        starts, ends = ranges.t()
+        num_match = ends - starts
+        offsets = num_match.cumsum(0) - num_match
+        types = types.repeat_interleave(num_match)
+        ranges = torch.arange(num_match.sum(), device=self.device)
+        ranges = ranges + (starts - offsets).repeat_interleave(num_match)
+        index = orders[types, ranges]
+
+        return index, num_match
+
+    def _build_inverted_index(self, mask):
+        keys = self.edge_list[:, mask]
+        base = torch.tensor(self.shape, device=self.device)
+        base = base[mask]
+        max = reduce(int.__mul__, base.tolist())
+        if max > torch.iinfo(torch.int64).max:
+            raise ValueError("Fail to build an inverted index table based on sorting. "
+                             "The graph is too large.")
+        scale = base.cumprod(0)
+        scale = scale[-1] // scale
+        key = (keys * scale).sum(dim=-1)
+        order = key.argsort()
+        num_keys = key.unique(return_counts=True)[1]
+        ends = num_keys.cumsum(0)
+        starts = ends - num_keys
+        ranges = torch.stack([starts, ends], dim=-1)
+        keys_set = keys[order[starts]]
+        inverted_range = Dictionary(keys_set, ranges)
+        return inverted_range, order
 
     def __getitem__(self, index):
         # why do we check tuple
@@ -898,7 +944,7 @@ class PackedGraph(Graph):
         Parameters:
             graph2graph (array_like): ID of the new graph each graph belongs to
         """
-        graph2graph = torch.as_tensor(graph2graph)
+        graph2graph = torch.as_tensor(graph2graph, dtype=torch.long, device=self.device)
         # coalesce arbitrary graph IDs to [0, n)
         _, graph2graph = torch.unique(graph2graph, return_inverse=True)
 

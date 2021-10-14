@@ -948,7 +948,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
             smiles_set.add(smiles)
         is_duplicate = torch.tensor(is_duplicate, device=self.device)
         result = result[~is_duplicate]
-        num_prediction = torch.bincount(result.synthon_id)
+        num_prediction = result.synthon_id.bincount(minlength=len(synthon))
 
         # remove extra predictions
         topk = functional.variadic_topk(result.logp, num_prediction, max_prediction)[1]
@@ -1139,7 +1139,7 @@ class Retrosynthesis(tasks.Task, core.Configurable):
         order = product_ids.argsort()
         logps = logps[order]
         reactant_ids = reactant_ids[order]
-        num_prediction = torch.bincount(product_ids)
+        num_prediction = product_ids.bincount()
         logps, topk = functional.variadic_topk(logps, num_prediction, self.max_prediction)
         topk_index = topk + (num_prediction.cumsum(0) - num_prediction).unsqueeze(-1)
         topk_index_shifted = torch.cat([-torch.ones(len(topk_index), 1, dtype=torch.long, device=self.device),
@@ -1170,7 +1170,7 @@ class Retrosynthesis(tasks.Task, core.Configurable):
                 setattr(reactant, k, v)
             reactant.logps = logps
 
-        num_prediction = torch.bincount(reactant.product_id)
+        num_prediction = reactant.product_id.bincount()
 
         return reactant, num_prediction # (num_graph * k)
 

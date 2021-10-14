@@ -4,6 +4,7 @@ from torch.nn import functional as F
 from torch.utils import data as torch_data
 
 from torchdrug import core, tasks
+from torchdrug.layers import functional
 from torchdrug.core import Registry as R
 
 
@@ -133,13 +134,13 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
             for neg_index in all_index.split(self.num_negative):
                 r_index = pos_r_index.unsqueeze(-1).expand(-1, len(neg_index))
                 h_index, t_index = torch.meshgrid(pos_h_index, neg_index)
-                t_pred = self.model(self.fact_graph, h_index, t_index, r_index)
+                t_pred = self.model(self.fact_graph, h_index, t_index, r_index, all_loss=all_loss, metric=metric)
                 t_preds.append(t_pred)
             t_pred = torch.cat(t_preds, dim=-1)
             for neg_index in all_index.split(self.num_negative):
                 r_index = pos_r_index.unsqueeze(-1).expand(-1, len(neg_index))
                 t_index, h_index = torch.meshgrid(pos_t_index, neg_index)
-                h_pred = self.model(self.fact_graph, h_index, t_index, r_index)
+                h_pred = self.model(self.fact_graph, h_index, t_index, r_index, all_loss=all_loss, metric=metric)
                 h_preds.append(h_pred)
             h_pred = torch.cat(h_preds, dim=-1)
             pred = torch.stack([t_pred, h_pred], dim=1)
@@ -162,32 +163,26 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
 
     def target(self, batch):
         # test target
+        batch_size = len(batch)
         pos_h_index, pos_t_index, pos_r_index = batch.t()
-        target = torch.stack([pos_t_index, pos_h_index], dim=1)
+        any = -torch.ones_like(pos_h_index)
 
-        hr_index_set, hr_inverse = torch.unique(pos_h_index * self.num_relation + pos_r_index, return_inverse=True)
-        tr_index_set, tr_inverse = torch.unique(pos_t_index * self.num_relation + pos_r_index, return_inverse=True)
-        hr_index2id = -torch.ones(self.num_entity * self.num_relation, dtype=torch.long, device=self.device)
-        hr_index2id[hr_index_set] = torch.arange(len(hr_index_set), device=self.device)
-        tr_index2id = -torch.ones(self.num_entity * self.num_relation, dtype=torch.long, device=self.device)
-        tr_index2id[tr_index_set] = torch.arange(len(tr_index_set), device=self.device)
+        pattern = torch.stack([pos_h_index, any, pos_r_index], dim=-1)
+        edge_index, num_t_truth = self.graph.match(pattern)
+        t_truth_index = self.graph.edge_list[edge_index, 1]
+        pos_index = functional._size_to_index(num_t_truth)
+        t_mask = torch.ones(batch_size, self.num_entity, dtype=torch.bool, device=self.device)
+        t_mask[pos_index, t_truth_index] = 0
 
-        h_index, t_index, r_index = self.graph.edge_list.t()
-        hr_index = h_index * self.num_relation + r_index
-        tr_index = t_index * self.num_relation + r_index
-        valid = hr_index2id[hr_index] >= 0
-        hr_index = hr_index[valid]
-        t_index = t_index[valid]
-        t_mask_set = torch.ones(len(hr_index_set), self.num_entity, dtype=torch.bool, device=self.device)
-        t_mask_set[hr_index2id[hr_index], t_index] = 0
-        t_mask = t_mask_set[hr_inverse]
-        valid = tr_index2id[tr_index] >= 0
-        tr_index = tr_index[valid]
-        h_index = h_index[valid]
-        h_mask_set = torch.ones(len(tr_index_set), self.num_entity, dtype=torch.bool, device=self.device)
-        h_mask_set[tr_index2id[tr_index], h_index] = 0
-        h_mask = h_mask_set[tr_inverse]
+        pattern = torch.stack([any, pos_t_index, pos_r_index], dim=-1)
+        edge_index, num_h_truth = self.graph.match(pattern)
+        h_truth_index = self.graph.edge_list[edge_index, 0]
+        pos_index = functional._size_to_index(num_h_truth)
+        h_mask = torch.ones(batch_size, self.num_entity, dtype=torch.bool, device=self.device)
+        h_mask[pos_index, h_truth_index] = 0
+
         mask = torch.stack([t_mask, h_mask], dim=1)
+        target = torch.stack([pos_t_index, pos_h_index], dim=1)
 
         # in case of GPU OOM
         return mask.cpu(), target.cpu()
@@ -225,47 +220,30 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
     @torch.no_grad()
     def _strict_negative(self, pos_h_index, pos_t_index, pos_r_index):
         batch_size = len(pos_h_index)
+        any = -torch.ones_like(pos_h_index)
 
-        hr_index_set, hr_inverse = torch.unique(pos_h_index * self.num_relation + pos_r_index, return_inverse=True)
-        tr_index_set, tr_inverse = torch.unique(pos_t_index * self.num_relation + pos_r_index, return_inverse=True)
-        hr_index2id = -torch.ones(self.num_entity * self.num_relation, dtype=torch.long, device=self.device)
-        hr_index2id[hr_index_set] = torch.arange(len(hr_index_set), device=self.device)
-        tr_index2id = -torch.ones(self.num_entity * self.num_relation, dtype=torch.long, device=self.device)
-        tr_index2id[tr_index_set] = torch.arange(len(tr_index_set), device=self.device)
+        pattern = torch.stack([pos_h_index, any, pos_r_index], dim=-1)
+        pattern = pattern[:batch_size // 2]
+        edge_index, num_t_truth = self.fact_graph.match(pattern)
+        t_truth_index = self.fact_graph.edge_list[edge_index, 1]
+        pos_index = functional._size_to_index(num_t_truth)
+        t_mask = torch.ones(len(pattern), self.num_entity, dtype=torch.bool, device=self.device)
+        t_mask[pos_index, t_truth_index] = 0
+        neg_t_candidate = t_mask.nonzero()[:, 1]
+        num_t_candidate = t_mask.sum(dim=-1)
+        neg_t_index = functional.variadic_sample(neg_t_candidate, num_t_candidate, self.num_negative)
 
-        h_index, t_index, r_index = self.fact_graph.edge_list.t()
-        hr_index = h_index * self.num_relation + r_index
-        tr_index = t_index * self.num_relation + r_index
-        valid = hr_index2id[hr_index] >= 0
-        hr_index = hr_index[valid]
-        t_index = t_index[valid]
-        t_mask_set = torch.ones(len(hr_index_set), self.num_entity, dtype=torch.bool, device=self.device)
-        t_mask_set[hr_index2id[hr_index], t_index] = 0
-        t_mask = t_mask_set[hr_inverse]
-        valid = tr_index2id[tr_index] >= 0
-        tr_index = tr_index[valid]
-        h_index = h_index[valid]
-        h_mask_set = torch.ones(len(tr_index_set), self.num_entity, dtype=torch.bool, device=self.device)
-        h_mask_set[tr_index2id[tr_index], h_index] = 0
-        h_mask = h_mask_set[tr_inverse]
+        pattern = torch.stack([any, pos_t_index, pos_r_index], dim=-1)
+        pattern = pattern[batch_size // 2:]
+        edge_index, num_h_truth = self.fact_graph.match(pattern)
+        h_truth_index = self.fact_graph.edge_list[edge_index, 0]
+        pos_index = functional._size_to_index(num_h_truth)
+        h_mask = torch.ones(len(pattern), self.num_entity, dtype=torch.bool, device=self.device)
+        h_mask[pos_index, h_truth_index] = 0
+        neg_h_candidate = h_mask.nonzero()[:, 1]
+        num_h_candidate = h_mask.sum(dim=-1)
+        neg_h_index = functional.variadic_sample(neg_h_candidate, num_h_candidate, self.num_negative)
 
-        num_neg_t = t_mask.sum(dim=-1, keepdim=True)
-        num_neg_h = h_mask.sum(dim=-1, keepdim=True)
-        num_cum_neg_t = num_neg_t.cumsum(0)
-        num_cum_neg_h = num_neg_h.cumsum(0)
-
-        neg_t_index = t_mask.nonzero()[:, 1]
-        neg_h_index = h_mask.nonzero()[:, 1]
-
-        rand = torch.rand(batch_size, self.num_negative, device=self.device)
-        index = (rand[:batch_size // 2] * num_neg_t[:batch_size // 2]).long()
-        index = index + (num_cum_neg_t[:batch_size // 2] - num_neg_t[:batch_size // 2])
-        neg_index_t = neg_t_index[index]
-
-        index = (rand[batch_size // 2:] * num_neg_h[batch_size // 2:]).long()
-        index = index + (num_cum_neg_h[batch_size // 2:] - num_neg_h[batch_size // 2:])
-        neg_index_h = neg_h_index[index]
-
-        neg_index = torch.cat([neg_index_t, neg_index_h])
+        neg_index = torch.cat([neg_t_index, neg_h_index])
 
         return neg_index

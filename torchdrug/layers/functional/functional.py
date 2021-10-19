@@ -185,9 +185,6 @@ def variadic_sum(input, size):
     Parameters:
         input (Tensor): input of shape :math:`(B, ...)`
         size (LongTensor): size of sets of shape :math:`(N,)`
-
-    Returns
-        Tensor: sum
     """
     index2sample = _size_to_index(size)
     index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
@@ -206,9 +203,6 @@ def variadic_mean(input, size):
     Parameters:
         input (Tensor): input of shape :math:`(B, ...)`
         size (LongTensor): size of sets of shape :math:`(N,)`
-
-    Returns
-        Tensor: mean
     """
     index2sample = _size_to_index(size)
     index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
@@ -420,8 +414,18 @@ def variadic_randperm(size):
     return perm
 
 
-def variadic_sample(input, size, k):
-    rand = torch.rand(len(size), k, device=size.device)
+def variadic_sample(input, size, num_sample):
+    """
+    Draw samples with replacement from sets with variadic sizes.
+
+    Suppose there are :math:`N` sets, and the sizes of all sets are summed to :math:`B`.
+
+    Parameters:
+        input (Tensor): input of shape :math:`(B, ...)`
+        size (LongTensor): size of sets of shape :math:`(N,)`
+        num_sample (int): number of samples to draw from each set
+    """
+    rand = torch.rand(len(size), num_sample, device=size.device)
     index = (rand * size.unsqueeze(-1)).long()
     index = index + (size.cumsum(0) - size).unsqueeze(-1)
     sample = input[index]

@@ -135,6 +135,11 @@ MOSES
 .. autoclass:: MOSES
     :members:
 
+PCQM4M
+^^^^^^
+.. autoclass:: PCQM4M
+    :members:
+
 
 Retrosynthesis Datasets
 -----------------------

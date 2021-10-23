@@ -2,9 +2,10 @@
 
 ----------------------------
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1rutJkuYH3zaxBsMROWMvAu5LQCRcKcOg?usp=sharing#forceEdit=true&sandboxMode=true)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Tbnr1Fog_YjkqU1MOhcVLuxqZ4DC-c8-#forceEdit=true&sandboxMode=true)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-blue)](https://github.com/DeepGraphLearning/torchdrug/blob/master/CONTRIBUTING.md)
 [![License Apache-2.0](https://img.shields.io/github/license/DeepGraphLearning/torchdrug?color=blue)](https://github.com/DeepGraphLearning/torchdrug/blob/master/LICENSE)
+[![TorchDrug Twitter](https://img.shields.io/twitter/url?label=TorchDrug&style=social&url=https%3A%2F%2Ftwitter.com%2FDrugTorch)](https://twitter.com/DrugTorch)
 
 [Docs] | [Tutorials] | [Benchmarks] | [Papers Implemented]
 

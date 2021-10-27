@@ -6,8 +6,6 @@
 
 namespace at {
 
-const float kEpsilon = 1e-15; // 1e-15 from graphvite
-
 void embedding_forward_check(CheckedFrom c, const TensorArg &entity_arg, const TensorArg &relation_arg,
                              const TensorArg &h_index_arg, const TensorArg &t_index_arg, const TensorArg &r_index_arg);
 

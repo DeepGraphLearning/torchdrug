@@ -216,7 +216,7 @@ Tensor spmm_forward_cuda(const SparseTensor &sparse, const Tensor &input_) {
     const int row_per_block = kThreadPerBlock / dim_per_block;
     const int num_row_block = (num_row + row_per_block - 1) / row_per_block;
 
-    AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), fn_name, [&] {
+    AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "spmm_forward_cuda", [&] {
         const int memory_size = kThreadPerBlock * (sizeof(int64_t) + sizeof(scalar_t));
         spmm_forward_out_cuda<scalar_t, NaryOp<scalar_t>, BinaryOp<scalar_t>>
             <<<dim3(num_row_block, num_dim_block), dim3(dim_per_block, row_per_block), memory_size, stream>>>(
@@ -267,7 +267,7 @@ std::tuple<SparseTensor, Tensor> spmm_backward_cuda(
     const int num_row_block = (num_row + row_per_block - 1) / row_per_block;
 
     if (sparse.requires_grad())
-        AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), fn_name, [&] {
+        AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "spmm_backward_cuda", [&] {
             const int memory_size = kThreadPerBlock * (sizeof(int64_t) + sizeof(scalar_t));
             spmm_backward_out_cuda<scalar_t, NaryOp<scalar_t>, BinaryOp<scalar_t>>
                 <<<dim3(num_row_block, num_dim_block), dim3(dim_per_block, row_per_block), memory_size, stream>>>(
@@ -283,7 +283,7 @@ std::tuple<SparseTensor, Tensor> spmm_backward_cuda(
             );
         });
     else
-        AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), fn_name, [&] {
+        AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "spmm_backward_cuda", [&] {
             const int memory_size = kThreadPerBlock * (sizeof(int64_t) + sizeof(scalar_t));
             spmm_backward_out_cuda<scalar_t, NaryOp<scalar_t>, BinaryOp<scalar_t>>
                 <<<dim3(num_row_block, num_dim_block), dim3(dim_per_block, row_per_block), memory_size, stream>>>(

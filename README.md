@@ -25,7 +25,8 @@ TorchDrug is a [PyTorch]-based machine learning toolbox designed for several pur
 Installation
 ------------
 
-TorchDrug is compatible with Python 3.7/3.8 and PyTorch >= 1.4.0.
+TorchDrug can be installed on either Linux, Windows or macOS. It is compatible with
+Python 3.7/3.8 and PyTorch >= 1.4.0.
 
 ### From Conda ###
 
@@ -46,11 +47,30 @@ instructions in https://github.com/rusty1s/pytorch_scatter
 
 ### From Source ###
 
-```
+```bash
 git clone https://github.com/DeepGraphLearning/torchdrug
 cd torchdrug
 pip install -r requirements.txt
 python setup.py install
+```
+
+### Windows (PowerShell) ###
+
+We need to first install the build tools for Visual Studio. We then install the
+following modules in PowerShell.
+
+```powershell
+Install-Module Pscx -AllowClobber
+Install-Module VSSetup
+```
+
+Initialize Visual Studio in PowerShell with the following commands. We may setup
+this for all PowerShell sessions by writing it to the PowerShell profile. Change
+the library path according to your own case.
+
+```powershell
+Import-VisualStudioVars -Architecture x64
+$env:LIB += ";C:\Program Files\Python37\libs"
 ```
 
 Quick Start

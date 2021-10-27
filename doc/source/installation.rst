@@ -1,7 +1,10 @@
 Installation
 ============
 
-TorchDrug is compatible with Python 3.7/3.8 and PyTorch >= 1.4.0.
+TorchDrug can be installed on either Linux, Windows or macOS. It is compatible with
+Python 3.7/3.8 and PyTorch >= 1.4.0.
+
+For Windows
 
 From Conda
 ----------
@@ -48,3 +51,37 @@ From Source
     cd torchdrug
     pip install -r requirements.txt
     python setup.py install
+
+Windows (PowerShell)
+--------------------
+
+For Windows, we need to additionally install Visual Studio to enable the JIT
+compilation. If you don't have Visual Studio installed, you can get a minimal
+version of the build tools for Visual Studio at
+https://visualstudio.microsoft.com/downloads/.
+
+.. note::
+
+    For non-English systems, you must select English as the language for Visual
+    Studio. Otherwise, the ANSI encoding of Windows will cause errors in Python.
+
+We then setup a command-line environment for JIT compilation. Launch a PowerShell
+as administrator, and install the following extensions.
+
+.. code:: powershell
+
+    Install-Module Pscx -AllowClobber
+    Install-Module VSSetup
+
+Initialize Visual Studio in PowerShell with the following commands. We need to
+change the library path based on our own Python path.
+
+.. code:: powershell
+
+    Import-VisualStudioVars -Architecture x64
+    $env:LIB += ";C:\Program Files\Python37\libs"
+
+The above commands should be executed for every PowerShell session. To setup this
+for all PowerShell sessions, we can write them to the PowerShell profile. The
+profile can be found by the ``$profile`` command in PowerShell. You may need to
+create the profile if you use it for the first time.

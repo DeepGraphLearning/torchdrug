@@ -154,7 +154,7 @@ Tensor rspmm_forward_cpu(const SparseTensor &sparse, const Tensor &relation_, co
     Tensor layer_ind = std::get<2>(csr);
     Tensor value = std::get<3>(csr);
 
-    AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), fn_name, [&] {
+    AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "rspmm_forward_cpu", [&] {
         rspmm_forward_out_cpu<scalar_t, NaryOp<scalar_t>, BinaryOp<scalar_t>>(
             row_ptr.data_ptr<int64_t>(),
             col_ind.data_ptr<int64_t>(),
@@ -202,7 +202,7 @@ std::tuple<SparseTensor, Tensor, Tensor> rspmm_backward_cpu(
     std::vector<std::mutex> relation_mutex(relation.numel());
     std::vector<std::mutex> input_mutex(input.numel());
 
-    AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), fn_name, [&] {
+    AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "rspmm_backward_cpu", [&] {
         rspmm_backward_out_cpu<scalar_t, NaryOp<scalar_t>, BinaryOp<scalar_t>>(
             row_ptr.data_ptr<int64_t>(),
             col_ind.data_ptr<int64_t>(),

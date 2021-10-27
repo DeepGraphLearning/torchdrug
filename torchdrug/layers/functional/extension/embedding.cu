@@ -218,6 +218,7 @@ void rotate_backward_out_cuda(const scalar_t *entity, const scalar_t *relation,
                               const int64_t *h_index, const int64_t *t_index, const int64_t *r_index,
                               const scalar_t *score_grad, scalar_t *entity_grad, scalar_t *relation_grad,
                               int64_t num_entity, int64_t num_relation, int64_t embedding_dim, int64_t num_sample) {
+    const float kEpsilon = 1e-15; // 1e-15 from GraphVite
     const int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     const int lane_id = thread_id % warpSize;
     const int num_thread = gridDim.x * blockDim.x;
@@ -313,7 +314,7 @@ void simple_backward_out_cuda(const scalar_t *entity, const scalar_t *relation,
 #define DECLARE_FORWARD_IMPL(NAME)                                                                         \
     Tensor NAME##_forward_cuda(const Tensor &entity_, const Tensor &relation_, const Tensor &h_index_,     \
 			const Tensor &t_index_, const Tensor &r_index_) {                                              \
-		constexpr const char *fn_name = #NAME"_forward_cuda";                                                        \
+		constexpr const char *fn_name = #NAME"_forward_cuda";                                              \
 		TensorArg entity_arg(entity_, "entity", 1), relation_arg(relation_, "relation", 2),                \
 				  h_index_arg(h_index_, "h_index", 3), r_index_arg(r_index_, "r_index", 4),                \
 				  t_index_arg(t_index_, "t_index", 5);                                                     \
@@ -353,7 +354,7 @@ void simple_backward_out_cuda(const scalar_t *entity, const scalar_t *relation,
     std::tuple<Tensor, Tensor> NAME##_backward_cuda(                                                                 \
             const Tensor &entity_, const Tensor &relation_, const Tensor &h_index_,                                  \
             const Tensor &t_index_, const Tensor &r_index_, const Tensor &score_grad_) {                             \
-        constexpr const char *fn_name = #NAME"_backward_cuda";                                                                 \
+        constexpr const char *fn_name = #NAME"_backward_cuda";                                                       \
         TensorArg entity_arg(entity_, "entity", 1), relation_arg(relation_, "relation", 2),                          \
                   h_index_arg(h_index_, "h_index", 3), r_index_arg(r_index_, "r_index", 4),                          \
                   t_index_arg(t_index_, "t_index", 5), score_grad_arg(score_grad_, "score_grad", 6);                 \
@@ -384,7 +385,7 @@ void simple_backward_out_cuda(const scalar_t *entity, const scalar_t *relation,
             NAME##_backward_out_cuda<scalar_t><<<4096, 512, 0, stream>>>(                                            \
                 entity.data_ptr<scalar_t>(), relation.data_ptr<scalar_t>(),                                          \
                 h_index.data_ptr<int64_t>(), t_index.data_ptr<int64_t>(), r_index.data_ptr<int64_t>(),               \
-                score_grad.data_ptr<scalar_t>(),                                                                      \
+                score_grad.data_ptr<scalar_t>(),                                                                     \
                 entity_grad.data_ptr<scalar_t>(), relation_grad.data_ptr<scalar_t>(),                                \
                 num_entity, num_relation, embedding_dim, num_sample                                                  \
             );                                                                                                       \

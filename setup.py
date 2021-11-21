@@ -29,8 +29,8 @@ if __name__ == "__main__":
         test_suite="nose.collector",
         install_requires=
             [
-                "torch>=1.4.0",
-                "torch-scatter>=1.4.0",
+                "torch>=1.8.0",
+                "torch-scatter>=2.0.8",
                 "decorator",
                 "numpy>=1.11",
                 "rdkit-pypi",

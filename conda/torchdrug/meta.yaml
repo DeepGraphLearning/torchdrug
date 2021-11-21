@@ -11,8 +11,8 @@ requirements:
     - pip
   run:
     - python >=3.7,<3.9
-    - pytorch >=1.4.0
-    - pytorch_scatter >=1.4.0
+    - pytorch >=1.8.0
+    - pytorch-scatter >=2.0.8
     - decorator
     - numpy >=1.11
     - rdkit

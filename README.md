@@ -26,12 +26,12 @@ Installation
 ------------
 
 TorchDrug can be installed on either Linux, Windows or macOS. It is compatible with
-Python 3.7/3.8 and PyTorch >= 1.4.0.
+Python 3.7/3.8 and PyTorch >= 1.8.0.
 
 ### From Conda ###
 
 ```bash
-conda install -c milagraph -c conda-forge torchdrug
+conda install torchdrug -c milagraph -c conda-forge -c pytorch -c pyg
 ```
 
 ### From Pip ###

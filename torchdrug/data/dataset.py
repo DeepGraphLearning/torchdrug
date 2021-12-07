@@ -57,12 +57,13 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
 
         if verbose:
             smiles_list = tqdm(smiles_list, "Constructing molecules from SMILES")
+        
         for i, smiles in enumerate(smiles_list):
-            mol = Chem.MolFromSmiles(smiles)
-            if not mol:
-                logger.debug("Can't construct molecule from SMILES `%s`. Ignore this sample." % smiles)
-                continue
             if not self.lazy or len(self.data) == 0:
+                mol = Chem.MolFromSmiles(smiles)
+                if not mol:
+                    logger.debug("Can't construct molecule from SMILES `%s`. Ignore this sample." % smiles)
+                    continue
                 mol = data.Molecule.from_molecule(mol, **kwargs)
             else:
                 mol = None

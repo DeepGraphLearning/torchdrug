@@ -36,9 +36,10 @@ class ZINC2m(data.MoleculeDataset):
             os.makedirs(path)
         zip_file_name = utils.download(self.url, path, md5=self.md5)
 
-        save_file = utils.extract(zip_file=zip_file_name, member=self.member)
         neo_save_file = os.path.join(os.path.dirname(zip_file_name), 'zinc2m_'+os.path.basename(self.member))
-        shutil.move(save_file, neo_save_file)
+        if not os.path.exists(neo_save_file):
+            save_file = utils.extract(zip_file=zip_file_name, member=self.member)
+            shutil.move(save_file, neo_save_file)
 
         with open(neo_save_file, "r") as fin:
             reader = csv.reader(fin)

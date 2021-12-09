@@ -1,0 +1,60 @@
+cff-version: 1.2.0
+title: "TorchDrug: A powerful and flexible machine learning platform for drug discovery"
+message: If you use this software, please cite it using the metadata from this file.
+type: software
+date-released: 2021-08-11
+license: Apache-2.0
+url: https://github.com/DeepGraphLearning/torchdrug
+authors:
+  - given-names: Zhaocheng
+    family-names: Zhu
+    email: zhaocheng.zhu@mila.quebec
+    affiliation: Mila - Quebec AI Institute, University of Montreal
+  - given-names: Shengchao
+    family-names: Liu
+    email: liusheng@mila.quebec
+    affiliation: Mila - Quebec AI Institute, University of Montreal
+  - given-names: Chence
+    family-names: Shi
+    email: chence.shi@mila.quebec
+    affiliation: Mila - Quebec AI Institute, University of Montreal
+  - given-names: Junkun
+    family-names: Chen
+    affiliation: Tsinghua University
+  - given-names: Zuobai
+    family-names: Zhang
+    email: zuobai.zhang@mila.quebec
+    affiliation: Mila - Quebec AI Institute, University of Montreal
+  - given-names: Meng
+    family-names: Qu
+    email: qumeng@mila.quebec
+    affiliation: Mila - Quebec AI Institute, University of Montreal
+  - given-names: Louis-Pascal
+    family-names: Xhonneux
+    email: xhonneul@mila.quebec
+    affiliation: Mila - Quebec AI Institute, University of Montreal
+  - given-names: Minghao
+    family-names: Xu
+    affiliation: Shanghai Jiao Tong University
+  - given-names: Xinyu
+    family-names: Yuan
+    affiliation: Peking University
+  - given-names: Chang
+    family-names: Ma
+    affiliation: Peking University
+  - given-names: Jiarui Lu
+    email: jiarui.lu@mila.quebec
+    affiliation: Mila - Quebec AI Institute, University of Montreal
+  - given-names: Yangtian
+    family-names: Zhang
+    affiliation: Shanghai Jiao Tong University
+  - given-names: Runcheng
+    family-names: Liu
+    affiliation: Tsinghua University
+  - given-names: Hongyu
+    family-names: Guo
+    affiliation: National Research Council Canada, University of Ottawa
+  - given-names: Jian
+    family-names: Tang
+    email: jian.tang@hec.ca
+    affiliation: Mila - Quebec AI Institute, HEC Montreal

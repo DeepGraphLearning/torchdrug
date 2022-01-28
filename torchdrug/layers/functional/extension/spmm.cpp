@@ -40,17 +40,23 @@ std::tuple<Tensor, Tensor, Tensor> coo2csr(const SparseTensor &sparse) {
     Tensor row_ind = index.select(0, 0);
     Tensor col_ind = index.select(0, 1);
     Tensor value = sparse.values();
-    Tensor nnz_per_row = at::zeros({sparse.size(0)}, row_ind.options());
-    nnz_per_row.scatter_add_(0, row_ind, at::ones_like(row_ind));
+    // scatter_add is super slow for int64, due to non-hardware atomic operations
+    // use int32 instead
+    Tensor nnz_per_row = at::zeros({sparse.size(0)}, row_ind.options().dtype(at::ScalarType::Int));
+    nnz_per_row.scatter_add_(0, row_ind, at::ones(row_ind.sizes(), nnz_per_row.options()));
+    nnz_per_row = nnz_per_row.toType(at::ScalarType::Long);
     Tensor row_ptr = nnz_per_row.cumsum(0) - nnz_per_row;
     return std::make_tuple(row_ptr, col_ind, value);
 }
 
 SparseTensor csr2coo(const Tensor &row_ptr_, const Tensor &col_ind, const Tensor &value, IntArrayRef size) {
     Tensor row_ptr = row_ptr_.masked_select(row_ptr_ < col_ind.size(0));
-    Tensor row_ind_ = at::zeros_like(col_ind);
-    row_ind_.scatter_add_(0, row_ptr, at::ones_like(row_ptr));
-    Tensor row_ind = row_ind_.cumsum(0) - 1;
+    // scatter_add is super slow for int64, due to non-hardware atomic operations
+    // use int32 instead
+    Tensor row_ind = at::zeros(col_ind.sizes(), col_ind.options().dtype(at::ScalarType::Int));
+    row_ind.scatter_add_(0, row_ptr, at::ones(row_ptr.sizes(), row_ind.options()));
+    row_ind = row_ind.toType(at::ScalarType::Long);
+    row_ind = row_ind.cumsum(0) - 1;
     Tensor index = at::stack({row_ind, col_ind}, 0);
     return at::_sparse_coo_tensor_unsafe(index, value, size, value.options().layout(kSparse));
 }

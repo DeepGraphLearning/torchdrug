@@ -99,8 +99,8 @@ class AutoregressiveGeneration(tasks.Task, core.Configurable):
             self.max_node = 0
 
             train_set = tqdm(train_set, "Computing max number of nodes and edge unrolling")
-            for data in train_set:
-                graph = data["graph"]
+            for sample in train_set:
+                graph = sample["graph"]
                 if graph.edge_list.numel():
                     edge_unroll = (graph.edge_list[:, 0] - graph.edge_list[:, 1]).abs().max().item()
                     self.max_edge_unroll = max(self.max_edge_unroll, edge_unroll)
@@ -677,8 +677,8 @@ class GCPNGeneration(tasks.Task, core.Configurable):
             self.max_node = 0
 
             train_set = tqdm(train_set, "Computing max number of nodes and edge unrolling")
-            for data in train_set:
-                graph = data["graph"]
+            for sample in train_set:
+                graph = sample["graph"]
                 if graph.edge_list.numel():
                     edge_unroll = (graph.edge_list[:, 0] - graph.edge_list[:, 1]).abs().max().item()
                     self.max_edge_unroll = max(self.max_edge_unroll, edge_unroll)

@@ -1,3 +1,4 @@
+import inspect
 from collections import deque
 
 import torch
@@ -43,9 +44,9 @@ class CenterIdentification(tasks.Task, core.Configurable):
     def preprocess(self, train_set, valid_set, test_set):
         reaction_types = set()
         bond_types = set()
-        for data in train_set:
-            reaction_types.add(data["reaction"])
-            for graph in data["graph"]:
+        for sample in train_set:
+            reaction_types.add(sample["reaction"])
+            for graph in sample["graph"]:
                 bond_types.update(graph.edge_list[:, 2].tolist())
         self.num_reaction = len(reaction_types)
         self.num_relation = len(bond_types)
@@ -312,9 +313,25 @@ class SynthonCompletion(tasks.Task, core.Configurable):
 
     def preprocess(self, train_set, valid_set, test_set):
         reaction_types = set()
-        for data in train_set:
-            reaction_types.add(data["reaction"])
+        atom_types = set()
+        bond_types = set()
+        for sample in train_set:
+            reaction_types.add(sample["reaction"])
+            for graph in sample["graph"]:
+                atom_types.update(graph.atom_type.tolist())
+                bond_types.update(graph.edge_list[:, 2].tolist())
+        # TODO: only for fast debugging, to remove
+        # atom_types = torch.tensor([5, 6, 7, 8, 9, 12, 14, 15, 16, 17, 29, 30, 34, 35, 50, 53])
+        # bond_types = torch.tensor([0, 1, 2])
+        atom_types = torch.tensor(sorted(atom_types))
+        atom2id = -torch.ones(atom_types.max() + 1, dtype=torch.long)
+        atom2id[atom_types] = torch.arange(len(atom_types))
+        self.register_buffer("id2atom", atom_types)
+        self.register_buffer("atom2id", atom2id)
         self.num_reaction = len(reaction_types)
+        self.num_atom_type = len(atom_types)
+        self.num_bond_type = len(bond_types)
+        node_feature_dim = train_set[0]["graph"][0].node_feature.shape[-1]
 
         if isinstance(train_set, torch_data.Subset):
             dataset = train_set.dataset
@@ -324,32 +341,14 @@ class SynthonCompletion(tasks.Task, core.Configurable):
             dataset.transform,
             RandomBFSOrder(),
         ])
-
-        # atom_types = set()
-        # bond_types = set()
-        # for data in train_set:
-        #     for graph in data["graph"]:
-        #         atom_types.update(graph.atom_type.tolist())
-        #         bond_types.update(graph.edge_list[:, 2].tolist())
-        # atom_types = torch.tensor(sorted(atom_types))
-
-        # TODO: only for fast debugging, to remove
-        atom_types = torch.tensor([5, 6, 7, 8, 9, 12, 14, 15, 16, 17, 29, 30, 34, 35, 50, 53])
-        bond_types = torch.tensor([0, 1, 2])
-
-        atom2id = -torch.ones(atom_types.max() + 1, dtype=torch.long)
-        atom2id[atom_types] = torch.arange(len(atom_types))
-        self.register_buffer("id2atom", atom_types)
-        self.register_buffer("atom2id", atom2id)
-        self.num_atom_type = len(atom_types)
-        self.num_bond_type = len(bond_types)
-        node_feature_dim = train_set[0]["graph"][0].node_feature.shape[-1]
-
-        if isinstance(train_set, torch_data.Subset):
-            dataset = train_set.dataset
-        else:
-            dataset = train_set
-        self.dataset_kwargs = dataset.config_dict().get("kwargs")
+        sig = inspect.signature(data.PackedMolecule.from_molecule)
+        keys = set(sig.parameters.keys())
+        kwargs = dataset.config_dict()
+        feature_kwargs = {}
+        for k, v in kwargs.items():
+            if k in keys:
+                feature_kwargs[k] = v
+        self.feature_kwargs = feature_kwargs
 
         node_dim = self.model.output_dim
         edge_dim = 0
@@ -382,7 +381,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         mols = graphs.to_molecule(ignore_error=True)
         valid = [mol is not None for mol in mols]
         valid = torch.tensor(valid, device=graphs.device)
-        new_graphs = type(graphs).from_molecule(mols, node_feature="synthon_completion", kekulize=True)
+        new_graphs = type(graphs).from_molecule(mols, **self.feature_kwargs)
 
         node_feature = torch.zeros(graphs.num_node, *new_graphs.node_feature.shape[1:],
                                    dtype=new_graphs.node_feature.dtype, device=graphs.device)
@@ -915,8 +914,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
             order = key.argsort(descending=True)
             new_graph = new_graph[order]
 
-            num_candidate = scatter_add(torch.ones_like(new_graph.synthon_id), new_graph.synthon_id,
-                                        dim_size=len(synthon))
+            num_candidate = new_graph.synthon_id.bincount(minlength=len(synthon))
             topk = functional.variadic_topk(new_graph.logp, num_candidate, num_beam)[1]
             topk_index = topk + (num_candidate.cumsum(0) - num_candidate).unsqueeze(-1)
             topk_index = torch.unique(topk_index)
@@ -965,7 +963,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
             num_input_per_graph = len(input) // len(num_xs)
             input2graph = torch.arange(len(num_xs), device=data.device).unsqueeze(-1)
             input2graph = input2graph.repeat(1, num_input_per_graph).flatten()
-        num_inputs = scatter_add(torch.ones_like(input2graph), input2graph, dim_size=len(num_xs))
+        num_inputs = input2graph.bincount(minlength=len(num_xs))
         new_num_xs = num_xs + num_inputs
         new_num_cum_xs = new_num_xs.cumsum(0)
         new_num_x = new_num_cum_xs[-1].item()

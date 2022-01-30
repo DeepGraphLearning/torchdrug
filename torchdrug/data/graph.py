@@ -240,7 +240,7 @@ class Graph(core._MetaContainer):
             last = min_neighbor
             min_neighbor = scatter_min(min_neighbor[node_out], node_in, dim_size=self.num_node)[0]
         anchor = torch.unique(min_neighbor)
-        num_cc = scatter_add(torch.ones_like(anchor), self.node2graph[anchor])
+        num_cc = scatter_add(torch.ones_like(anchor), self.node2graph[anchor], dim_size=self.batch_size)
         return self.split(min_neighbor), num_cc
 
     def split(self, node2graph):

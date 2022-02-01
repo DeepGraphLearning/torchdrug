@@ -23,7 +23,7 @@ class GraphConvolutionalNetwork(nn.Module, core.Configurable):
         batch_norm (bool, optional): apply batch normalization or not
         activation (str or function, optional): activation function
         concat_hidden (bool, optional): concat hidden representations from all layers as output
-        readout (str, optional): readout function. Available functions are ``sum`` and ``mean``.
+        readout (str, optional): readout function. Available functions are ``sum``, ``mean``, and ``max``.
     """
 
     def __init__(self, input_dim, hidden_dims, edge_input_dim=None, short_cut=False, batch_norm=False,
@@ -46,6 +46,8 @@ class GraphConvolutionalNetwork(nn.Module, core.Configurable):
             self.readout = layers.SumReadout()
         elif readout == "mean":
             self.readout = layers.MeanReadout()
+        elif readout == "max":
+            self.readout = layers.MaxReadout()
         else:
             raise ValueError("Unknown readout `%s`" % readout)
 
@@ -102,7 +104,7 @@ class RelationalGraphConvolutionalNetwork(nn.Module, core.Configurable):
         batch_norm (bool, optional): apply batch normalization or not
         activation (str or function, optional): activation function
         concat_hidden (bool, optional): concat hidden representations from all layers as output
-        readout (str, optional): readout function. Available functions are ``sum`` and ``mean``.
+        readout (str, optional): readout function. Available functions are ``sum``, ``mean``, and ``max``.
     """
 
     def __init__(self, input_dim, hidden_dims, num_relation, edge_input_dim=None, short_cut=False, batch_norm=False,
@@ -127,6 +129,8 @@ class RelationalGraphConvolutionalNetwork(nn.Module, core.Configurable):
             self.readout = layers.SumReadout()
         elif readout == "mean":
             self.readout = layers.MeanReadout()
+        elif readout == "max":
+            self.readout = layers.MaxReadout()
         else:
             raise ValueError("Unknown readout `%s`" % readout)
 

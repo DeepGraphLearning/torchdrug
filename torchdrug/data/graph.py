@@ -1425,11 +1425,22 @@ class PackedGraph(Graph):
 
     def to(self, device):
         """Return a copy of this packed graph on the given device."""
-        if device == "cpu":
-            return self.cpu()
-        elif device == "cuda":
-            return self.cuda()
-        raise NotImplementedError(f"{self.__class__.__name__}.to() is not implemented for {devide}")
+        if isinstance(device, str):
+            if device == "cpu":
+                return self.cpu()
+            elif device == "cuda":
+                return self.cuda()
+            else:
+                raise NotImplementedError(f"{self.__class__.__name__}.to() is not implemented for string: {device}")
+        elif isinstance(device, torch.device):
+            if device.type == "cpu":
+                return self.cpu()
+            elif device.type == "cuda":
+                return self.cuda()
+            else:
+                raise NotImplementedError
+        else:
+            raise TypeError
 
     def cuda(self, *args, **kwargs):
         """

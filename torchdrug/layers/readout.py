@@ -1,9 +1,14 @@
 import torch
 from torch import nn
 from torch_scatter import scatter_mean, scatter_add, scatter_max
+from class_resolver import ClassResolver
 
 
-class MeanReadout(nn.Module):
+class Readout(nn.Module):
+    """A base class for readouts."""
+
+
+class MeanReadout(Readout):
     """Mean readout operator over graphs with variadic sizes."""
 
     def forward(self, graph, input):
@@ -21,7 +26,7 @@ class MeanReadout(nn.Module):
         return output
 
 
-class SumReadout(nn.Module):
+class SumReadout(Readout):
     """Sum readout operator over graphs with variadic sizes."""
 
     def forward(self, graph, input):
@@ -39,7 +44,7 @@ class SumReadout(nn.Module):
         return output
 
 
-class MaxReadout(nn.Module):
+class MaxReadout(Readout):
     """Max readout operator over graphs with variadic sizes."""
 
     def forward(self, graph, input):
@@ -55,6 +60,12 @@ class MaxReadout(nn.Module):
         """
         output = scatter_max(input, graph.node2graph, dim=0, dim_size=graph.batch_size)[0]
         return output
+
+
+readout_resolver = ClassResolver.from_subclasses(
+    Readout,
+    default=SumReadout,
+)
 
 
 class Softmax(nn.Module):

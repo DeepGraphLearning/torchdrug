@@ -25,11 +25,11 @@ class GraphAttentionNetwork(nn.Module, core.Configurable):
         batch_norm (bool, optional): apply batch normalization or not
         activation (str or function, optional): activation function
         concat_hidden (bool, optional): concat hidden representations from all layers as output
-        readout (str, optional): readout function. Available functions are ``sum``, ``mean``, and ``max``.
+        readout: readout function. Available functions are ``sum``, ``mean``, and ``max``.
     """
 
     def __init__(self, input_dim, hidden_dims, edge_input_dim=None, num_head=1, negative_slope=0.2, short_cut=False,
-                 batch_norm=False, activation="relu", concat_hidden=False, readout="sum"):
+                 batch_norm=False, activation="relu", concat_hidden=False, readout: Hint[Readout] = "sum"):
         super(GraphAttentionNetwork, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -45,14 +45,7 @@ class GraphAttentionNetwork(nn.Module, core.Configurable):
             self.layers.append(layers.GraphAttentionConv(self.dims[i], self.dims[i + 1], edge_input_dim, num_head,
                                                          negative_slope, batch_norm, activation))
 
-        if readout == "sum":
-            self.readout = layers.SumReadout()
-        elif readout == "mean":
-            self.readout = layers.MeanReadout()
-        elif readout == "max":
-            self.readout = layers.MaxReadout()
-        else:
-            raise ValueError("Unknown readout `%s`" % readout)
+        self.readout = readout_resolver.make(readout)
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """

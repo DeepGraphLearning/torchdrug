@@ -48,14 +48,7 @@ class GraphIsomorphismNetwork(nn.Module, core.Configurable):
             self.layers.append(layers.GraphIsomorphismConv(self.dims[i], self.dims[i + 1], edge_input_dim,
                                                            layer_hidden_dims, eps, learn_eps, batch_norm, activation))
 
-        if readout == "sum":
-            self.readout = layers.SumReadout()
-        elif readout == "mean":
-            self.readout = layers.MeanReadout()
-        elif readout == "max":
-            self.readout = layers.MaxReadout()
-        else:
-            raise ValueError("Unknown readout `%s`" % readout)
+        self.readout = readout_resolver.make(readout)
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """

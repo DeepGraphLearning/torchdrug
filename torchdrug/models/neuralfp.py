@@ -47,12 +47,7 @@ class NeuralFingerprint(nn.Module, core.Configurable):
                                                             batch_norm, activation))
             self.linears.append(nn.Linear(self.dims[i + 1], output_dim))
 
-        if readout == "sum":
-            self.readout = layers.SumReadout()
-        elif readout == "mean":
-            self.readout = layers.MeanReadout()
-        else:
-            raise ValueError("Unknown readout `%s`" % readout)
+        self.readout = readout_resolver.make(readout)
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """

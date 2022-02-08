@@ -28,7 +28,7 @@ class SchNet(nn.Module, core.Configurable):
     """
 
     def __init__(self, input_dim, hidden_dims, edge_input_dim=None, cutoff=5, num_gaussian=100, short_cut=True,
-                 batch_norm=False, activation="shifted_softplus", concat_hidden=False):
+                 batch_norm=False, activation="shifted_softplus", concat_hidden=False, readout: Hint[Readout] = "sum"):
         super(SchNet, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -44,7 +44,7 @@ class SchNet(nn.Module, core.Configurable):
             self.layers.append(layers.ContinuousFilterConv(self.dims[i], self.dims[i + 1], edge_input_dim, None, cutoff,
                                                            num_gaussian, batch_norm, activation))
 
-        self.readout = layers.SumReadout()
+        self.readout = readout_resolver.make(readout)
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """

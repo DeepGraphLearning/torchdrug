@@ -1,10 +1,12 @@
 from collections.abc import Sequence
 
 import torch
+from class_resolver import Hint
 from torch import nn
 
 from torchdrug import core, layers
 from torchdrug.core import Registry as R
+from torchdrug.layers import Readout, readout_resolver
 
 
 @R.register("models.GAT")

@@ -1,11 +1,13 @@
 from collections.abc import Sequence
 
 import torch
+from class_resolver import Hint
 from torch import nn
 from torch.nn import functional as F
 
 from torchdrug import core, layers
 from torchdrug.core import Registry as R
+from torchdrug.layers import Readout, readout_resolver
 
 
 @R.register("models.NeuralFP")
@@ -25,11 +27,11 @@ class NeuralFingerprint(nn.Module, core.Configurable):
         batch_norm (bool, optional): apply batch normalization or not
         activation (str or function, optional): activation function
         concat_hidden (bool, optional): concat hidden representations from all layers as output
-        readout (str, optional): readout function. Available functions are ``sum`` and ``mean``.
+        readout: readout function. Available functions are ``sum``, ``mean``, and ``max``.
     """
 
     def __init__(self, input_dim, output_dim, hidden_dims, edge_input_dim=None, short_cut=False, batch_norm=False,
-                 activation="relu", concat_hidden=False, readout="sum"):
+                 activation="relu", concat_hidden=False, readout: Hint[Readout] = "sum"):
         super(NeuralFingerprint, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):

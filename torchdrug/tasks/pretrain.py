@@ -1,13 +1,14 @@
 import copy
 
 import torch
+from class_resolver import Hint
 from torch import nn
 from torch.nn import functional as F
 from torch_scatter import scatter_max, scatter_min
 
 from torchdrug import core, tasks, layers
 from torchdrug.data import constant
-from torchdrug.layers import functional
+from torchdrug.layers import functional, readout_resolver, Readout
 from torchdrug.core import Registry as R
 
 
@@ -169,9 +170,10 @@ class ContextPrediction(tasks.Task, core.Configurable):
         r2 (int, optional): outer radius for context graphs
         readout (nn.Module, optional): readout function over context anchor nodes
         num_negative (int, optional): number of negative samples per positive sample
+        readout: readout function. Available functions are ``sum``, ``mean``, and ``max``.
     """
 
-    def __init__(self, model, context_model=None, k=5, r1=4, r2=7, readout="mean", num_negative=1):
+    def __init__(self, model, context_model=None, k=5, r1=4, r2=7, readout: Hint[Readout] = "mean", num_negative=1):
         super(ContextPrediction, self).__init__()
         self.model = model
         self.k = k
@@ -184,12 +186,8 @@ class ContextPrediction(tasks.Task, core.Configurable):
             self.context_model = copy.deepcopy(model)
         else:
             self.context_model = context_model
-        if readout == "sum":
-            self.readout = layers.SumReadout()
-        elif readout == "mean":
-            self.readout = layers.MeanReadout()
-        else:
-            raise ValueError("Unknown readout `%s`" % readout)
+
+        self.readout = readout_resolver.make(readout)
 
     def substruct_and_context(self, graph):
         center_index = (torch.rand(len(graph), device=self.device) * graph.num_nodes).long()

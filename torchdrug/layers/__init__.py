@@ -23,7 +23,7 @@ __all__ = [
     "MessagePassingBase", "GraphConv", "GraphAttentionConv", "RelationalGraphConv", "GraphIsomorphismConv",
     "NeuralFingerprintConv", "ContinuousFilterConv", "MessagePassing", "ChebyshevConv",
     "DiffPool", "MinCutPool",
-    "MeanReadout", "SumReadout", "MaxReadout", "Softmax", "Set2Set", "Sort",
+    "MeanReadout", "SumReadout", "MaxReadout", "Softmax", "Set2Set", "Sort", "readout_resolver", "Readout",
     "ConditionalFlow",
     "NodeSampler", "EdgeSampler",
     "distribution", "functional",

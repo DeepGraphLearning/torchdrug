@@ -1,10 +1,12 @@
 from collections.abc import Sequence
 
 import torch
+from class_resolver import Hint
 from torch import nn
 
 from torchdrug import core, layers
 from torchdrug.core import Registry as R
+from torchdrug.layers import Readout, readout_resolver
 
 
 @R.register("models.ChebNet")
@@ -25,11 +27,11 @@ class ChebyshevConvolutionalNetwork(nn.Module, core.Configurable):
         batch_norm (bool, optional): apply batch normalization or not
         activation (str or function, optional): activation function
         concat_hidden (bool, optional): concat hidden representations from all layers as output
-        readout (str, optional): readout function. Available functions are ``sum`` and ``mean``.
+        readout: readout function. Available functions are ``sum`` and ``mean``.
     """
 
     def __init__(self, input_dim, hidden_dims, edge_input_dim=None, k=1, short_cut=False, batch_norm=False,
-                 activation="relu", concat_hidden=False, readout="sum"):
+                 activation="relu", concat_hidden=False, readout: Hint[Readout] = "sum"):
         super(ChebyshevConvolutionalNetwork, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -45,12 +47,7 @@ class ChebyshevConvolutionalNetwork(nn.Module, core.Configurable):
             self.layers.append(layers.ChebyshevConv(self.dims[i], self.dims[i + 1], edge_input_dim, k,
                                                     batch_norm, activation))
 
-        if readout == "sum":
-            self.readout = layers.SumReadout()
-        elif readout == "mean":
-            self.readout = layers.MeanReadout()
-        else:
-            raise ValueError("Unknown readout `%s`" % readout)
+        self.readout = readout_resolver.make(readout)
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """

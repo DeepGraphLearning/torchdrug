@@ -39,6 +39,7 @@ if __name__ == "__main__":
                 "networkx",
                 "ninja",
                 "jinja2",
+                "class-resolver",
             ],
         python_requires=">=3.7,<3.9",
         classifiers=[

@@ -1423,6 +1423,14 @@ class PackedGraph(Graph):
                           num_nodes=self.num_nodes, num_edges=self.num_edges, num_relation=self.num_relation,
                           offsets=self._offsets, meta_dict=self.meta_dict, **utils.clone(self.data_dict))
 
+    def to(self, device):
+        """Return a copy of this packed graph on the given device."""
+        if device == "cpu":
+            return self.cpu()
+        elif device == "cuda":
+            return self.cuda()
+        raise NotImplementedError(f"{self.__class__.__name__}.to() is not implemented for {devide}")
+
     def cuda(self, *args, **kwargs):
         """
         Return a copy of this packed graph in CUDA memory.

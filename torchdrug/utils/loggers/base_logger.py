@@ -31,7 +31,6 @@ class BaseLogger(ABC):
     def step(self):
         self.epoch_id += 1
         self.epoch2batch.append(self.batch_id)
-        index = slice()
         index = slice(self.epoch2batch[-2], self.epoch2batch[-1])
 
         averages = {}

@@ -5,8 +5,8 @@ from torchdrug.utils.loggers.base_logger import BaseLogger
 
 
 class SimpleLogger(BaseLogger):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, logger_interval=100):
+        super().__init__(logger_interval=logger_interval)
         self.logger = logging.getLogger(__name__)
     
     def log(self, record):

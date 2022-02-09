@@ -18,7 +18,7 @@ class Meter(object):
         log_interval (int, optional): log every n updates
         silent (int, optional): surpress all outputs or not
     """
-    def __init__(self, log_interval=100, silent=False, logger='simple'):
+    def __init__(self, log_interval=100, silent=False, metric_logger='simple', project=None):
         self.records = defaultdict(list)
         self.log_interval = log_interval
         self.epoch2batch = [0]
@@ -26,14 +26,17 @@ class Meter(object):
         self.epoch_id = 0
         self.batch_id = 0
         self.silent = silent
-        if isinstance(logger, str):
-            if logger == 'simple':
-                self.logger = SimpleLogger()
-            elif logger == 'wandb':
-                self.logger = None
+        if isinstance(metric_logger, str):
+            if metric_logger == 'simple':
+                self.logger = SimpleLogger(log_interval=log_interval)
+            elif metric_logger == 'wandb':
+                self.logger = WandbLogger(log_interval=log_interval, project=project)
         else:
-            self.logger = logger
+            self.logger = metric_logger
 
+    def log(self, record, type='train'):
+        self.logger.log(record, type)
+        
     def update(self, record):
         """
         Update with a meter record.
@@ -42,14 +45,6 @@ class Meter(object):
             record (dict): any tensor metric
         """
         self.logger.update(record)
-        # if self.batch_id % self.log_interval == 0:
-        #     self.logger.log(record)
-        # self.batch_id += 1
-
-        # for k, v in record.items():
-        #     if isinstance(v, torch.Tensor):
-        #         v = v.item()
-        #     self.records[k].append(v)
 
     def step(self):
         """
@@ -81,11 +76,6 @@ class Meter(object):
             torch.cuda.reset_peak_memory_stats()
 
         self.logger.step()
-
-
-        # logger.warning(pretty.line)
-        # for k in sorted(self.records.keys()):
-        #     logger.warning("average %s: %g" % (k, np.mean(self.records[k][index])))
 
     def __call__(self, num_epoch):
         self.start_epoch = self.epoch_id

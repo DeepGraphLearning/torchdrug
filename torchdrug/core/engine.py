@@ -10,6 +10,7 @@ from torch.utils import data as torch_data
 from torchdrug import data, core, utils
 from torchdrug.core import Registry as R
 from torchdrug.utils import comm
+from torchdrug.utils.loggers import WandbLogger
 
 
 logger = logging.getLogger(__name__)
@@ -56,14 +57,15 @@ class Engine(core.Configurable):
     """
 
     def __init__(self, task, train_set, valid_set, test_set, optimizer, scheduler=None, gpus=None, batch_size=1,
-                 gradient_interval=1, num_worker=0, log_interval=100):
+                 gradient_interval=1, num_worker=0, log_interval=100, metric_logger='simple', project=None):
         self.rank = comm.get_rank()
         self.world_size = comm.get_world_size()
         self.gpus = gpus
         self.batch_size = batch_size
         self.gradient_interval = gradient_interval
         self.num_worker = num_worker
-        self.meter = core.Meter(log_interval=log_interval, silent=self.rank > 0)
+        self.meter = core.Meter(log_interval=log_interval, silent=self.rank > 0, 
+                                metric_logger=metric_logger, project=project)
 
         if gpus is None:
             self.device = torch.device("cpu")
@@ -104,6 +106,16 @@ class Engine(core.Configurable):
         self.test_set = test_set
         self.optimizer = optimizer
         self.scheduler = scheduler
+
+        hyperparams = {}
+        for key, val in self.model.model.__dict__.items():
+            if not key.startswith("_"):
+                hyperparams[key] = val
+        hyperparams.update({'model_type': self.model.model.__class__.__name__})
+        self.meter.logger.save_hyperparams(hyperparams)
+
+        if isinstance(self.meter.logger, WandbLogger):
+            self.meter.logger.watch(self.model.model)
 
     def train(self, num_epoch=1, batch_per_epoch=None):
         """
@@ -200,7 +212,7 @@ class Engine(core.Configurable):
             target = comm.cat(target)
         metric = model.evaluate(pred, target)
         if log:
-            self.meter.log(metric)
+            self.meter.log(metric, type=split)
 
         return metric
 

@@ -9,23 +9,26 @@ except ImportError:
     wandb = None
 
 class WandbLogger(BaseLogger):
-    def __init__(self, project=None, name=None, save_dir=None, logger_interval=100, **kwargs):
+    def __init__(self, project=None, name=None, save_dir=None, log_interval=100, **kwargs):
         if wandb is None:
             raise ModuleNotFoundError(
                 "You want to use `wandb` logger which is not installed yet,"
                 " install it with `pip install wandb`."
             )
 
-        super().__init__(logger_interval=logger_interval)
+        super().__init__(log_interval=log_interval)
         self._wandb_init = dict(
             name=name,
             project=project,
-            save_dir=save_dir
+            dir=save_dir
         )
         self._wandb_init.update(**kwargs)
         self._experiment = None
 
         _ = self.experiment
+
+        self.experiment.define_metric("epoch")
+        self.experiment.define_metric("average/*", step_metric="epoch")
     
     @property
     def experiment(self):
@@ -44,12 +47,23 @@ class WandbLogger(BaseLogger):
     def watch(self, model):
         self.experiment.watch(model)
     
-    def log(self, record):
-        updated_record = dict()
-        for key, val in record.keys():
-            if key.startswith("average"):
-                key = "average/" + key.lstrip("average")
-            updated_record[key] = val
-        
-        self.experiment.log(updated_record)
+    def log(self, record, type='train'):
+        if type == 'train':
+            updated_record = dict()
+            for key, val in record.items():
+                if key.startswith("average"):
+                    key = "average/" + key.lstrip("average")
+                updated_record[key] = val
+
+            self.experiment.log(updated_record)
+        else:
+            self.experiment.summary.update({
+                type + " " + k: v for k, v in record.items()
+            })
+    
+    def watch(self, model):
+        self.experiment.watch(model, log_graph=True)
+    
+    def save_hyperparams(self, params):
+        self.experiment.config.update(params)
             

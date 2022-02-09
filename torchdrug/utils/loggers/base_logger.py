@@ -7,19 +7,23 @@ import torch
 
 
 class BaseLogger(ABC):
-    def __init__(self, logger_interval=100):
+    def __init__(self, log_interval=100):
         self.records = defaultdict(list)
         self.epoch_id = 0
         self.batch_id = 0
         self.epoch2batch = [0]
-        self.logger_interval = logger_interval
+        self.log_interval = log_interval
     
     @abstractmethod
-    def log(self, record):
+    def log(self, record, type='train'):
+        pass
+
+    @abstractmethod
+    def save_hyperparams(self, hyperparams):
         pass
 
     def update(self, record):
-        if self.batch_id % self.logger_interval == 0:
+        if self.batch_id % self.log_interval == 0:
             self.log(record)
         self.batch_id += 1
 
@@ -36,5 +40,5 @@ class BaseLogger(ABC):
         averages = {}
         for k in sorted(self.records.keys()):
             averages[f"average {k}"] = np.mean(self.records[k][index])
-        
+        averages['epoch'] = self.epoch_id
         self.log(averages)

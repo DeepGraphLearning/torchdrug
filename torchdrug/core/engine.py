@@ -54,6 +54,8 @@ class Engine(core.Configurable):
             This creates an equivalent batch size of ``batch_size * gradient_interval`` for optimization.
         num_worker (int, optional): number of CPU workers per GPU
         log_interval (int, optional): log every n gradient updates
+        metric_logger (str or torchdrug.utils.loggers.BaseLogger, optional): logger for the metrics
+        project (str, optional): project for which metrics are being logged
     """
 
     def __init__(self, task, train_set, valid_set, test_set, optimizer, scheduler=None, gpus=None, batch_size=1,

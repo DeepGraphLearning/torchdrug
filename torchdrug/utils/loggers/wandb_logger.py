@@ -10,6 +10,16 @@ except ImportError:
 
 class WandbLogger(BaseLogger):
     def __init__(self, project=None, name=None, save_dir=None, log_interval=100, **kwargs):
+        """
+        Implementation of the W&B logger in TorchDrug.
+        It inherits from the BaseLogger class and implements the log and save_hyperparams methods.
+
+        Parameters:
+            project (str, optional): Name of the wandb project
+            name (str, optional): Name of the wandb run
+            save_dir (str, optional): Directory to save the wandb run
+            log_interval (int, optional): log after every n steps
+        """
         if wandb is None:
             raise ModuleNotFoundError(
                 "You want to use `wandb` logger which is not installed yet,"
@@ -27,6 +37,8 @@ class WandbLogger(BaseLogger):
 
         _ = self.experiment
 
+        # We define an epoch as a metric so that the averages logged
+        # at the end of the epoch are plotted against the epochs
         self.experiment.define_metric("epoch")
         self.experiment.define_metric("average/*", step_metric="epoch")
     

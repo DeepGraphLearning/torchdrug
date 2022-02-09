@@ -4,8 +4,15 @@ from torchdrug.utils import pretty
 from torchdrug.utils.loggers.base_logger import BaseLogger
 
 
-class SimpleLogger(BaseLogger):
+class ConsoleLogger(BaseLogger):
     def __init__(self, log_interval=100):
+        """
+        Implementation of the original logger in TorchDrug conforming to the new logging architecture.
+        It inherits from the BaseLogger class and implements the log and save_hyperparams methods.
+
+        Parameters:
+            log_interval (int, optional): log after every n steps
+        """
         super().__init__(log_interval=log_interval)
         self.logger = logging.getLogger(__name__)
     

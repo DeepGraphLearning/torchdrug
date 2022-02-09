@@ -17,8 +17,10 @@ class Meter(object):
     Parameters:
         log_interval (int, optional): log every n updates
         silent (int, optional): surpress all outputs or not
+        metric_logger (str or torchdrug.utils.loggers.BaseLogger, optional): logger for recording metrics
+        project (str, optional): project for which metrics are being logged
     """
-    def __init__(self, log_interval=100, silent=False, metric_logger='simple', project=None):
+    def __init__(self, log_interval=100, silent=False, metric_logger='console', project=None):
         self.records = defaultdict(list)
         self.log_interval = log_interval
         self.epoch2batch = [0]
@@ -26,15 +28,25 @@ class Meter(object):
         self.epoch_id = 0
         self.batch_id = 0
         self.silent = silent
+
+        self.console_logger = ConsoleLogger(log_interval=log_interval)
+        self.logger = None
+
         if isinstance(metric_logger, str):
-            if metric_logger == 'simple':
-                self.logger = SimpleLogger(log_interval=log_interval)
-            elif metric_logger == 'wandb':
+            if metric_logger == 'wandb':
                 self.logger = WandbLogger(log_interval=log_interval, project=project)
         else:
             self.logger = metric_logger
 
     def log(self, record, type='train'):
+        """
+        Log a record.
+
+        Parameters:
+            record (dict): any tensor metric
+            type (str, optional): type of record (train or valid or test)
+        """
+        self.console_logger.log(record, type)
         self.logger.log(record, type)
         
     def update(self, record):
@@ -44,6 +56,7 @@ class Meter(object):
         Parameters:
             record (dict): any tensor metric
         """
+        self.console_logger.update(record)
         self.logger.update(record)
 
     def step(self):
@@ -75,6 +88,7 @@ class Meter(object):
             logger.warning("max GPU memory: %.1f MiB" % (torch.cuda.max_memory_allocated() / 1e6))
             torch.cuda.reset_peak_memory_stats()
 
+        self.console_logger.step()
         self.logger.step()
 
     def __call__(self, num_epoch):

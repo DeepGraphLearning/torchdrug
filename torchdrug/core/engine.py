@@ -59,7 +59,7 @@ class Engine(core.Configurable):
     """
 
     def __init__(self, task, train_set, valid_set, test_set, optimizer, scheduler=None, gpus=None, batch_size=1,
-                 gradient_interval=1, num_worker=0, log_interval=100, metric_logger='simple', project=None):
+                 gradient_interval=1, num_worker=0, log_interval=100, metric_logger='console', project=None):
         self.rank = comm.get_rank()
         self.world_size = comm.get_world_size()
         self.gpus = gpus
@@ -114,10 +114,14 @@ class Engine(core.Configurable):
             if not key.startswith("_"):
                 hyperparams[key] = val
         hyperparams.update({'model_type': self.model.model.__class__.__name__})
+        hyperparams.update({'task': self.model.__class__.__name__})
         self.meter.logger.save_hyperparams(hyperparams)
 
         if isinstance(self.meter.logger, WandbLogger):
-            self.meter.logger.watch(self.model.model)
+            try:
+                self.meter.logger.watch(self.model.model)
+            except:
+                logger.warning("The given model cannot be watched by wandb")
 
     def train(self, num_epoch=1, batch_per_epoch=None):
         """

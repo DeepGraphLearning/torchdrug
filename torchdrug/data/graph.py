@@ -810,6 +810,16 @@ class Graph(core._MetaContainer):
             return type(self)(edge_list, edge_weight=self.edge_weight, num_node=self.num_node,
                               num_relation=self.num_relation, meta_dict=self.meta_dict, **utils.cpu(self.data_dict))
 
+    def to(self, device, *args, **kwargs):
+        """
+        Return a copy of this graph on the given device.
+        """
+        device = torch.device(device)
+        if device.type == "cpu":
+            return self.cpu(*args, **kwargs)
+        else:
+            return self.cuda(device, *args, **kwargs)
+
     def __repr__(self):
         fields = ["num_node=%d" % self.num_node, "num_edge=%d" % self.num_edge]
         if self.num_relation is not None:

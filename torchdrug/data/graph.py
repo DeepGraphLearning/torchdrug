@@ -810,6 +810,16 @@ class Graph(core._MetaContainer):
             return type(self)(edge_list, edge_weight=self.edge_weight, num_node=self.num_node,
                               num_relation=self.num_relation, meta_dict=self.meta_dict, **utils.cpu(self.data_dict))
 
+    def to(self, device, *args, **kwargs):
+        """
+        Return a copy of this graph on the given device.
+        """
+        device = torch.device(device)
+        if device.type == "cpu":
+            return self.cpu(*args, **kwargs)
+        else:
+            return self.cuda(device, *args, **kwargs)
+
     def __repr__(self):
         fields = ["num_node=%d" % self.num_node, "num_edge=%d" % self.num_edge]
         if self.num_relation is not None:
@@ -1422,25 +1432,6 @@ class PackedGraph(Graph):
         return type(self)(self.edge_list.clone(), edge_weight=self.edge_weight.clone(),
                           num_nodes=self.num_nodes, num_edges=self.num_edges, num_relation=self.num_relation,
                           offsets=self._offsets, meta_dict=self.meta_dict, **utils.clone(self.data_dict))
-
-    def to(self, device):
-        """Return a copy of this packed graph on the given device."""
-        if isinstance(device, str):
-            if device == "cpu":
-                return self.cpu()
-            elif device == "cuda":
-                return self.cuda()
-            else:
-                raise NotImplementedError(f"{self.__class__.__name__}.to() is not implemented for string: {device}")
-        elif isinstance(device, torch.device):
-            if device.type == "cpu":
-                return self.cpu()
-            elif device.type == "cuda":
-                return self.cuda()
-            else:
-                raise NotImplementedError
-        else:
-            raise TypeError
 
     def cuda(self, *args, **kwargs):
         """

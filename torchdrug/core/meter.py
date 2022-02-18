@@ -5,6 +5,7 @@ from collections import defaultdict
 import numpy as np
 import torch
 
+from torchdrug import core
 from torchdrug.utils import pretty
 
 logger = logging.getLogger(__name__)
@@ -17,8 +18,9 @@ class Meter(object):
     Parameters:
         log_interval (int, optional): log every n updates
         silent (int, optional): surpress all outputs or not
+        logger (core.LoggerBase, optional): log handler
     """
-    def __init__(self, log_interval=100, silent=False):
+    def __init__(self, log_interval=100, silent=False, logger=None):
         self.records = defaultdict(list)
         self.log_interval = log_interval
         self.epoch2batch = [0]
@@ -26,36 +28,47 @@ class Meter(object):
         self.epoch_id = 0
         self.batch_id = 0
         self.silent = silent
+        self.logger = logger
+
+    def log(self, record, category="train/batch"):
+        """
+        Log a record.
+
+        Parameters:
+            record (dict): dict of any metric
+            category (str, optional): log category.
+                Available types are ``train/batch``, ``train/epoch``, ``valid/epoch`` and ``test/epoch``.
+        """
+        if category.endswith("batch"):
+            step_id = self.batch_id
+        elif category.endswith("epoch"):
+            step_id = self.epoch_id
+        self.logger.log(record, step_id=step_id, category=category)
+
+    def log_config(self, config):
+        """
+        Log a hyperparameter config.
+
+        Parameters:
+            config (dict): hyperparameter config
+        """
+        self.logger.log_config(config)
 
     def update(self, record):
         """
-        Update with a meter record.
+        Update the meter with a record.
 
         Parameters:
-            record (dict): any tensor metric
+            record (dict): dict of any metric
         """
         if self.batch_id % self.log_interval == 0:
-            self.log(record)
+            self.log(record, category="train/batch")
         self.batch_id += 1
 
         for k, v in record.items():
             if isinstance(v, torch.Tensor):
                 v = v.item()
             self.records[k].append(v)
-
-    def log(self, record):
-        """
-        Log a meter record.
-
-        Parameters:
-            record (dict): any float metric
-        """
-        if self.silent:
-            return
-
-        logger.warning(pretty.separator)
-        for k in sorted(record.keys()):
-            logger.warning("%s: %g" % (k, record[k]))
 
     def step(self):
         """
@@ -77,6 +90,7 @@ class Meter(object):
 
         logger.warning("duration: %s" % pretty.time(duration))
         logger.warning("speed: %.2f batch / sec" % speed)
+
         eta = (self.time[-1] - self.time[self.start_epoch]) \
               / (self.epoch_id - self.start_epoch) * (self.end_epoch - self.epoch_id)
         logger.warning("ETA: %s" % pretty.time(eta))
@@ -84,9 +98,10 @@ class Meter(object):
             logger.warning("max GPU memory: %.1f MiB" % (torch.cuda.max_memory_allocated() / 1e6))
             torch.cuda.reset_peak_memory_stats()
 
-        logger.warning(pretty.line)
-        for k in sorted(self.records.keys()):
-            logger.warning("average %s: %g" % (k, np.mean(self.records[k][index])))
+        record = {}
+        for k, v in self.records.items():
+            record[k] = np.mean(v[index])
+        self.log(record, category="train/epoch")
 
     def __call__(self, num_epoch):
         self.start_epoch = self.epoch_id

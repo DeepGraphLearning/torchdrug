@@ -1,5 +1,6 @@
+import os
+import sys
 import logging
-import os.path
 from itertools import islice
 
 import torch
@@ -9,11 +10,11 @@ from torch.utils import data as torch_data
 
 from torchdrug import data, core, utils
 from torchdrug.core import Registry as R
-from torchdrug.utils import comm
+from torchdrug.utils import comm, pretty
 
 
+module = sys.modules[__name__]
 logger = logging.getLogger(__name__)
-separator = ">" * 20
 
 
 @R.register("core.Engine")
@@ -52,18 +53,18 @@ class Engine(core.Configurable):
         gradient_interval (int, optional): perform a gradient update every n batches.
             This creates an equivalent batch size of ``batch_size * gradient_interval`` for optimization.
         num_worker (int, optional): number of CPU workers per GPU
+        logger (str or core.LoggerBase, optional): logger type. Avaiable types are ``console`` and ``wandb``.
         log_interval (int, optional): log every n gradient updates
     """
 
     def __init__(self, task, train_set, valid_set, test_set, optimizer, scheduler=None, gpus=None, batch_size=1,
-                 gradient_interval=1, num_worker=0, log_interval=100):
+                 gradient_interval=1, num_worker=0, logger="console", log_interval=100):
         self.rank = comm.get_rank()
         self.world_size = comm.get_world_size()
         self.gpus = gpus
         self.batch_size = batch_size
         self.gradient_interval = gradient_interval
         self.num_worker = num_worker
-        self.meter = core.Meter(log_interval=log_interval, silent=self.rank > 0)
 
         if gpus is None:
             self.device = torch.device("cpu")
@@ -77,13 +78,13 @@ class Engine(core.Configurable):
 
         if self.world_size > 1 and not dist.is_initialized():
             if self.rank == 0:
-                logger.info("Initializing distributed process group")
+                module.logger.info("Initializing distributed process group")
             backend = "gloo" if gpus is None else "nccl"
             comm.init_process_group(backend, init_method="env://")
 
         if hasattr(task, "preprocess"):
             if self.rank == 0:
-                logger.warning("Preprocess training set")
+                module.logger.warning("Preprocess training set")
             # TODO: more elegant implementation
             # handle dynamic parameters in optimizer
             old_params = list(task.parameters())
@@ -104,6 +105,14 @@ class Engine(core.Configurable):
         self.test_set = test_set
         self.optimizer = optimizer
         self.scheduler = scheduler
+
+        if isinstance(logger, str):
+            if logger == "console":
+                logger = core.ConsoleLogger()
+            elif logger == "wandb":
+                logger = core.WandbLogger(project=task.__class__.__name__)
+        self.meter = core.Meter(log_interval=log_interval, silent=self.rank > 0, logger=logger)
+        self.meter.log_config(self.config_dict())
 
     def train(self, num_epoch=1, batch_per_epoch=None):
         """
@@ -171,11 +180,13 @@ class Engine(core.Configurable):
 
         Parameters:
             split (str): split to evaluate. Can be ``train``, ``valid`` or ``test``.
+            log (bool, optional): log metrics or not
 
         Returns:
             dict: metrics
         """
         if comm.get_rank() == 0:
+            logger.warning(pretty.separator)
             logger.warning("Evaluate on %s" % split)
         test_set = getattr(self, "%s_set" % split)
         sampler = torch_data.DistributedSampler(test_set, self.world_size, self.rank)
@@ -200,7 +211,7 @@ class Engine(core.Configurable):
             target = comm.cat(target)
         metric = model.evaluate(pred, target)
         if log:
-            self.meter.log(metric)
+            self.meter.log(metric, category="%s/epoch" % split)
 
         return metric
 

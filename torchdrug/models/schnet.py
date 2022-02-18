@@ -1,12 +1,10 @@
 from collections.abc import Sequence
 
 import torch
-from class_resolver import Hint
 from torch import nn
 
 from torchdrug import core, layers
 from torchdrug.core import Registry as R
-from torchdrug.layers import Readout, readout_resolver
 
 
 @R.register("models.SchNet")
@@ -31,7 +29,7 @@ class SchNet(nn.Module, core.Configurable):
     """
 
     def __init__(self, input_dim, hidden_dims, edge_input_dim=None, cutoff=5, num_gaussian=100, short_cut=True,
-                 batch_norm=False, activation="shifted_softplus", concat_hidden=False, readout: Hint[Readout] = "sum"):
+                 batch_norm=False, activation="shifted_softplus", concat_hidden=False, readout="sum"):
         super(SchNet, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -47,7 +45,14 @@ class SchNet(nn.Module, core.Configurable):
             self.layers.append(layers.ContinuousFilterConv(self.dims[i], self.dims[i + 1], edge_input_dim, None, cutoff,
                                                            num_gaussian, batch_norm, activation))
 
-        self.readout = readout_resolver.make(readout)
+        if readout == "sum":
+            self.readout = layers.SumReadout()
+        elif readout == "mean":
+            self.readout = layers.MeanReadout()
+        elif readout == "max":
+            self.readout = layers.MaxReadout()
+        else:
+            raise ValueError("Unknown readout `%s`" % readout)
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """

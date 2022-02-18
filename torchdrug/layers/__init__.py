@@ -3,7 +3,7 @@ from .common import MultiLayerPerceptron, GaussianSmearing, MutualInformation, P
 from .conv import MessagePassingBase, GraphConv, GraphAttentionConv, RelationalGraphConv, GraphIsomorphismConv, \
     NeuralFingerprintConv, ContinuousFilterConv, MessagePassing, ChebyshevConv
 from .pool import DiffPool, MinCutPool
-from .readout import MeanReadout, SumReadout, MaxReadout, Softmax, Set2Set, Sort, readout_resolver, Readout
+from .readout import MeanReadout, SumReadout, MaxReadout, Softmax, Set2Set, Sort
 from .flow import ConditionalFlow
 from .sampler import NodeSampler, EdgeSampler
 from . import distribution, functional
@@ -23,7 +23,7 @@ __all__ = [
     "MessagePassingBase", "GraphConv", "GraphAttentionConv", "RelationalGraphConv", "GraphIsomorphismConv",
     "NeuralFingerprintConv", "ContinuousFilterConv", "MessagePassing", "ChebyshevConv",
     "DiffPool", "MinCutPool",
-    "MeanReadout", "SumReadout", "MaxReadout", "Softmax", "Set2Set", "Sort", "readout_resolver", "Readout",
+    "MeanReadout", "SumReadout", "MaxReadout", "Softmax", "Set2Set", "Sort",
     "ConditionalFlow",
     "NodeSampler", "EdgeSampler",
     "distribution", "functional",

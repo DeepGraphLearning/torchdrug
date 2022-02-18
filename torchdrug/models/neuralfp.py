@@ -1,13 +1,11 @@
 from collections.abc import Sequence
 
 import torch
-from class_resolver import Hint
 from torch import nn
 from torch.nn import functional as F
 
 from torchdrug import core, layers
 from torchdrug.core import Registry as R
-from torchdrug.layers import Readout, readout_resolver
 
 
 @R.register("models.NeuralFP")
@@ -31,7 +29,7 @@ class NeuralFingerprint(nn.Module, core.Configurable):
     """
 
     def __init__(self, input_dim, output_dim, hidden_dims, edge_input_dim=None, short_cut=False, batch_norm=False,
-                 activation="relu", concat_hidden=False, readout: Hint[Readout] = "sum"):
+                 activation="relu", concat_hidden=False, readout="sum"):
         super(NeuralFingerprint, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -49,7 +47,14 @@ class NeuralFingerprint(nn.Module, core.Configurable):
                                                             batch_norm, activation))
             self.linears.append(nn.Linear(self.dims[i + 1], output_dim))
 
-        self.readout = readout_resolver.make(readout)
+        if readout == "sum":
+            self.readout = layers.SumReadout()
+        elif readout == "mean":
+            self.readout = layers.MeanReadout()
+        elif readout == "max":
+            self.readout = layers.MaxReadout()
+        else:
+            raise ValueError("Unknown readout `%s`" % readout)
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """

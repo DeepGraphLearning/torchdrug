@@ -1,12 +1,10 @@
 from collections.abc import Sequence
 
 import torch
-from class_resolver import Hint
 from torch import nn
 
 from torchdrug import core, layers
 from torchdrug.core import Registry as R
-from torchdrug.layers import Readout, readout_resolver
 
 
 @R.register("models.ChebNet")
@@ -31,7 +29,7 @@ class ChebyshevConvolutionalNetwork(nn.Module, core.Configurable):
     """
 
     def __init__(self, input_dim, hidden_dims, edge_input_dim=None, k=1, short_cut=False, batch_norm=False,
-                 activation="relu", concat_hidden=False, readout: Hint[Readout] = "sum"):
+                 activation="relu", concat_hidden=False, readout="sum"):
         super(ChebyshevConvolutionalNetwork, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -47,7 +45,14 @@ class ChebyshevConvolutionalNetwork(nn.Module, core.Configurable):
             self.layers.append(layers.ChebyshevConv(self.dims[i], self.dims[i + 1], edge_input_dim, k,
                                                     batch_norm, activation))
 
-        self.readout = readout_resolver.make(readout)
+        if readout == "sum":
+            self.readout = layers.SumReadout()
+        elif readout == "mean":
+            self.readout = layers.MeanReadout()
+        elif readout == "max":
+            self.readout = layers.MaxReadout()
+        else:
+            raise ValueError("Unknown readout `%s`" % readout)
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """

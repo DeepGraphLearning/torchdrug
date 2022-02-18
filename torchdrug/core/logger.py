@@ -13,17 +13,31 @@ class LoggerBase(object):
     """
 
     def log(self, record, step_id, category="train/batch"):
+        """
+        Log a record.
+
+        Parameters:
+            record (dict): dict of any metric
+            step_id (int): index of this log step
+            category (str, optional): log category.
+                Available types are ``train/batch``, ``train/epoch``, ``valid/epoch`` and ``test/epoch``.
+        """
         raise NotImplementedError
 
-    def log_config(self, config_dict):
+    def log_config(self, config):
+        """
+        Log a hyperparameter config.
+
+        Parameters:
+            config (dict): hyperparameter config
+        """
         raise NotImplementedError
 
 
 @R.register("core.ConsoleLogger")
 class ConsoleLogger(LoggerBase):
     """
-    Implementation of the original logger in TorchDrug conforming to the new logging architecture.
-    It inherits from the BaseLogger class and implements the log and save_hyperparams methods.
+    Logger for console output.
     """
 
     def __init__(self):
@@ -41,20 +55,19 @@ class ConsoleLogger(LoggerBase):
             for k in sorted(record.keys()):
                 self.logger.warning("%s: %g" % (k, record[k]))
 
-    def log_config(self, config_dict):
-        self.logger.warning(pprint.pformat(config_dict))
+    def log_config(self, config):
+        self.logger.warning(pprint.pformat(config))
 
 
 @R.register("core.WandbLogger")
 class WandbLogger(ConsoleLogger):
     """
-    Implementation of the W&B logger in TorchDrug.
-    It inherits from the BaseLogger class and implements the log and save_hyperparams methods.
+    Logger for wandb and console outputs.
 
     Parameters:
-        project (str, optional): Name of the wandb project
-        name (str, optional): Name of the wandb run
-        dir (str, optional): Directory to save the wandb run
+        project (str, optional): name of the project in wandb
+        name (str, optional): name for this run in wandb
+        dir (str, optional): path to save wandb outputs. By default, outputs are stored in ``./wandb``.
     """
 
     def __init__(self, project=None, name=None, dir=None, **kwargs):

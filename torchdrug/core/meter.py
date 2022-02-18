@@ -1,5 +1,5 @@
-import logging
 import time
+import logging
 from collections import defaultdict
 
 import numpy as np
@@ -35,8 +35,9 @@ class Meter(object):
         Log a record.
 
         Parameters:
-            record (dict): any tensor metric
-            category (str, optional): type of record (train or valid or test)
+            record (dict): dict of any metric
+            category (str, optional): log category.
+                Available types are ``train/batch``, ``train/epoch``, ``valid/epoch`` and ``test/epoch``.
         """
         if category.endswith("batch"):
             step_id = self.batch_id
@@ -44,15 +45,21 @@ class Meter(object):
             step_id = self.epoch_id
         self.logger.log(record, step_id=step_id, category=category)
 
-    def log_config(self, config_dict):
-        self.logger.log_config(config_dict)
+    def log_config(self, config):
+        """
+        Log a hyperparameter config.
+
+        Parameters:
+            config (dict): hyperparameter config
+        """
+        self.logger.log_config(config)
 
     def update(self, record):
         """
-        Update with a meter record.
+        Update the meter with a record.
 
         Parameters:
-            record (dict): any tensor metric
+            record (dict): dict of any metric
         """
         if self.batch_id % self.log_interval == 0:
             self.log(record, category="train/batch")

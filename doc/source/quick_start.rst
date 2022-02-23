@@ -177,6 +177,32 @@ the script using ``python -m torch.distributed.launch --nproc_per_node=4``.
     solver = core.Engine(task, train_set, valid_set, test_set, optimizer,
                          batch_size=256, gpus=[0, 1, 2, 3])
 
+To use the `W&B`_ logger to log training metrics, install the wandb client
+and login to your wandb account using the following commands.
+
+.. code:: bash
+
+    pip install wandb
+    wandb.login()
+
+To use wandb for logging metrics along with the console logger
+
+.. code:: python
+
+    solver = core.Engine(task, train_set, valid_set, test_set, optimizer,
+                         batch_size=1024, gpus=[0], logger='wandb')
+
+For further customization of the wandb run
+
+.. code:: python
+    
+    from torchdrug.core import WandbLogger
+    wandb_logger = WandbLogger(project="<project_name>", name="<run_name>")
+
+    solver = core.Engine(task, train_set, valid_set, test_set, optimizer,
+                         batch_size=1024, gpus=[0], logger=wandb_logger)
+
+
 Test the Model
 ^^^^^^^^^^^^^^
 

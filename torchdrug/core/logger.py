@@ -63,12 +63,13 @@ class ConsoleLogger(LoggerBase):
 @R.register("core.WandbLogger")
 class WandbLogger(ConsoleLogger):
     """
-    Logger for wandb and console outputs.
+    Log your metrics using Weights and Biases https://docs.wandb.ai/guides/track
 
-    Parameters:
-        project (str, optional): name of the project in wandb
-        name (str, optional): name for this run in wandb
-        dir (str, optional): path to save wandb outputs. By default, outputs are stored in ``./wandb``.
+    Install with pip
+        `pip install wandb`
+    
+    Pass the logger argument to the engine:
+        `engine = Engine(model, train_loader, valid_loader, logger='wandb')`
     """
 
     def __init__(self, project=None, name=None, dir=None, entity=None, config=None, **kwargs):
@@ -81,7 +82,7 @@ class WandbLogger(ConsoleLogger):
         if wandb.run is not None:
             warnings.warn(
                  "There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse"
-                " this run. If this is not desired, call `wandb.finish()` before instantiating `WandbLogger`."
+                " this run. If this is not desired, call `wandb.finish()` or `WandbLogger.finish()` before instantiating `WandbLogger`."
             )
             self.run = wandb.run
         else:
@@ -105,3 +106,6 @@ class WandbLogger(ConsoleLogger):
     def log_config(self, confg_dict):
         super(WandbLogger, self).log_config(confg_dict)
         self.run.config.update(confg_dict)
+    
+    def finish(self):
+        self.run.finish()

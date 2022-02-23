@@ -64,3 +64,5 @@
 .. _RotatE: https://arxiv.org/pdf/1902.10197.pdf
 .. _KBGAT: https://www.aclweb.org/anthology/P19-1466.pdf
 .. _NeuralLP: https://papers.nips.cc/paper/2017/file/0e55666a4ad822e0e34299df3591d979-Paper.pdf
+
+.. _W&B: https://docs.wandb.ai/guides/track

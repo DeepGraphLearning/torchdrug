@@ -35,10 +35,23 @@ class LoggerBase(object):
         raise NotImplementedError
 
 
-@R.register("core.ConsoleLogger")
-class ConsoleLogger(LoggerBase):
+@R.register("core.LoggingLogger")
+class LoggingLogger(LoggerBase):
     """
-    Logger for console output.
+    Log outputs with the builtin logging module of Python.
+
+    By default, the logs will be printed to the console. To additionally log outputs to a file,
+    add the following lines in the beginning of your code.
+
+    .. code-block: python
+
+        import logging
+
+        format = logging.Formatter("%(asctime)-10s %(message)s", "%H:%M:%S")
+        handler = logging.FileHandler("log.txt")
+        handler.setFormatter(format)
+        logger = logging.getLogger("")
+        logger.addHandler(handler)
     """
 
     def __init__(self):
@@ -61,18 +74,28 @@ class ConsoleLogger(LoggerBase):
 
 
 @R.register("core.WandbLogger")
-class WandbLogger(ConsoleLogger):
+class WandbLogger(LoggingLogger):
     """
-    Log your metrics using Weights and Biases https://docs.wandb.ai/guides/track
+    Log outputs with `Weights and Biases`_ and track the experiment progress.
 
-    Install with pip
-        `pip install wandb`
-    
-    Pass the logger argument to the engine:
-        `engine = Engine(model, train_loader, valid_loader, logger='wandb')`
+    Note this class also output logs with the builtin logging module.
+
+    See `wandb.init`_ for more details.
+
+    .. _Weights and Biases:
+        https://docs.wandb.ai
+
+    .. _wandb.init:
+        https://docs.wandb.ai/ref/python/init
+
+    Parameters:
+        project (str, optional): name of the project
+        name (str, optional): name of this run
+        dir (str, optional): path to store meta data. Default is `./wandb`.
+        kwargs: keyword arguments for `wandb.init`_
     """
 
-    def __init__(self, project=None, name=None, dir=None, entity=None, config=None, **kwargs):
+    def __init__(self, project=None, name=None, dir=None, **kwargs):
         super(WandbLogger, self).__init__()
         try:
             import wandb
@@ -86,15 +109,11 @@ class WandbLogger(ConsoleLogger):
             )
             self.run = wandb.run
         else:
-            self.run = wandb.init(project=project, name=name, dir=dir, entity=entity, reinit=True, **kwargs)
+            self.run = wandb.init(project=project, name=name, dir=dir, **kwargs)
 
-        if getattr(self.run, "define_metric", None):
-            self.run.define_metric("train/batch/*", step_metric="batch", summary="none")
-            for split in ["train", "valid", "test"]:
-                self.run.define_metric("%s/epoch/*" % split, step_metric="epoch")
-        
-        if config:
-            self.run.config.update(config)
+        self.run.define_metric("train/batch/*", step_metric="batch", summary="none")
+        for split in ["train", "valid", "test"]:
+            self.run.define_metric("%s/epoch/*" % split, step_metric="epoch")
 
     def log(self, record, step_id, category="train/batch"):
         super(WandbLogger, self).log(record, step_id, category)
@@ -106,6 +125,3 @@ class WandbLogger(ConsoleLogger):
     def log_config(self, confg_dict):
         super(WandbLogger, self).log_config(confg_dict)
         self.run.config.update(confg_dict)
-    
-    def finish(self):
-        self.run.finish()

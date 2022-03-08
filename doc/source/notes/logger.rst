@@ -1,13 +1,11 @@
 Custom Loggers
-==================
+==============
 
 .. include :: ../bibliography.rst
 
-TorchDrug also supports using 3rd party and custom loggers to 
-log metrics during training.
+TorchDrug also supports using 3rd party and custom loggers to log metrics during training.
 
-All the loggers are derived from the 
-the :class:`core.LoggerBase <torchdrug.core.LoggerBase>` class.
+All the loggers are derived from the the :class:`core.LoggerBase <torchdrug.core.LoggerBase>` class.
 
 Define your own logger
 ----------------------

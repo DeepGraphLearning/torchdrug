@@ -53,12 +53,13 @@ class Engine(core.Configurable):
         gradient_interval (int, optional): perform a gradient update every n batches.
             This creates an equivalent batch size of ``batch_size * gradient_interval`` for optimization.
         num_worker (int, optional): number of CPU workers per GPU
-        logger (str or core.LoggerBase, optional): logger type. Avaiable types are ``console`` and ``wandb``.
+        logger (str or core.LoggerBase, optional): logger type or logger instance.
+            Available types are ``logging`` and ``wandb``.
         log_interval (int, optional): log every n gradient updates
     """
 
     def __init__(self, task, train_set, valid_set, test_set, optimizer, scheduler=None, gpus=None, batch_size=1,
-                 gradient_interval=1, num_worker=0, logger="console", log_interval=100):
+                 gradient_interval=1, num_worker=0, logger="logging", log_interval=100):
         self.rank = comm.get_rank()
         self.world_size = comm.get_world_size()
         self.gpus = gpus
@@ -107,10 +108,12 @@ class Engine(core.Configurable):
         self.scheduler = scheduler
 
         if isinstance(logger, str):
-            if logger == "console":
-                logger = core.ConsoleLogger()
+            if logger == "logging":
+                logger = core.LoggingLogger()
             elif logger == "wandb":
                 logger = core.WandbLogger(project=task.__class__.__name__)
+            else:
+                raise ValueError("Unknown logger `%s`" % logger)
         self.meter = core.Meter(log_interval=log_interval, silent=self.rank > 0, logger=logger)
         self.meter.log_config(self.config_dict())
 

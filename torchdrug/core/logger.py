@@ -1,5 +1,6 @@
 import pprint
 import logging
+import warnings
 
 from torchdrug.core import Registry as R
 from torchdrug.utils import pretty
@@ -34,10 +35,23 @@ class LoggerBase(object):
         raise NotImplementedError
 
 
-@R.register("core.ConsoleLogger")
-class ConsoleLogger(LoggerBase):
+@R.register("core.LoggingLogger")
+class LoggingLogger(LoggerBase):
     """
-    Logger for console output.
+    Log outputs with the builtin logging module of Python.
+
+    By default, the logs will be printed to the console. To additionally log outputs to a file,
+    add the following lines in the beginning of your code.
+
+    .. code-block: python
+
+        import logging
+
+        format = logging.Formatter("%(asctime)-10s %(message)s", "%H:%M:%S")
+        handler = logging.FileHandler("log.txt")
+        handler.setFormatter(format)
+        logger = logging.getLogger("")
+        logger.addHandler(handler)
     """
 
     def __init__(self):
@@ -60,14 +74,25 @@ class ConsoleLogger(LoggerBase):
 
 
 @R.register("core.WandbLogger")
-class WandbLogger(ConsoleLogger):
+class WandbLogger(LoggingLogger):
     """
-    Logger for wandb and console outputs.
+    Log outputs with `Weights and Biases`_ and track the experiment progress.
+
+    Note this class also output logs with the builtin logging module.
+
+    See `wandb.init`_ for more details.
+
+    .. _Weights and Biases:
+        https://docs.wandb.ai
+
+    .. _wandb.init:
+        https://docs.wandb.ai/ref/python/init
 
     Parameters:
-        project (str, optional): name of the project in wandb
-        name (str, optional): name for this run in wandb
-        dir (str, optional): path to save wandb outputs. By default, outputs are stored in ``./wandb``.
+        project (str, optional): name of the project
+        name (str, optional): name of this run
+        dir (str, optional): path to store meta data. Default is `./wandb`.
+        kwargs: keyword arguments for `wandb.init`_
     """
 
     def __init__(self, project=None, name=None, dir=None, **kwargs):
@@ -77,7 +102,14 @@ class WandbLogger(ConsoleLogger):
         except ModuleNotFoundError:
             raise ModuleNotFoundError("Wandb is not found. Please install it with `pip install wandb`")
 
-        self.run = wandb.init(project=project, name=name, dir=dir, reinit=True, **kwargs)
+        if wandb.run is not None:
+            warnings.warn(
+                 "There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse"
+                " this run. If this is not desired, call `wandb.finish()` or `WandbLogger.finish()` before instantiating `WandbLogger`."
+            )
+            self.run = wandb.run
+        else:
+            self.run = wandb.init(project=project, name=name, dir=dir, **kwargs)
 
         self.run.define_metric("train/batch/*", step_metric="batch", summary="none")
         for split in ["train", "valid", "test"]:

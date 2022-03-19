@@ -78,7 +78,8 @@ Quick Start
 
 TorchDrug is designed for humans and focused on graph structured data.
 It enables easy implementation of graph operations in machine learning models.
-All the operations in TorchDrug are backed by [PyTorch] framework, and support GPU acceleration and auto differentiation.
+All the operations in TorchDrug are backed by [PyTorch] framework, and support GPU
+acceleration and auto differentiation.
 
 ```python
 from torchdrug import data
@@ -90,7 +91,8 @@ graph = graph.cuda()
 subgraph = graph.subgraph([2, 3, 4])
 ```
 
-Molecules are also supported in TorchDrug. You can get the desired molecule properties without any domain knowledge.
+Molecules are also supported in TorchDrug. You can get the desired molecule
+properties without any domain knowledge.
 
 ```python
 mol = data.Molecule.from_smiles("CCOC(=O)N", node_feature="default", edge_feature="default")
@@ -99,7 +101,8 @@ print(mol.atom_type)
 print(mol.to_scaffold())
 ```
 
-You may also register custom node, edge or graph attributes. They will be automatically processed during indexing operations.
+You may also register custom node, edge or graph attributes. They will be
+automatically processed during indexing operations.
 
 ```python
 with mol.edge():
@@ -108,8 +111,9 @@ sub_mol = mol.subgraph(mol.atom_type != td.NITROGEN)
 print(sub_mol.is_CC_bond)
 ```
 
-TorchDrug provides a wide range of common datasets and building blocks for drug discovery.
-With minimal code, you can apply standard models to solve your own problem.
+TorchDrug provides a wide range of common datasets and building blocks for drug
+discovery. With minimal code, you can apply standard models to solve your own
+problem.
 
 ```python
 import torch
@@ -143,6 +147,13 @@ solver = core.Engine(task, train_set, valid_set, test_set, optimizer, gpus=[0, 1
 # Distributed GPUs
 solver = core.Engine(task, train_set, valid_set, test_set, optimizer, gpus=[0, 1, 2, 3, 0, 1, 2, 3])
 ```
+
+Experiments can be easily tracked and managed through [Weights & Biases platform].
+```python
+solver = core.Engine(task, train_set, valid_set, test_set, optimizer, logger="wandb")
+```
+
+[Weights & Biases platform]: https://wandb.ai/
 
 Contributing
 ------------

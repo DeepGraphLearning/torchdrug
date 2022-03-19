@@ -7,4 +7,3 @@ Notes
     variadic
     layer
     model
-    logger

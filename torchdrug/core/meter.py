@@ -39,6 +39,9 @@ class Meter(object):
             category (str, optional): log category.
                 Available types are ``train/batch``, ``train/epoch``, ``valid/epoch`` and ``test/epoch``.
         """
+        if self.silent:
+            return
+            
         if category.endswith("batch"):
             step_id = self.batch_id
         elif category.endswith("epoch"):

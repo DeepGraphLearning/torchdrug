@@ -61,7 +61,10 @@ class PatchedModule(nn.Module):
             tensor = next(self.buffers())
         return tensor.device
 
-    def register_buffer(self, name, tensor):
+    def register_buffer(self, name, tensor, persistent=True):
+        if persistent is False and isinstance(self, torch.jit.ScriptModule):
+            raise RuntimeError("ScriptModule does not support non-persistent buffers")
+
         if '_buffers' not in self.__dict__:
             raise AttributeError(
                 "cannot assign buffer before Module.__init__() call")
@@ -80,6 +83,10 @@ class PatchedModule(nn.Module):
                             .format(torch.typename(tensor), name))
         else:
             self._buffers[name] = tensor
+            if persistent:
+                self._non_persistent_buffers_set.discard(name)
+            else:
+                self._non_persistent_buffers_set.add(name)
 
 
 class PatchedDistributedDataParallel(nn.parallel.DistributedDataParallel):

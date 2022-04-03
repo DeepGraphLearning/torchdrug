@@ -1,6 +1,6 @@
 import os
-import sys
 import inspect
+import importlib
 
 import torch
 from torch import nn
@@ -12,8 +12,6 @@ from torch import distributed as dist
 
 from torchdrug import core, data
 from torchdrug.core import Registry as R
-
-module = sys.modules[__name__]
 
 
 class PatchedModule(nn.Module):
@@ -121,36 +119,34 @@ def _get_build_directory(name, verbose):
     return build_directory
 
 
-nn._Module = nn.Module
-nn.Module = PatchedModule
+def patch(module, name, cls):
+    backup = getattr(module, name)
+    setattr(module, "_%s" % name, backup)
+    setattr(module, name, cls)
 
-nn.parallel._DistributedDataParallel = nn.parallel.DistributedDataParallel
-nn.parallel.DistributedDataParallel = PatchedDistributedDataParallel
 
-cpp_extension.__get_build_directory = cpp_extension._get_build_directory
-cpp_extension._get_build_directory = _get_build_directory
-
+patch(nn, "Module", PatchedModule)
+patch(nn.parallel, "DistributedDataParallel", PatchedDistributedDataParallel)
+patch(cpp_extension, "_get_build_directory", _get_build_directory)
 
 Optimizer = optim.Optimizer
 for name, cls in inspect.getmembers(optim):
     if inspect.isclass(cls) and issubclass(cls, Optimizer):
-        setattr(optim, "_%s" % name, cls)
         cls = core.make_configurable(cls, ignore_args=("params",))
         cls = R.register("optim.%s" % name)(cls)
-        setattr(optim, name, cls)
+        patch(optim, name, cls)
 
 Scheduler = scheduler._LRScheduler
 for name, cls in inspect.getmembers(scheduler):
     if inspect.isclass(cls) and issubclass(cls, Scheduler):
-        setattr(scheduler, "_%s" % name, cls)
         cls = core.make_configurable(cls, ignore_args=("optimizer",))
         cls = R.register("scheduler.%s" % name)(cls)
-        setattr(optim, name, cls)
+        patch(scheduler, name, cls)
 
 Dataset = dataset.Dataset
 for name, cls in inspect.getmembers(dataset):
     if inspect.isclass(cls) and issubclass(cls, Dataset):
-        setattr(dataset, "_%s" % name, cls)
         cls = core.make_configurable(cls)
         cls = R.register("dataset.%s" % name)(cls)
-        setattr(dataset, name, cls)
+        patch(dataset, name, cls)
+importlib.reload(torch.utils.data)

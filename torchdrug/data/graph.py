@@ -1219,7 +1219,7 @@ class PackedGraph(Graph):
 
         index = self._standarize_index(index[0], self.batch_size)
         count = index.bincount(minlength=self.batch_size)
-        if len(count) > 0 and max(count) > 1:
+        if self.batch_size > 0 and count.max() > 1:
             graph = self.repeat_interleave(count)
             index_order = index.argsort()
             order = torch.zeros_like(index)

@@ -35,7 +35,7 @@ class GraphAttentionNetwork(nn.Module, core.Configurable):
         if not isinstance(hidden_dims, Sequence):
             hidden_dims = [hidden_dims]
         self.input_dim = input_dim
-        self.output_dim = hidden_dims[-1] * (len(hidden_dims) if concat_hidden else 1)
+        self.output_dim = sum(hidden_dims) if concat_hidden else hidden_dims[-1]
         self.dims = [input_dim] + list(hidden_dims)
         self.short_cut = short_cut
         self.concat_hidden = concat_hidden

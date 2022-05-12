@@ -169,6 +169,7 @@ class ContextPrediction(tasks.Task, core.Configurable):
         r2 (int, optional): outer radius for context graphs
         readout (nn.Module, optional): readout function over context anchor nodes
         num_negative (int, optional): number of negative samples per positive sample
+        readout: readout function. Available functions are ``sum``, ``mean``, and ``max``.
     """
 
     def __init__(self, model, context_model=None, k=5, r1=4, r2=7, readout="mean", num_negative=1):
@@ -184,10 +185,13 @@ class ContextPrediction(tasks.Task, core.Configurable):
             self.context_model = copy.deepcopy(model)
         else:
             self.context_model = context_model
+
         if readout == "sum":
             self.readout = layers.SumReadout()
         elif readout == "mean":
             self.readout = layers.MeanReadout()
+        elif readout == "max":
+            self.readout = layers.MaxReadout()
         else:
             raise ValueError("Unknown readout `%s`" % readout)
 

@@ -26,12 +26,11 @@ class GraphIsomorphismNetwork(nn.Module, core.Configurable):
         batch_norm (bool, optional): apply batch normalization or not
         activation (str or function, optional): activation function
         concat_hidden (bool, optional): concat hidden representations from all layers as output
-        readout (str, optional): readout function. Available functions are ``sum`` and ``mean``.
+        readout: readout function. Available functions are ``sum``, ``mean``, and ``max``.
     """
 
     def __init__(self, input_dim=None, hidden_dims=None, edge_input_dim=None, num_mlp_layer=2, eps=0, learn_eps=False,
-                 short_cut=False, batch_norm=False, activation="relu", concat_hidden=False,
-                 readout="sum"):
+                 short_cut=False, batch_norm=False, activation="relu", concat_hidden=False, readout="sum"):
         super(GraphIsomorphismNetwork, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -52,6 +51,8 @@ class GraphIsomorphismNetwork(nn.Module, core.Configurable):
             self.readout = layers.SumReadout()
         elif readout == "mean":
             self.readout = layers.MeanReadout()
+        elif readout == "max":
+            self.readout = layers.MaxReadout()
         else:
             raise ValueError("Unknown readout `%s`" % readout)
 

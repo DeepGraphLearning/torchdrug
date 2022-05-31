@@ -36,6 +36,36 @@ class MoleculeTest(unittest.TestCase):
         mol = data.Molecule.from_smiles(self.smiles, graph_feature="ecfp")
         self.assertTrue((mol.graph_feature > 0).any(), "Incorrect ECFP feature")
 
+    def test_feature_with_kwargs(self):
+        from torchdrug.core import Registry as R
+        @R.register('features.atom.my_features')
+        def my_features(atom, i, j):
+            return [i, j]
+
+        @R.register('features.bond.my_features')
+        def my_features(bond, i, j):
+            return [i, j]
+
+        @R.register('features.molecule.my_features')
+        def my_features(mol, i, j):
+            return [i, j]
+
+        expected_node_features = torch.tensor([1,2]).repeat((6,1))
+        expected_edge_features = torch.tensor([1, 2]).repeat((12, 1))
+        expected_graph_features = torch.tensor([1, 2])
+
+        m = data.Molecule.from_smiles("C1=CC=CC=C1",
+                                      node_feature="my_features",
+                                      node_feature_kwargs=dict(i=1, j=2),
+                                      edge_feature="my_features",
+                                      edge_feature_kwargs=dict(i=1, j=2),
+                                      graph_feature="my_features",
+                                      graph_feature_kwargs=dict(i=1, j=2))
+
+        assert (m.node_feature == expected_node_features).all()
+        assert (m.edge_feature == expected_edge_features).all()
+        assert (m.graph_feature == expected_graph_features).all()
+
 
 if __name__ == "__main__":
     unittest.main()

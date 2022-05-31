@@ -11,6 +11,7 @@ from torchdrug import utils
 from torchdrug.data import constant, Graph, PackedGraph
 from torchdrug.core import Registry as R
 from torchdrug.data.rdkit import draw
+from typing import Optional
 
 plt.switch_backend("agg")
 
@@ -98,6 +99,14 @@ class Molecule(Graph):
             option = [option]
         return option
 
+    @classmethod
+    def _standarize_option_kwargs(cls, option_kwargs):
+        if option_kwargs is None:
+            option_kwargs = [{}]
+        elif isinstance(option_kwargs, dict):
+            option_kwargs = [option_kwargs]
+        return option_kwargs
+
     def _check_no_stereo(self):
         if (self.bond_stereo > 0).any():
             warnings.warn("Try to apply masks on molecules with stereo bonds. This may produce invalid molecules. "
@@ -110,8 +119,19 @@ class Molecule(Graph):
             return 0
 
     @classmethod
+    def _check_features_kwargs(cls, features, feature_kwargs):
+        if len(features) > 0 and len(features) != len(feature_kwargs):
+            raise ValueError("""
+            The number of features to extract does not match the number of provided feature_kwargs.
+            If you provide a list of features, provide a list of (empty) kwargs dicts.
+            """)
+
+    @classmethod
     def from_smiles(cls, smiles, node_feature="default", edge_feature="default", graph_feature=None,
-                    with_hydrogen=False, kekulize=False):
+                    with_hydrogen=False, kekulize=False,
+                    node_feature_kwargs: Optional[dict] = None,
+                    edge_feature_kwargs: Optional[dict] = None,
+                    graph_feature_kwargs: Optional[dict] = None):
         """
         Create a molecule from a SMILES string.
 
@@ -126,16 +146,24 @@ class Molecule(Graph):
                 Note this only affects the relation in ``edge_list``.
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
+            node_feature_kwargs (dict or list of dic, optional):  (list of) dict with kwargs for each `node_feature` extraction function
+            edge_feature_kwargs (dict or list of dict, optional): (list of) dict with kwargs for each `edge_feature` extraction function
+            graph_feature_kwargs (dict or list of dict, optional): (list of) dict with kwargs for each `graph_feature` extraction function
         """
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             raise ValueError("Invalid SMILES `%s`" % smiles)
 
-        return cls.from_molecule(mol, node_feature, edge_feature, graph_feature, with_hydrogen, kekulize)
+        return cls.from_molecule(mol, node_feature, edge_feature, graph_feature, with_hydrogen, kekulize,
+                                 node_feature_kwargs, edge_feature_kwargs, graph_feature_kwargs)
 
     @classmethod
     def from_molecule(cls, mol, node_feature="default", edge_feature="default", graph_feature=None,
-                      with_hydrogen=False, kekulize=False):
+                      with_hydrogen=False, kekulize=False,
+                      node_feature_kwargs: Optional[dict] = None,
+                      edge_feature_kwargs: Optional[dict] = None,
+                      graph_feature_kwargs: Optional[dict] = None
+                      ):
         """
         Create a molecule from a RDKit object.
 
@@ -150,6 +178,9 @@ class Molecule(Graph):
                 Note this only affects the relation in ``edge_list``.
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
+            node_feature_kwargs (dict or list of dic, optional):  (list of) dict with kwargs for each `node_feature` extraction function
+            edge_feature_kwargs (dict or list of dict, optional): (list of) dict with kwargs for each `edge_feature` extraction function
+            graph_feature_kwargs (dict or list of dict, optional): (list of) dict with kwargs for each `graph_feature` extraction function
         """
         if mol is None:
             mol = cls.empty_mol
@@ -162,6 +193,14 @@ class Molecule(Graph):
         node_feature = cls._standarize_option(node_feature)
         edge_feature = cls._standarize_option(edge_feature)
         graph_feature = cls._standarize_option(graph_feature)
+
+        node_feature_kwargs = cls._standarize_option_kwargs(node_feature_kwargs)
+        edge_feature_kwargs = cls._standarize_option_kwargs(edge_feature_kwargs)
+        graph_feature_kwargs = cls._standarize_option_kwargs(graph_feature_kwargs)
+
+        for feat, feat_kwargs in zip([node_feature, edge_feature, graph_feature],
+                                     [node_feature_kwargs, edge_feature_kwargs, graph_feature_kwargs]):
+            cls._check_features_kwargs(feat, feat_kwargs)
 
         atom_type = []
         formal_charge = []
@@ -179,9 +218,9 @@ class Molecule(Graph):
             radical_electrons.append(atom.GetNumRadicalElectrons())
             atom_map.append(atom.GetAtomMapNum())
             feature = []
-            for name in node_feature:
+            for name, kwargs in zip(node_feature, node_feature_kwargs):
                 func = R.get("features.atom.%s" % name)
-                feature += func(atom)
+                feature += func(atom, **kwargs)
             _node_feature.append(feature)
         atom_type = torch.tensor(atom_type)[:-1]
         atom_map = torch.tensor(atom_map)[:-1]
@@ -219,9 +258,9 @@ class Molecule(Graph):
             bond_stereo += [stereo, stereo]
             stereo_atoms += [_atoms, _atoms]
             feature = []
-            for name in edge_feature:
+            for name, kwargs in zip(edge_feature, edge_feature_kwargs):
                 func = R.get("features.bond.%s" % name)
-                feature += func(bond)
+                feature += func(bond, **kwargs)
             _edge_feature += [feature, feature]
         edge_list = edge_list[:-2]
         bond_type = torch.tensor(bond_type)[:-2]
@@ -233,9 +272,9 @@ class Molecule(Graph):
             _edge_feature = None
 
         _graph_feature = []
-        for name in graph_feature:
+        for name, kwargs in zip(graph_feature, graph_feature_kwargs):
             func = R.get("features.molecule.%s" % name)
-            _graph_feature += func(mol)
+            _graph_feature += func(mol, **kwargs)
         if len(graph_feature) > 0:
             _graph_feature = torch.tensor(_graph_feature)
         else:

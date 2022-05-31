@@ -47,7 +47,7 @@ def onehot(x, vocab, allow_unknown=False):
 
 # TODO: this one is too slow
 @R.register("features.atom.default")
-def atom_default(atom):
+def atom_default(atom, **kwargs):
     """Default atom feature.
 
     Features:
@@ -83,7 +83,7 @@ def atom_default(atom):
 
 
 @R.register("features.atom.center_identification")
-def atom_center_identification(atom):
+def atom_center_identification(atom, **kwargs):
     """Reaction center identification atom feature.
 
     Features:
@@ -107,7 +107,7 @@ def atom_center_identification(atom):
 
 
 @R.register("features.atom.synthon_completion")
-def atom_synthon_completion(atom):
+def atom_synthon_completion(atom, **kwargs):
     """Synthon completion atom feature.
 
     Features:
@@ -133,7 +133,7 @@ def atom_synthon_completion(atom):
 
 
 @R.register("features.atom.symbol")
-def atom_symbol(atom):
+def atom_symbol(atom, **kwargs):
     """Symbol atom feature.
 
     Features:
@@ -143,7 +143,7 @@ def atom_symbol(atom):
 
 
 @R.register("features.atom.explicit_property_prediction")
-def atom_explicit_property_prediction(atom):
+def atom_explicit_property_prediction(atom, **kwargs):
     """Explicit property prediction atom feature.
 
     Features:
@@ -165,7 +165,7 @@ def atom_explicit_property_prediction(atom):
 
 
 @R.register("features.atom.property_prediction")
-def atom_property_prediction(atom):
+def atom_property_prediction(atom, **kwargs):
     """Property prediction atom feature.
 
     Features:
@@ -190,7 +190,7 @@ def atom_property_prediction(atom):
 
 
 @R.register("features.atom.position")
-def atom_position(atom):
+def atom_position(atom, **kwargs):
     """
     Atom position.
     Return 3D position if available, otherwise 2D position is returned.
@@ -204,7 +204,7 @@ def atom_position(atom):
 
 
 @R.register("features.atom.pretrain")
-def atom_pretrain(atom):
+def atom_pretrain(atom, **kwargs):
     """Atom feature for pretraining.
 
     Features:
@@ -217,7 +217,7 @@ def atom_pretrain(atom):
 
 
 @R.register("features.bond.default")
-def bond_default(bond):
+def bond_default(bond, **kwargs):
     """Default bond feature.
 
     Features:
@@ -239,7 +239,7 @@ def bond_default(bond):
 
 
 @R.register("features.bond.length")
-def bond_length(bond):
+def bond_length(bond, **kwargs):
     """Bond length"""
     mol = bond.GetOwningMol()
     if mol.GetNumConformers() == 0:
@@ -251,7 +251,7 @@ def bond_length(bond):
 
 
 @R.register("features.bond.property_prediction")
-def bond_property_prediction(bond):
+def bond_property_prediction(bond, **kwargs):
     """Property prediction bond feature.
 
     Features:
@@ -266,7 +266,7 @@ def bond_property_prediction(bond):
 
 
 @R.register("features.bond.pretrain")
-def bond_pretrain(bond):
+def bond_pretrain(bond, **kwargs):
     """Bond feature for pretraining.
 
     Features:
@@ -290,9 +290,9 @@ def ExtendedConnectivityFingerprint(mol, radius=2, length=1024):
 
 
 @R.register("features.molecule.default")
-def molecule_default(mol):
+def molecule_default(mol, **kwargs):
     """Default molecule feature."""
-    return ExtendedConnectivityFingerprint(mol)
+    return ExtendedConnectivityFingerprint(mol, **kwargs)
 
 ECFP = ExtendedConnectivityFingerprint
 

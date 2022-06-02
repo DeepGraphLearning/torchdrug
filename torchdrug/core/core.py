@@ -52,7 +52,7 @@ class _MetaContainer(object):
         else:
             meta_dict = meta_dict.copy()
 
-        self._setattr("_meta_context", None)
+        self._setattr("_meta_contexts", set())
         self._setattr("meta_dict", meta_dict)
         for k, v in kwargs.items():
             self._setattr(k, v)
@@ -64,21 +64,23 @@ class _MetaContainer(object):
         """
         if type is not None and self._meta_types and type not in self._meta_types:
             raise ValueError("Expect context type in %s, but got `%s`" % (self._meta_types, type))
-        backup = self._meta_context
-        self._setattr("_meta_context", type)
+        self._meta_contexts.add(type)
         yield
-        self._setattr("_meta_context", backup)
+        self._meta_contexts.remove(type)
 
     def __setattr__(self, key, value):
         if hasattr(self, "meta_dict"):
-            type = self._meta_context
-            if type is None and self.enable_auto_context:
-                for _type in self._meta_types:
-                    if key.startswith(_type):
-                        type = _type
-                        break
-            if type:
-                self.meta_dict[key] = type
+            types = self._meta_contexts
+            if not types and self.enable_auto_context:
+                for type in self._meta_types:
+                    if key.startswith(type):
+                        types.append(type)
+                if len(types) > 1:
+                    raise ValueError("Auto context found multiple contexts for key `%s`. "
+                                     "If this is desired, set `enable_auto_context` to False "
+                                     "and manually specify the context. " % key)
+            if types:
+                self.meta_dict[key] = types.copy()
         self._setattr(key, value)
 
     def __delattr__(self, key):
@@ -111,12 +113,12 @@ class _MetaContainer(object):
 
         include = self._standarize_type(include)
         exclude = self._standarize_type(exclude)
-        types = include or set(self.meta_dict.values())
+        types = include or set().union(*self.meta_dict.values())
         types = types - exclude
         data_dict = {}
         meta_dict = {}
         for k, v in self.meta_dict.items():
-            if v in types:
+            if v.issubset(types):
                 data_dict[k] = getattr(self, k)
                 meta_dict[k] = v
         return data_dict, meta_dict
@@ -167,7 +169,7 @@ class Registry(object):
     >>> def my_featurizer(atom):
     >>>     ...
     >>>
-    >>> data.Molecule.from_smiles("C1=CC=CC=C1", node_feature="my_feature")
+    >>> data.Molecule.from_smiles("C1=CC=CC=C1", atom_feature="my_feature")
     """
 
     table = Tree()
@@ -257,6 +259,10 @@ class _Configurable(type):
         for k, v in config.items():
             if isinstance(v, dict) and "class" in v:
                 v = _Configurable.load_config_dict(v)
+            elif isinstance(v, list):
+                v = [_Configurable.load_config_dict(_v) 
+                        if isinstance(_v, dict) and "class" in _v else _v 
+                            for _v in v]
             if k != "class":
                 new_config[k] = v
 

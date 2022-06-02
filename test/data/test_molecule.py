@@ -33,7 +33,7 @@ class MoleculeTest(unittest.TestCase):
         self.assertTrue((mols.num_edges == 0).all(), "Incorrect SMILES side case")
 
     def test_feature(self):
-        mol = data.Molecule.from_smiles(self.smiles, graph_feature="ecfp")
+        mol = data.Molecule.from_smiles(self.smiles, mol_feature="ecfp")
         self.assertTrue((mol.graph_feature > 0).any(), "Incorrect ECFP feature")
 
 

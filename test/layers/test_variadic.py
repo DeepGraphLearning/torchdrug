@@ -45,6 +45,21 @@ class VariadicTest(unittest.TestCase):
             self.assertTrue(torch.equal(result_value, truth_value), "Incorrect variadic topk")
             self.assertTrue(torch.equal(result_index, truth_index), "Incorrect variadic topk")
 
+        for _ in range(10):
+            k = torch.randint(self.size.min(), self.size.max(), (self.num_graph,))
+            result_value, result_index = functional.variadic_topk(self.input, self.size, k)
+            _truth_value, _truth_index = self.padded.topk(self.size.max(), dim=1)
+            truth_value, truth_index = [], []
+            for i, size in enumerate(self.size):
+                truth_value.append(_truth_value[i, :k[i]])
+                truth_index.append(_truth_index[i, :k[i]])
+                for j in range(size, k[i].item()):
+                    truth_value[i][j] = truth_value[i][j-1]
+                    truth_index[i][j] = truth_index[i][j-1]
+            truth_value = torch.cat(truth_value, dim=0)
+            truth_index = torch.cat(truth_index, dim=0)
+            self.assertTrue(torch.equal(result_value, truth_value), "Incorrect variadic topk")
+            self.assertTrue(torch.equal(result_index, truth_index), "Incorrect variadic topk")
 
 if __name__ == "__main__":
     unittest.main()

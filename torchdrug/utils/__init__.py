@@ -1,13 +1,13 @@
 from .io import input_choice, literal_eval, no_rdkit_log, capture_rdkit_log
-from .file import download, extract, compute_md5, get_line_count
+from .file import download, smart_open, extract, compute_md5, get_line_count
 from .torch import load_extension, cpu, cuda, detach, clone, mean, cat, stack, sparse_coo_tensor
-from .decorator import cached_property, cached
+from .decorator import cached_property, cached, deprecated_alias
 from . import pretty, comm, doc, plot
 
 __all__ = [
     "input_choice", "literal_eval", "no_rdkit_log", "capture_rdkit_log",
-    "download", "extract", "compute_md5", "get_line_count",
+    "download", "smart_open", "extract", "compute_md5", "get_line_count",
     "load_extension", "cpu", "cuda", "detach", "clone", "mean", "cat", "stack", "sparse_coo_tensor",
-    "cached_property", "cached",
+    "cached_property", "cached", "deprecated_alias",
     "pretty", "comm", "doc", "plot",
 ]

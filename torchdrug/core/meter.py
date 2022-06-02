@@ -55,6 +55,9 @@ class Meter(object):
         Parameters:
             config (dict): hyperparameter config
         """
+        if self.silent:
+            return
+            
         self.logger.log_config(config)
 
     def update(self, record):

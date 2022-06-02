@@ -9,7 +9,7 @@ Create a Graph
 
 To begin with, let's create a graph.
 
-.. code-block:: python
+.. code:: python
 
     import torch
     from torchdrug import data
@@ -25,7 +25,7 @@ This will plot a ring graph like the following.
     :width: 33%
 
 Internally, the graph is stored as a sparse edge list to save memory footprint. For
-an intuitive comparison, a `scale-free graph`_ mayr have 1 million nodes and 10 million
+an intuitive comparison, a `scale-free graph`_ may have 1 million nodes and 10 million
 edges. The dense version takes about 4TB, while the sparse version only requires 120MB.
 
 .. _scale-free graph:
@@ -33,7 +33,7 @@ edges. The dense version takes about 4TB, while the sparse version only requires
 
 Here are some commonly used properties of the graph.
 
-.. code-block:: python
+.. code:: python
 
     print(graph.num_node)
     print(graph.num_edge)
@@ -45,7 +45,7 @@ molecules have bond types like ``single bound``, while knowledge graphs have rel
 like ``consists of``. To construct such a relational graph, we can pass the edge type
 as a third variable in the edge list.
 
-.. code-block:: python
+.. code:: python
 
     triplet_list = [[0, 1, 0], [1, 2, 1], [2, 3, 0], [3, 4, 1], [4, 5, 0], [5, 0, 1]]
     graph = data.Graph(triplet_list, num_node=6, num_relation=2)
@@ -62,7 +62,7 @@ corresponds to an edge from node :math:`i` to node :math:`j`. The relational gra
 uses a 3D adjacency matrix :math:`A`, where non-zero :math:`A_{i,j,k}` denotes an
 edge from node :math:`i` to node :math:`j` with edge type :math:`k`.
 
-.. code-block:: python
+.. code:: python
 
     adjacency = torch.zeros(6, 6)
     adjacency[edge_list] = 1
@@ -78,7 +78,7 @@ For example, the following code creates a benzene molecule.
 .. _SMILES:
     https://en.wikipedia.org/wiki/Simplified_molecular-input_line-entry_system
 
-.. code-block:: python
+.. code:: python
 
     mol = data.Molecule.from_smiles("C1=CC=CC=C1")
     mol.visualize()
@@ -90,7 +90,7 @@ For example, the following code creates a benzene molecule.
 Once the graph is created, we can transfer it between CPU and GPUs, just like
 :class:`torch.Tensor`.
 
-.. code-block:: python
+.. code:: python
 
     graph = graph.cuda()
     print(graph.device)
@@ -109,7 +109,7 @@ during any graph operation.
 
 Here we specify some features during the construction of the molecule graph.
 
-.. code-block:: python
+.. code:: python
 
     mol = data.Molecule.from_smiles("C1=CC=CC=C1", node_feature="default",
                                     edge_feature="default", graph_feature="ecfp")
@@ -122,14 +122,15 @@ We may also want to define our own attributes. This only requires to wrap the
 assignment lines with a context manager. The following example defines edge importance
 as the reciprocal of node degrees.
 
-.. code-block:: python
+.. code:: python
 
     node_in, node_out = mol.edge_list.t()[:2]
     with mol.edge():
         mol.edge_importance = 1 / graph.degree_in[node_in] + 1 / graph.degree_out[node_out]
 
 We can use ``mol.node()`` and ``mol.graph()`` for node- and graph-level attributes
-respectively.
+respectively. Attributes may also be a reference to node/edge/graph indexes. See
+:doc:`reference` for more details.
 
 Note in order to support batching and masking, attributes should always have the same
 length as their corresponding components. This means the size of the first dimension of
@@ -142,7 +143,7 @@ Modern deep learning frameworks employs batched operations to accelerate computa
 In TorchDrug, we can easily batch same kind of graphs with **arbitary sizes**. Here
 is an example of creating a batch of 4 graphs.
 
-.. code-block:: python
+.. code:: python
 
     graphs = [graph, graph, graph, graph]
     batch = data.Graph.pack(graphs)
@@ -170,7 +171,7 @@ where :math:`A_i` is the adjacency of :math:`i`-th graph.
 To get a single graph from the batch, use the conventional index or
 :meth:`PackedGraph.unpack <torchdrug.data.PackedGraph.unpack>`.
 
-.. code-block:: python
+.. code:: python
 
     graph = batch[1]
     graphs = batch.unpack()
@@ -186,7 +187,7 @@ Subgraph and Masking
 The graph data structure also provides a bunch of slicing operations to create subgraphs
 or masked graphs in a sparse manner. Some typical operations include
 
-.. code-block:: python
+.. code:: python
 
     g1 = graph.subgraph([1, 2, 3, 4])
     g1.visualize()
@@ -220,7 +221,7 @@ isolated nodes.
 The same operations can also be applied to batches. In this case, we need to convert
 the index of a single graph into the index in a batch.
 
-.. code-block:: python
+.. code:: python
 
     graph_ids = torch.tensor([0, 0, 0, 0, 1, 1, 1, 1, 1, 1])
     node_ids = torch.tensor([1, 2, 3, 4, 0, 1, 2, 3, 4, 5])
@@ -232,7 +233,7 @@ the index of a single graph into the index in a batch.
 
 We can also pick a subset of graphs in a batch.
 
-.. code-block:: python
+.. code:: python
 
     batch = batch[[0, 1]]
     batch.visualize()

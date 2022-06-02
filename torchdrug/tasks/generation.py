@@ -54,7 +54,7 @@ class AutoregressiveGeneration(tasks.Task, core.Configurable):
 
     eps = 1e-10
     top_k = 10
-    _option_members = set(["task", "criterion"])
+    _option_members = {"task", "criterion"}
 
     def __init__(self, node_model, edge_model, task=(), num_node_sample=-1, num_edge_sample=-1,
                  max_edge_unroll=None, max_node=None, criterion="nll", agent_update_interval=5, gamma=0.9,
@@ -617,7 +617,7 @@ class GCPNGeneration(tasks.Task, core.Configurable):
 
     eps = 1e-10
     top_k = 10
-    _option_members = set(["task", "criterion"])
+    _option_members = {"task", "criterion"}
 
     def __init__(self, model, atom_types, max_edge_unroll=None, max_node=None, task=(), criterion="nll",
                  hidden_dim_mlp=128, agent_update_interval=10, gamma=0.9, reward_temperature=1, baseline_momentum=0.9):
@@ -1293,7 +1293,7 @@ class GCPNGeneration(tasks.Task, core.Configurable):
         mols = graphs.to_molecule(ignore_error=True)
         valid = [mol is not None for mol in mols]
         valid = torch.tensor(valid, device=graphs.device)
-        new_graphs = type(graphs).from_molecule(mols, kekulize=True, node_feature="symbol")
+        new_graphs = type(graphs).from_molecule(mols, kekulize=True, atom_feature="symbol")
 
         node_feature = torch.zeros(graphs.num_node, *new_graphs.node_feature.shape[1:],
                                    dtype=new_graphs.node_feature.dtype, device=graphs.device)
@@ -1342,7 +1342,7 @@ class GCPNGeneration(tasks.Task, core.Configurable):
         is_training = self.training
         self.eval()
 
-        graph = data.Molecule.from_smiles(initial_smiles, kekulize=True, node_feature="symbol").repeat(num_sample)
+        graph = data.Molecule.from_smiles(initial_smiles, kekulize=True, atom_feature="symbol").repeat(num_sample)
 
         # TODO: workaround
         if self.device.type == "cuda":

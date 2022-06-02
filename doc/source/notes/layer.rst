@@ -105,7 +105,7 @@ representations as a graph representation. First, we readout the mean of node
 representations. Second, we broadcast the mean representation to each node to compute
 the difference. Finally, we readout the mean of the squared difference as the variance.
 
-.. code-block:: python
+.. code:: python
 
     from torch import nn
     from torch_scatter import scatter_mean

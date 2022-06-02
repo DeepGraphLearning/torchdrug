@@ -95,7 +95,7 @@ Molecules are also supported in TorchDrug. You can get the desired molecule
 properties without any domain knowledge.
 
 ```python
-mol = data.Molecule.from_smiles("CCOC(=O)N", node_feature="default", edge_feature="default")
+mol = data.Molecule.from_smiles("CCOC(=O)N", atom_feature="default", bond_feature="default")
 print(mol.node_feature)
 print(mol.atom_type)
 print(mol.to_scaffold())

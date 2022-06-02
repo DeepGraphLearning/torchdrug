@@ -1,4 +1,5 @@
 import inspect
+import warnings
 
 from decorator import decorator
 
@@ -18,12 +19,14 @@ class cached_property(property):
         self.__doc__ = func.__doc__
 
     def __get__(self, obj, cls):
+        if obj is None:
+            return self
         result = self.func(obj)
         obj.__dict__[self.func.__name__] = result
         return result
 
 
-def cached(func, debug=False):
+def cached(forward, debug=False):
     """
     Cache the result of last function call.
     """
@@ -55,10 +58,10 @@ def cached(func, debug=False):
         if self.training:
             return forward(self, *args, **kwargs)
 
-        func = inspect.signature(forward)
-        func = func.bind(self, *args, **kwargs)
-        func.apply_defaults()
-        arguments = func.arguments.copy()
+        forward = inspect.signature(forward)
+        forward = forward.bind(self, *args, **kwargs)
+        forward.apply_defaults()
+        arguments = forward.arguments.copy()
         arguments.pop(next(iter(arguments.keys())))
 
         if hasattr(self, "_forward_cache"):
@@ -89,4 +92,22 @@ def cached(func, debug=False):
         self._forward_cache["result"] = result
         return result
 
-    return wrapper(func)
+    return wrapper(forward)
+
+
+def deprecated_alias(**alias):
+    """
+    Handle argument alias for a function and output deprecated warnings.
+    """
+
+    def wrapper(func, *args, **kwargs):
+        for key, value in alias.items():
+            if key in kwargs:
+                if value in kwargs:
+                    raise TypeError("%s() got values for both `%s` and `%s`" % (func.__name__, value, key))
+                warnings.warn("%s(): argument `%s` is deprecated in favor of `%s`" % (func.__name__, key, value))
+                kwargs[value] = kwargs.pop(key)
+
+        return func(*args, **kwargs)
+
+    return decorator(wrapper, kwsyntax=True)

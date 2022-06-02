@@ -69,7 +69,7 @@ distributed, module-centric manner.
 We compute the variational regularization loss, and add it to the global loss and the
 global metric.
 
-.. code-block::
+.. code::
 
         def reparameterize(self, mu, log_sigma):
             if self.training:

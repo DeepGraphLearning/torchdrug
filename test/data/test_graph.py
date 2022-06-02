@@ -326,11 +326,63 @@ class GraphTest(unittest.TestCase):
         index_results = index_result.split(num_match_result.tolist())
         match = ((graph.edge_list.unsqueeze(0) == edge.unsqueeze(1)) | (edge.unsqueeze(1) == -1)).all(dim=-1)
         query_index, index_truth = match.nonzero().t()
-        num_match_truth = torch.bincount(query_index, minlength=len(edge))
+        num_match_truth = query_index.bincount(minlength=len(edge))
         index_truths = index_truth.split(num_match_truth.tolist())
         self.assertTrue(torch.equal(num_match_result, num_match_truth), "Incorrect edge match")
         for index_result, index_truth in zip(index_results, index_truths):
             self.assertTrue(torch.equal(index_result.sort()[0], index_truth.sort()[0]), "Incorrect edge match")
+
+    def test_reference(self):
+        node_out = torch.arange(1, self.num_node)
+        node_in = (node_out - 1) // 2
+        edge_list = torch.stack([node_in, node_out], dim=-1)
+        tree = data.Graph(edge_list, num_node=self.num_node)
+        with tree.node(), tree.node_reference():
+            tree.dad = (torch.arange(self.num_node) - 1) // 2
+
+        mask = torch.arange(1, self.num_node)
+        graph = tree.subgraph(mask)
+        degree_in_result = graph.dad[graph.dad != -1].bincount(minlength=graph.num_node)
+        is_root_result = graph.dad == -1
+        node_in, node_out = graph.edge_list.t()
+        degree_in_truth = node_in.bincount(minlength=graph.num_node)
+        is_root_truth = node_out.bincount(minlength=graph.num_node) == 0
+        self.assertTrue(torch.equal(degree_in_result, degree_in_truth), "Incorrect node reference")
+        self.assertTrue(torch.equal(is_root_result, is_root_truth), "Incorrect node reference")
+
+        packed_graph = tree.repeat(4)
+        packed_graph2 = data.Graph.pack([tree] * 4)
+        self.assert_equal(packed_graph, packed_graph2, "node reference")
+
+        # special case: 0 repetition
+        repeats = [2, 0, 1, 2]
+        trees = []
+        for start in range(4):
+            index = torch.arange(start, self.num_node)
+            trees.append(tree.subgraph(index))
+        packed_graph = data.Graph.pack(trees)
+        repeat_graph = packed_graph.repeat_interleave(repeats)
+        true_graphs = []
+        for i, tree in zip(repeats, trees):
+            true_graphs += [tree] * i
+        true_graph = data.Graph.pack(true_graphs)
+        self.assert_equal(repeat_graph, true_graph, "node reference")
+
+    def test_line_graph(self):
+        graph = data.Graph(self.edge_list, self.edge_weight, self.num_node, edge_feature=self.edge_feature)
+        line_graph = graph.line_graph()
+        adj_result = line_graph.adjacency.to_dense()
+        feat_result = line_graph.node_feature
+        edge_index = torch.arange(graph.num_edge)
+        node_in, node_out = graph.edge_list.t()
+        edge2node_out = torch.zeros(graph.num_edge, graph.num_node)
+        node_in2edge = torch.zeros(graph.num_node, graph.num_edge)
+        edge2node_out[edge_index, node_out] = 1
+        node_in2edge[node_in, edge_index] = 1
+        adj_truth = edge2node_out @ node_in2edge
+        feat_truth = graph.edge_feature
+        self.assertTrue(torch.equal(adj_result, adj_truth), "Incorrect line graph")
+        self.assertTrue(torch.equal(feat_result, feat_truth), "Incorrect line graph")
 
 
 if __name__ == "__main__":

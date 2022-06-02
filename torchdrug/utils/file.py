@@ -1,5 +1,7 @@
 import os
+import struct
 import logging
+from tqdm import tqdm
 
 
 logger = logging.getLogger(__name__)
@@ -30,12 +32,35 @@ def download(url, path, save_file=None, md5=None):
     return save_file
 
 
+def smart_open(file_name, mode="rb"):
+    """
+    Open a regular file or a zipped file.
+
+    This function can be used as drop-in replacement of the builtin function `open()`.
+
+    Parameters:
+        file_name (str): file name
+        mode (str, optional): open mode for the file stream
+    """
+    import bz2
+    import gzip
+
+    extension = os.path.splitext(file_name)[1]
+    if extension == '.bz2':
+        return bz2.BZ2File(file_name, mode)
+    elif extension == '.gz':
+        return gzip.GzipFile(file_name, mode)
+    else:
+        return open(file_name, mode)
+
+
 def extract(zip_file, member=None):
     """
     Extract files from a zip file. Currently, ``zip``, ``gz``, ``tar.gz``, ``tar`` file types are supported.
 
     Parameters:
-        member (str, optional): extract a specific member from the zip file.
+        zip_file (str): file name
+        member (str, optional): extract specific member from the zip file.
             If not specified, extract all members.
     """
     import gzip
@@ -47,40 +72,64 @@ def extract(zip_file, member=None):
     if zip_name.endswith(".tar"):
         extension = ".tar" + extension
         zip_name = zip_name[:-4]
-
-    if member is None:
-        save_file = zip_name
-    else:
-        save_file = os.path.join(os.path.dirname(zip_name), os.path.basename(member))
-    if os.path.exists(save_file):
-        return save_file
-
-    if member is None:
-        logger.info("Extracting %s to %s" % (zip_file, save_file))
-    else:
-        logger.info("Extracting %s from %s to %s" % (member, zip_file, save_file))
+    save_path = os.path.dirname(zip_file)
 
     if extension == ".gz":
-        with gzip.open(zip_file, "rb") as fin, open(save_file, "wb") as fout:
-            shutil.copyfileobj(fin, fout)
+        member = os.path.basename(zip_name)
+        members = [member]
+        save_files = [os.path.join(save_path, member)]
+        for _member, save_file in zip(members, save_files):
+            with open(zip_file, "rb") as fin:
+                fin.seek(-4, 2)
+                file_size = struct.unpack("<I", fin.read())[0]
+            with gzip.open(zip_file, "rb") as fin:
+                if not os.path.exists(save_file) or file_size != os.path.getsize(save_file):
+                    logger.info("Extracting %s to %s" % (zip_file, save_file))
+                    with open(save_file, "wb") as fout:
+                        shutil.copyfileobj(fin, fout)
     elif extension in [".tar.gz", ".tgz", ".tar"]:
-        if member is None:
-            with tarfile.open(zip_file, "r") as fin:
-                fin.extractall(save_file)
+        tar = tarfile.open(zip_file, "r")
+        if member is not None:
+            members = [member]
+            save_files = [os.path.join(save_path, os.path.basename(member))]
+            logger.info("Extracting %s from %s to %s" % (member, zip_file, save_files[0]))
         else:
-            with tarfile.open(zip_file, "r").extractfile(member) as fin, open(save_file, "wb") as fout:
-                shutil.copyfileobj(fin, fout)
+            members = tar.getnames()
+            save_files = [os.path.join(save_path, _member) for _member in members]
+            logger.info("Extracting %s to %s" % (zip_file, save_path))
+        for _member, save_file in zip(members, save_files):
+            if tar.getmember(_member).isdir():
+                os.makedirs(save_file, exist_ok=True)
+                continue
+            os.makedirs(os.path.dirname(save_file), exist_ok=True)
+            if not os.path.exists(save_file) or tar.getmember(_member).size != os.path.getsize(save_file):
+                with tar.extractfile(_member) as fin, open(save_file, "wb") as fout:
+                    shutil.copyfileobj(fin, fout)
     elif extension == ".zip":
-        if member is None:
-            with zipfile.ZipFile(zip_file) as fin:
-                fin.extractall(save_file)
+        zipped = zipfile.ZipFile(zip_file)
+        if member is not None:
+            members = [member]
+            save_files = [os.path.join(save_path, os.path.basename(member))]
+            logger.info("Extracting %s from %s to %s" % (member, zip_file, save_files[0]))
         else:
-            with zipfile.ZipFile(zip_file).open(member, "r") as fin, open(save_file, "wb") as fout:
-                shutil.copyfileobj(fin, fout)
+            members = zipped.namelist()
+            save_files = [os.path.join(save_path, _member) for _member in members]
+            logger.info("Extracting %s to %s" % (zip_file, save_path))
+        for _member, save_file in zip(members, save_files):
+            if zipped.getinfo(_member).is_dir():
+                os.makedirs(save_file, exist_ok=True)
+                continue
+            os.makedirs(os.path.dirname(save_file), exist_ok=True)
+            if not os.path.exists(save_file) or zipped.getinfo(_member).file_size != os.path.getsize(save_file):
+                with zipped.open(_member, "r") as fin, open(save_file, "wb") as fout:
+                    shutil.copyfileobj(fin, fout)
     else:
         raise ValueError("Unknown file extension `%s`" % extension)
 
-    return save_file
+    if len(save_files) == 1:
+        return save_files[0]
+    else:
+        return save_path
 
 
 def compute_md5(file_name, chunk_size=65536):

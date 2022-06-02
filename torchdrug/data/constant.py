@@ -2,6 +2,7 @@ import sys
 
 module = sys.modules[__name__]
 
+# orderd by perodic table
 ATOM_NAME = ["Null",
     "Hydrogen", "Helium", "Lithium", "Beryllium", "Boron", "Carbon", "Nitrogen", "Oxygen", "Fluorine",
     "Neon", "Sodium", "Magnesium", "Aluminium", "Silicon", "Phosphorus", "Sulfur", "Chlorine", "Argon",

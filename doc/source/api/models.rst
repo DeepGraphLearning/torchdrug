@@ -3,8 +3,8 @@ torchdrug.models
 
 .. currentmodule:: torchdrug.models
 
-Knowledge Graph Embedding
--------------------------
+Knowledge Graph Reasoning Models
+--------------------------------
 
 TransE
 ^^^^^^
@@ -102,8 +102,8 @@ SchNet
 .. autoclass:: SchNet
     :members:
 
-Normalizing Flow
-----------------
+Normalizing Flows
+-----------------
 
 GraphAutoregressiveFlow
 ^^^^^^^^^^^^^^^^^^^^^^^

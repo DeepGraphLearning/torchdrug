@@ -1,10 +1,10 @@
 torchdrug.layers
 ================
 
+.. currentmodule:: torchdrug.layers
+
 Common Layers
 -------------
-
-.. currentmodule:: torchdrug.layers
 
 GaussianSmearing
 ^^^^^^^^^^^^^^^^

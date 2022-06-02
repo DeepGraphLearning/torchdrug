@@ -6,6 +6,7 @@ from rdkit.Chem import AllChem
 from torchdrug.core import Registry as R
 
 
+# orderd by perodic table
 atom_vocab = ["H", "B", "C", "N", "O", "F", "Mg", "Si", "P", "S", "Cl", "Cu", "Zn", "Se", "Br", "Sn", "I"]
 atom_vocab = {a: i for i, a in enumerate(atom_vocab)}
 degree_vocab = range(7)
@@ -45,7 +46,6 @@ def onehot(x, vocab, allow_unknown=False):
     return feature
 
 
-# TODO: this one is too slow
 @R.register("features.atom.default")
 def atom_default(atom):
     """Default atom feature.
@@ -68,8 +68,6 @@ def atom_default(atom):
         GetIsAromatic(): whether the atom is aromatic
         
         IsInRing(): whether the atom is in a ring
-        
-        atom_position(): the 3D position of the atom
     """
     return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + \
            onehot(atom.GetChiralTag(), chiral_tag_vocab) + \
@@ -78,8 +76,7 @@ def atom_default(atom):
            onehot(atom.GetTotalNumHs(), num_hs_vocab) + \
            onehot(atom.GetNumRadicalElectrons(), num_radical_vocab) + \
            onehot(atom.GetHybridization(), hybridization_vocab) + \
-           [atom.GetIsAromatic(), atom.IsInRing()] + \
-           atom_position(atom)
+           [atom.GetIsAromatic(), atom.IsInRing()]
 
 
 @R.register("features.atom.center_identification")
@@ -192,8 +189,10 @@ def atom_property_prediction(atom):
 @R.register("features.atom.position")
 def atom_position(atom):
     """
-    Atom position.
+    Atom position in the molecular conformation.
     Return 3D position if available, otherwise 2D position is returned.
+    
+    Note it takes much time to compute the conformation for large molecules.
     """
     mol = atom.GetOwningMol()
     if mol.GetNumConformers() == 0:
@@ -228,19 +227,20 @@ def bond_default(bond):
         GetStereo(): one-hot embedding for the stereo configuration of the bond
         
         GetIsConjugated(): whether the bond is considered to be conjugated
-        
-        bond_length: the length of the bond
     """
     return onehot(bond.GetBondType(), bond_type_vocab) + \
            onehot(bond.GetBondDir(), bond_dir_vocab) + \
            onehot(bond.GetStereo(), bond_stereo_vocab) + \
-           [int(bond.GetIsConjugated())] + \
-           bond_length(bond)
+           [int(bond.GetIsConjugated())]
 
 
 @R.register("features.bond.length")
 def bond_length(bond):
-    """Bond length"""
+    """
+    Bond length in the molecular conformation.
+    
+    Note it takes much time to compute the conformation for large molecules.
+    """
     mol = bond.GetOwningMol()
     if mol.GetNumConformers() == 0:
         mol.Compute2DCoords()

@@ -127,7 +127,7 @@ Molecule Features
 Element Constants
 -----------------
 
-Element constants are provided for convenient manipulating of atom types. The atomic
+Element constants are provided for convenient manipulation of atom types. The atomic
 numbers can be accessed by uppercased element names at the root of the package. For
 example, we can get the carbon scaffold of a molecule with the following code.
 

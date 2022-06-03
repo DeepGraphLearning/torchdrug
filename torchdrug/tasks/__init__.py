@@ -19,6 +19,7 @@ _metric_name = {
     "mse": "mean squared error",
     "rmse": "root mean squared error",
     "acc": "accuracy",
+    "mcc": "matthews correlation coefficient",
 }
 
 

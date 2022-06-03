@@ -1,12 +1,9 @@
-import os
-import sys
-
 import torch
 from torch.nn import functional as F
-from torch_scatter import scatter_max
+from torch_scatter import scatter_add, scatter_mean, scatter_max
 import networkx as nx
 from rdkit import Chem
-from rdkit.Chem import RDConfig, Descriptors
+from rdkit.Chem import Descriptors
 
 from torchdrug import utils
 from torchdrug.layers import functional
@@ -178,13 +175,103 @@ def chemical_validity(pred):
         validity.append(1 if mol else 0)
 
     return torch.tensor(validity, dtype=torch.float, device=pred.device)
+    
+
+@R.register("metrics.accuracy")
+def accuracy(pred, target):
+    """
+    Compute classification accuracy over sets with equal size.
+
+    Suppose there are :math:`N` sets and :math:`C` categories.
+
+    Parameters:
+        pred (Tensor): prediction of shape :math:`(N, C)`
+        target (Tensor): target of shape :math:`(N,)`
+    """
+    return (pred.argmax(dim=-1) == target).float().mean()
 
 
+@R.register("metrics.mcc")
+def matthews_corrcoef(pred, target, eps=1e-6):
+    """
+    Matthews correlation coefficient between target and prediction.
+
+    Definition follows matthews_corrcoef for K classes in sklearn.
+    For details, see: 'https://scikit-learn.org/stable/modules/model_evaluation.html#matthews-corrcoef'
+
+    Parameters:
+        pred (Tensor): prediction of shape :math: `(N,)`
+        target (Tensor): target of shape :math: `(N,)`
+    """
+    num_class = pred.size(-1)
+    pred = pred.argmax(-1)
+    ones = torch.ones(len(target), device=pred.device)
+    confusion_matrix = scatter_add(ones, target * num_class + pred, dim=0, dim_size=num_class ** 2)
+    confusion_matrix = confusion_matrix.view(num_class, num_class)
+    t = confusion_matrix.sum(dim=1)
+    p = confusion_matrix.sum(dim=0)
+    c = confusion_matrix.trace()
+    s = confusion_matrix.sum()
+    return (c * s - t @ p) / ((s * s - p @ p) * (s * s - t @ t) + eps).sqrt()
+
+
+@R.register("metrics.pearsonr")
+def pearsonr(pred, target):
+    """
+    Pearson correlation between target and prediction.
+    Mimics `scipy.stats.pearsonr`.
+
+    Parameters:
+        pred (Tensor): prediction of shape :math: `(N,)`
+        target (Tensor): target of shape :math: `(N,)`
+    """
+    pred_mean = pred.float().mean()
+    target_mean = target.float().mean()
+    pred_centered = pred - pred_mean
+    target_centered = target - target_mean
+    pred_normalized = pred_centered / pred_centered.norm(2)
+    target_normalized = target_centered / target_centered.norm(2)
+    pearsonr = pred_normalized @ target_normalized
+    return pearsonr
+
+
+@R.register("metrics.spearmanr")
+def spearmanr(pred, target, eps=1e-6):
+    """
+    Spearman correlation between target and prediction.
+    Implement in PyTorch, but non-diffierentiable. (validation metric only)
+
+    Parameters:
+        pred (Tensor): prediction of shape :math: `(N,)`
+        target (Tensor): target of shape :math: `(N,)`
+    """
+
+    def get_ranking(input):
+        input_set, input_inverse = input.unique(return_inverse=True)
+        order = input_inverse.argsort()
+        ranking = torch.zeros(len(input_inverse), device=input.device)
+        ranking[order] = torch.arange(1, len(input) + 1, dtype=torch.float, device=input.device)
+
+        # for elements that have the same value, replace their rankings with the mean of their rankings
+        mean_ranking = scatter_mean(ranking, input_inverse, dim=0, dim_size=len(input_set))
+        ranking = mean_ranking[input_inverse]
+        return ranking
+
+    pred = get_ranking(pred)
+    target = get_ranking(target)
+    covariance = (pred * target).mean() - pred.mean() * target.mean()
+    pred_std = pred.std(unbiased=False)
+    target_std = target.std(unbiased=False)
+    spearmanr = covariance / (pred_std * target_std + eps)
+    return spearmanr
+
+
+@R.register("metrics.variadic_accuracy")
 def variadic_accuracy(input, target, size):
     """
     Compute classification accuracy over variadic sizes of categories.
 
-    Suppose there are :math:`N` samples, and the number of categories in all samples is summed to :math`B`.
+    Suppose there are :math:`N` samples, and the number of categories in all samples is summed to :math:`B`.
 
     Parameters:
         input (Tensor): prediction of shape :math:`(B,)`

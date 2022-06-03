@@ -43,8 +43,8 @@ class GraphPoolTest(unittest.TestCase):
             truth_adj = torch.einsum("bna, bnm, bmc -> bac", assignment, adjacency, assignment)
             index = torch.arange(self.output_node, device=truth.device)
             truth_adj[:, index, index] = 0
-            self.assertTrue(torch.allclose(result, truth), "Incorrect diffpool node feature")
-            self.assertTrue(torch.allclose(result_adj, truth_adj), "Incorrect diffpool adjacency")
+            self.assertTrue(torch.allclose(result, truth, rtol=1e-3, atol=1e-4), "Incorrect diffpool node feature")
+            self.assertTrue(torch.allclose(result_adj, truth_adj, rtol=1e-3, atol=1e-4), "Incorrect diffpool adjacency")
 
             graph = self.graph[0]
             rng_state = torch.get_rng_state()
@@ -60,8 +60,8 @@ class GraphPoolTest(unittest.TestCase):
             truth_adj = torch.einsum("na, nm, mc -> ac", assignment, adjacency, assignment)
             index = torch.arange(self.output_node, device=truth.device)
             truth_adj[index, index] = 0
-            self.assertTrue(torch.allclose(result, truth), "Incorrect diffpool node feature")
-            self.assertTrue(torch.allclose(result_adj, truth_adj), "Incorrect diffpool adjacency")
+            self.assertTrue(torch.allclose(result, truth, rtol=1e-3, atol=1e-4), "Incorrect diffpool node feature")
+            self.assertTrue(torch.allclose(result_adj, truth_adj, rtol=1e-3, atol=1e-4), "Incorrect diffpool adjacency")
 
         pool = layers.MinCutPool(self.input_dim, self.output_node, self.feature_layer, self.pool_layer).cuda()
         all_loss = torch.tensor(0, dtype=torch.float32, device="cuda")
@@ -89,10 +89,10 @@ class GraphPoolTest(unittest.TestCase):
         x = x - torch.eye(self.output_node, device=x.device) / (self.output_node ** 0.5)
         regularization = x.flatten(-2).norm(dim=-1).mean()
         truth_metric = {"normalized cut loss": cut_loss, "orthogonal regularization": regularization}
-        self.assertTrue(torch.allclose(result, truth), "Incorrect min cut pool feature")
-        self.assertTrue(torch.allclose(result_adj, truth_adj), "Incorrect min cut pool adjcency")
+        self.assertTrue(torch.allclose(result, truth, rtol=1e-3, atol=1e-4), "Incorrect min cut pool feature")
+        self.assertTrue(torch.allclose(result_adj, truth_adj, rtol=1e-3, atol=1e-4), "Incorrect min cut pool adjcency")
         for key in result_metric:
-            self.assertTrue(torch.allclose(result_metric[key], truth_metric[key], atol=1e-4, rtol=1e-7),
+            self.assertTrue(torch.allclose(result_metric[key], truth_metric[key], rtol=1e-3, atol=1e-4),
                             "Incorrect min cut pool metric")
 
 

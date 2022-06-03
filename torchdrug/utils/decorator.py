@@ -1,5 +1,6 @@
 import inspect
 import warnings
+import functools
 
 from decorator import decorator
 
@@ -100,14 +101,19 @@ def deprecated_alias(**alias):
     Handle argument alias for a function and output deprecated warnings.
     """
 
-    def wrapper(func, *args, **kwargs):
-        for key, value in alias.items():
-            if key in kwargs:
-                if value in kwargs:
-                    raise TypeError("%s() got values for both `%s` and `%s`" % (func.__name__, value, key))
-                warnings.warn("%s(): argument `%s` is deprecated in favor of `%s`" % (func.__name__, key, value))
-                kwargs[value] = kwargs.pop(key)
+    def decorate(func):
 
-        return func(*args, **kwargs)
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for key, value in alias.items():
+                if key in kwargs:
+                    if value in kwargs:
+                        raise TypeError("%s() got values for both `%s` and `%s`" % (func.__name__, value, key))
+                    warnings.warn("%s(): argument `%s` is deprecated in favor of `%s`" % (func.__name__, key, value))
+                    kwargs[value] = kwargs.pop(key)
 
-    return decorator(wrapper, kwsyntax=True)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorate

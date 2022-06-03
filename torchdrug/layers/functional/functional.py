@@ -106,7 +106,7 @@ def multi_slice_mask(starts, ends, length):
     slices = torch.cat([starts, ends])
     if slices.numel():
         assert slices.min() >= 0 and slices.max() <= length
-    mask = scatter_add(values, slices, dim_size=length + 1)[:-1]
+    mask = scatter_add(values, slices, dim=0, dim_size=length + 1)[:-1]
     mask = mask.cumsum(0).bool()
     return mask
 
@@ -230,7 +230,7 @@ def variadic_max(input, size):
     index2sample = index2sample.expand_as(input)
 
     value, index = scatter_max(input, index2sample, dim=0)
-    index = index - size.cumsum(0) + size
+    index = index + (size - size.cumsum(0)).view([-1] + [1] * (index.ndim - 1))
     return value, index
 
 
@@ -314,7 +314,8 @@ def variadic_topk(input, size, k, largest=True):
     Parameters:
         input (Tensor): input of shape :math:`(B, ...)`
         size (LongTensor): size of sets of shape :math:`(N,)`
-        k (int): the k in "top-k"
+        k (int or LongTensor): the k in "top-k". Can be a fixed value for all sets,
+            or different values for different sets of shape :math:`(N,)`.
         largest (bool, optional): return largest or smallest elements
 
     Returns
@@ -326,13 +327,19 @@ def variadic_topk(input, size, k, largest=True):
     mask = ~torch.isinf(input)
     max = input[mask].max().item()
     min = input[mask].min().item()
-    safe_input = input.clamp(2 * min - max, 2 * max - min)
-    offset = (max - min) * 4
+    abs_max = input[mask].abs().max().item()
+    # special case: max = min
+    gap = max - min + abs_max * 1e-6
+    safe_input = input.clamp(min - gap, max + gap)
+    offset = gap * 4
     if largest:
         offset = -offset
     input_ext = safe_input + offset * index2graph
     index_ext = input_ext.argsort(dim=0, descending=largest)
-    num_actual = size.clamp(max=k)
+    if isinstance(k, torch.Tensor) and k.shape == size.shape:
+        num_actual = torch.min(size, k)
+    else:
+        num_actual = size.clamp(max=k)
     num_padding = k - num_actual
     starts = size.cumsum(0) - size
     ends = starts + num_actual
@@ -346,9 +353,14 @@ def variadic_topk(input, size, k, largest=True):
 
     index = index_ext[mask] # (N * k, ...)
     value = input.gather(0, index)
-    value = value.view(-1, k, *input.shape[1:])
-    index = index.view(-1, k, *input.shape[1:])
-    index = index - (size.cumsum(0) - size).view([-1] + [1] * (index.ndim - 1))
+    if isinstance(k, torch.Tensor) and k.shape == size.shape:
+        value = value.view(-1, *input.shape[1:])
+        index = index.view(-1, *input.shape[1:])
+        index = index - (size.cumsum(0) - size).repeat_interleave(k).view([-1] + [1] * (index.ndim - 1))
+    else:
+        value = value.view(-1, k, *input.shape[1:])
+        index = index.view(-1, k, *input.shape[1:])
+        index = index - (size.cumsum(0) - size).view([-1] + [1] * (index.ndim - 1))
 
     return value, index
 
@@ -430,6 +442,39 @@ def variadic_sample(input, size, num_sample):
     index = index + (size.cumsum(0) - size).unsqueeze(-1)
     sample = input[index]
     return sample
+
+
+def variadic_meshgrid(input1, size1, input2, size2):
+    grid_size = size1 * size2
+    local_index = variadic_arange(grid_size)
+    local_inner_size = size2.repeat_interleave(grid_size)
+    offset1 = (size1.cumsum(0) - size1).repeat_interleave(grid_size)
+    offset2 = (size2.cumsum(0) - size2).repeat_interleave(grid_size)
+    index1 = local_index // local_inner_size + offset1
+    index2 = local_index % local_inner_size + offset2
+    return input1[index1], input2[index2]
+
+
+def variadic_to_padded(input, size, value=0):
+    num_sample = len(size)
+    max_size = size.max()
+    starts = torch.arange(num_sample, device=size.device) * max_size
+    ends = starts + size
+    mask = multi_slice_mask(starts, ends, num_sample * max_size)
+    mask = mask.view(num_sample, max_size)
+    shape = (num_sample, max_size) + input.shape[1:]
+    padded = torch.full(shape, value, dtype=input.dtype, device=size.device)
+    padded[mask] = input
+    return padded, mask
+
+
+def padded_to_variadic(padded, size):
+    num_sample, max_size = padded.shape[:2]
+    starts = torch.arange(num_sample, device=size.device) * max_size
+    ends = starts + size
+    mask = multi_slice_mask(starts, ends, num_sample * max_size)
+    mask = mask.view(num_sample, max_size)
+    return padded[mask]
 
 
 def one_hot(index, size):

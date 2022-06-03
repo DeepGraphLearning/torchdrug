@@ -185,7 +185,7 @@ std::tuple<SparseTensor, Tensor, Tensor> rspmm_backward_cpu(
               output_arg(output_, "output", 4), output_grad_arg(output_grad_, "output_grad", 5);
 
     rspmm_backward_check(fn_name, sparse_arg, relation_arg, input_arg, output_arg, output_grad_arg);
-    checkDeviceType(fn_name, {sparse, input_, output_, output_grad_}, kCPU);
+    checkDeviceType(fn_name, {sparse, relation_, input_, output_, output_grad_}, kCPU);
 
     const Tensor relation = relation_.contiguous();
     const Tensor input = input_.contiguous();

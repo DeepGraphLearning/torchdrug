@@ -17,7 +17,6 @@ class NeuralLogicProgramming(nn.Module, core.Configurable):
         https://papers.nips.cc/paper/2017/file/0e55666a4ad822e0e34299df3591d979-Paper.pdf
 
     Parameters:
-        num_entity (int): number of entities
         num_relation (int): number of relations
         hidden_dim (int): dimension of hidden units in LSTM
         num_step (int): number of recurrent steps
@@ -26,17 +25,15 @@ class NeuralLogicProgramming(nn.Module, core.Configurable):
 
     eps = 1e-10
 
-    def __init__(self, num_entity, num_relation, hidden_dim, num_step, num_lstm_layer=1):
+    def __init__(self, num_relation, hidden_dim, num_step, num_lstm_layer=1):
         super(NeuralLogicProgramming, self).__init__()
 
         num_relation = int(num_relation)
-        self.num_entity = num_entity
         self.num_relation = num_relation
         self.num_step = num_step
 
         self.query = nn.Embedding(num_relation * 2 + 1, hidden_dim)
         self.lstm = nn.LSTM(hidden_dim, hidden_dim, num_lstm_layer)
-        self.key_linear = nn.Linear(hidden_dim, hidden_dim)
         self.weight_linear = nn.Linear(hidden_dim, num_relation * 2)
         self.linear = nn.Linear(1, 1)
 
@@ -56,7 +53,7 @@ class NeuralLogicProgramming(nn.Module, core.Configurable):
         query = self.query(q_index)
 
         hidden, hx = self.lstm(query)
-        memory = functional.one_hot(h_index, self.num_entity).unsqueeze(0)
+        memory = functional.one_hot(h_index, graph.num_entity).unsqueeze(0)
 
         for i in range(self.num_step):
             key = hidden[i]

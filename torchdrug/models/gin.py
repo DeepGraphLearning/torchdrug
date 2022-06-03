@@ -29,7 +29,7 @@ class GraphIsomorphismNetwork(nn.Module, core.Configurable):
         readout (str, optional): readout function. Available functions are ``sum`` and ``mean``.
     """
 
-    def __init__(self, input_dim=None, hidden_dims=None, edge_input_dim=None, num_mlp_layer=2, eps=0, learn_eps=False,
+    def __init__(self, input_dim, hidden_dims, edge_input_dim=None, num_mlp_layer=2, eps=0, learn_eps=False,
                  short_cut=False, batch_norm=False, activation="relu", concat_hidden=False,
                  readout="sum"):
         super(GraphIsomorphismNetwork, self).__init__()

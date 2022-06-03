@@ -26,9 +26,21 @@ R2
 ^^
 .. autofunction:: r2
 
-Variadic Accuracy
-^^^^^^^^^^^^^^^^^
-.. autofunction:: variadic_accuracy
+Accuracy
+^^^^^^^^
+.. autofunction:: accuracy
+
+Matthews Correlation Coefficient
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autofuction:: matthews_corrcoef
+
+Pearson Correlation Coefficient
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: pearsonr
+
+Spearman Correlation Coefficient
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: spearmanr
 
 
 Chemical Metrics

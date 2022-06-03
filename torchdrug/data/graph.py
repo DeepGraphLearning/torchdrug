@@ -699,6 +699,17 @@ class Graph(core._MetaContainer):
                           num_relation=self.num_relation, meta_dict=meta_dict, **data_dict)
 
     def line_graph(self):
+        """
+        Construct a line graph of this graph.
+        The node feature of the line graph is inherited from the edge feature of the original graph.
+
+        In the line graph, each node corresponds to an edge in the original graph.
+        For a pair of edges (a, b) and (b, c) that share the same intermediate node in the original graph,
+        there is a directed edge (a, b) -> (b, c) in the line graph.
+
+        Returns:
+            Graph
+        """
         node_in, node_out = self.edge_list.t()[:2]
         edge_index = torch.arange(self.num_edge, device=self.device)
         edge_in = edge_index[node_out.argsort()]
@@ -1627,6 +1638,17 @@ class PackedGraph(Graph):
         return self.graph_mask(index, compact=True)
 
     def line_graph(self):
+        """
+        Construct a packed line graph of this packed graph.
+        The node features of the line graphs are inherited from the edge features of the original graphs.
+
+        In the line graph, each node corresponds to an edge in the original graph.
+        For a pair of edges (a, b) and (b, c) that share the same intermediate node in the original graph,
+        there is a directed edge (a, b) -> (b, c) in the line graph.
+
+        Returns:
+            PackedGraph
+        """
         node_in, node_out = self.edge_list.t()[:2]
         edge_index = torch.arange(self.num_edge, device=self.device)
         edge_in = edge_index[node_out.argsort()]

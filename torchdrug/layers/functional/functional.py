@@ -375,6 +375,9 @@ def variadic_sort(input, size, descending=False):
         input (Tensor): input of shape :math:`(B, ...)`
         size (LongTensor): size of sets of shape :math:`(N,)`
         descending (bool, optional): return ascending or descending order
+
+    Returns
+        (Tensor, LongTensor): sorted values and indexes
     """
     index2sample = _size_to_index(size)
     index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
@@ -445,6 +448,21 @@ def variadic_sample(input, size, num_sample):
 
 
 def variadic_meshgrid(input1, size1, input2, size2):
+    """
+    Compute the Cartesian product for two batches of sets with variadic sizes.
+
+    Suppose there are :math:`N` sets in each input,
+    and the sizes of all sets are summed to :math:`B_1` and :math:`B_2` respectively.
+
+    Parameters:
+        input1 (Tensor): input of shape :math:`(B_1, ...)`
+        size1 (LongTensor): size of :attr:`input1` of shape :math:`(N,)`
+        input2 (Tensor): input of shape :math:`(B_2, ...)`
+        size2 (LongTensor): size of :attr:`input2` of shape :math:`(N,)`
+
+    Returns
+        (Tensor, Tensor): the first and the second elements in the Cartesian product
+    """
     grid_size = size1 * size2
     local_index = variadic_arange(grid_size)
     local_inner_size = size2.repeat_interleave(grid_size)
@@ -456,6 +474,19 @@ def variadic_meshgrid(input1, size1, input2, size2):
 
 
 def variadic_to_padded(input, size, value=0):
+    """
+    Convert a variadic tensor to a padded tensor.
+
+    Suppose there are :math:`N` sets, and the sizes of all sets are summed to :math:`B`.
+
+    Parameters:
+        input (Tensor): input of shape :math:`(B, ...)`
+        size (LongTensor): size of sets of shape :math:`(N,)`
+        value (scalar): fill value for padding
+
+    Returns:
+        (Tensor, BoolTensor): padded tensor and mask
+    """
     num_sample = len(size)
     max_size = size.max()
     starts = torch.arange(num_sample, device=size.device) * max_size
@@ -469,6 +500,13 @@ def variadic_to_padded(input, size, value=0):
 
 
 def padded_to_variadic(padded, size):
+    """
+    Convert a padded tensor to a variadic tensor.
+
+    Parameters:
+        padded (Tensor): padded tensor of shape :math:`(N, ...)`
+        size (LongTensor): size of sets of shape :math:`(N,)`
+    """
     num_sample, max_size = padded.shape[:2]
     starts = torch.arange(num_sample, device=size.device) * max_size
     ends = starts + size

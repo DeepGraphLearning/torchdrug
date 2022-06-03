@@ -214,6 +214,12 @@ Variadic
 
 .. autofunction:: variadic_sample
 
+.. autofunction:: variadic_meshgrid
+
+.. autofunction:: variadic_to_padded
+
+.. autofunction:: padded_to_variadic
+
 Tensor Reduction
 ^^^^^^^^^^^^^^^^
 .. autofunction:: masked_mean

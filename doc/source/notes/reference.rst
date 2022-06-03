@@ -30,6 +30,7 @@ the result is not desired. The edges are masked out correctly, but the values of
 inverse indexes are wrong.
 
 .. code:: python
+
     with graph.edge():
         graph.inv_edge_index = torch.tensor(inv_edge_index)
     g1 = graph.edge_mask([0, 2, 3])
@@ -56,33 +57,3 @@ since the corresponding inverse edge has been masked out.
 
 We can use ``graph.node_reference()`` and ``graph.graph_reference()`` for references
 to nodes and graphs respectively.
-
-Use Cases in Proteins
----------------------
-
-In :class:`data.Protein`, the mapping ``atom2residue`` is implemented as
-references. The intuition is that references enable flexible indexing on either atoms
-or residues, while maintaining the correspondence between two views.
-
-The following example shows how to track a specific residue with ``atom2residue`` in
-the atom view. For a protein, we first create a mask for atoms in a glutamine (GLN).
-
-.. code:: python
-
-    protein = data.Protein.from_sequence("KALKQMLDMG")
-    is_glutamine = protein.residue_type[protein.atom2residue] == protein.residue2id["GLN"]
-    with protein.node():
-        protein.is_glutamine = is_glutamine
-
-We then apply a mask to the protein residue sequence. In the output protein,
-``atom2residue`` is able to map the masked atoms back to the glutamine residue.
-
-.. code:: python
-
-    p1 = protein[3:6]
-    residue_type = p1.residue_type[p1.atom2residue[p1.is_glutamine]]
-    print([p1.id2residue[r] for r in residue_type.tolist()])
-
-.. code:: bash
-
-    ['GLN', 'GLN', 'GLN', 'GLN', 'GLN', 'GLN', 'GLN', 'GLN', 'GLN']

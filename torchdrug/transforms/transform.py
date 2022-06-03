@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 class TargetNormalize(object):
     """
     Normalize the target values in a sample.
+
     Parameters:
         mean (dict of float): mean of targets
         std (dict of float): standard deviation of targets

@@ -125,3 +125,62 @@ class WandbLogger(LoggingLogger):
     def log_config(self, confg_dict):
         super(WandbLogger, self).log_config(confg_dict)
         self.run.config.update(confg_dict)
+
+
+@R.register("core.AimLogger")
+class AimLogger(LoggingLogger):
+    """
+    Log outputs with `Aim`_ and track the experiment progress.
+
+    Note this class also output logs with the builtin logging module.
+
+    .. _Aim Documentation:
+        https://aimstack.readthedocs.io/en/latest/
+
+    .. _aim.Run:
+        https://aimstack.readthedocs.io/en/latest/refs/sdk.html#module-aim.sdk.run
+
+    Parameters:
+        experiment_name (str, optional): name of the project
+        repo (str, optional): path to the repository. Default is `.`.
+        run_hash (str, optional): Hash of the run you want to continue from. If none is provided, a new run will be created.
+    """
+
+    def __init__(self, experiment_name=None, repo='.', run_has=None):
+        super(AimLogger, self).__init__()
+        try:
+            import aim
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("Aim is not found. Please install it with `pip install aim`")
+
+        self.aim_run = aim.Run(repo = repo, experiment=experiment_name, run_hash=run_has)
+
+        # self.run.define_metric("train/batch/*", step_metric="batch", summary="none")
+        # for split in ["train", "valid", "test"]:
+        #     self.run.define_metric("%s/epoch/*" % split, step_metric="epoch")
+
+    def log(self, record, step_id, category="train/batch"):
+
+        super(AimLogger, self).log(record, step_id, category)
+
+        print("_________Started Aim Logging_________")
+        print(category)
+        context_type,context_specific  = category.split("/")
+
+        print(record)
+        print(self.aim_run.repo)
+
+        if category == "train/epoch":
+            for metric_name in sorted(record.keys()):
+                self.aim_run.track(record[metric_name], step=step_id, name=metric_name, context={f"{context_type}_average": context_specific}) 
+        elif category ==  "valid/epoch":
+            for metric_name in sorted(record.keys()):
+                self.aim_run[metric_name] = record[metric_name].item()
+        else:
+            for metric_name in sorted(record.keys()):
+                self.aim_run.track(record[metric_name], step=step_id, name=metric_name, context={context_type: context_specific}) 
+        
+        print("_________Ended Aim Logging_________")
+
+    def log_config(self, confg_dict):
+        self.aim_run["config"] = confg_dict

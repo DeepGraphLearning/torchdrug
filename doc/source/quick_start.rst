@@ -177,8 +177,13 @@ the script using ``python -m torch.distributed.launch --nproc_per_node=4``.
     solver = core.Engine(task, train_set, valid_set, test_set, optimizer,
                          batch_size=256, gpus=[0, 1, 2, 3])
 
-We may log the training and evaluation metrics to Weights & Biases platform for
+We may log the training and evaluation metrics to Aim or Weights & Biases platform for
 better experiment tracking in the browser.
+
+.. code:: python
+
+    solver = core.Engine(task, train_set, valid_set, test_set, optimizer,
+                         batch_size=1024, logger="aim")
 
 .. code:: python
 

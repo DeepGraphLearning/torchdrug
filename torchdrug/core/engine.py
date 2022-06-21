@@ -112,6 +112,8 @@ class Engine(core.Configurable):
                 logger = core.LoggingLogger()
             elif logger == "wandb":
                 logger = core.WandbLogger(project=task.__class__.__name__)
+            elif logger == "aim":
+                logger = core.AimLogger(experiment_name=task.__class__.__name__)
             else:
                 raise ValueError("Unknown logger `%s`" % logger)
         self.meter = core.Meter(log_interval=log_interval, silent=self.rank > 0, logger=logger)

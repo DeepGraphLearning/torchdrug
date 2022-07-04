@@ -1,5 +1,12 @@
 FROM pytorch/pytorch:1.8.1-cuda11.1-cudnn8-devel
 
+# metainformation
+LABEL org.opencontainers.image.version = "0.1.3"
+LABEL org.opencontainers.image.authors = "TorchDrug Team"
+LABEL org.opencontainers.image.source = "https://github.com/DeepGraphLearning/torchdrug"
+LABEL org.opencontainers.image.licenses = "Apache License 2.0"
+LABEL org.opencontainers.image.base.name="docker.io/pytorch/pytorch:1.8.1-cuda11.1-cudnn8-devel"
+
 RUN apt-get update && \
     apt-get install -y libxrender1 && \
     rm -rf /var/lib/apt/lists/*

@@ -8,3 +8,4 @@ tqdm
 networkx
 ninja
 jinja2
+guacamol

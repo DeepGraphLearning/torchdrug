@@ -71,7 +71,7 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         all_loss = torch.tensor(0, dtype=torch.float32, device=self.device)
         metric = {}
 
-        pred = self.predict(batch, all_loss, metric)
+        standard_pred = self._standard_predict(batch, all_loss, metric)
 
         if all([t not in batch for t in self.task]):
             # unlabeled data
@@ -83,9 +83,9 @@ class PropertyPrediction(tasks.Task, core.Configurable):
 
         for criterion, weight in self.criterion.items():
             if criterion == "mse":
-                loss = F.mse_loss(pred, (target - self.mean) / self.std, reduction="none")
+                loss = F.mse_loss(standard_pred, (target - self.mean) / self.std, reduction="none")
             elif criterion == "bce":
-                loss = F.binary_cross_entropy_with_logits(pred, target, reduction="none")
+                loss = F.binary_cross_entropy_with_logits(standard_pred, target, reduction="none")
             else:
                 raise ValueError("Unknown criterion `%s`" % criterion)
             loss = functional.masked_mean(loss, labeled, dim=0)
@@ -99,6 +99,13 @@ class PropertyPrediction(tasks.Task, core.Configurable):
             all_loss += loss * weight
 
         return all_loss, metric
+
+    def _standard_predict(self, batch, all_loss=None, metric=None):
+        """ prediction standardized by `mean` and `std` computed by `preprocess`,
+        mainly used for training.
+        """
+        pred = self.predict(batch, all_loss, metric)
+        return (pred - self.mean) / self.std
 
     def predict(self, batch, all_loss=None, metric=None):
         graph = batch["graph"]
@@ -118,10 +125,10 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         metric = {}
         for _metric in self.metric:
             if _metric == "mae":
-                score = F.l1_loss(pred * self.std + self.mean, target, reduction="none")
+                score = F.l1_loss(pred, target, reduction="none")
                 score = functional.masked_mean(score, labeled, dim=0)
             elif _metric == "rmse":
-                score = F.mse_loss(pred * self.std + self.mean, target, reduction="none")
+                score = F.mse_loss(pred, target, reduction="none")
                 score = functional.masked_mean(score, labeled, dim=0).sqrt()
             elif _metric == "auroc":
                 score = []

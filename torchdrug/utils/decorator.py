@@ -59,10 +59,10 @@ def cached(forward, debug=False):
         if self.training:
             return forward(self, *args, **kwargs)
 
-        forward = inspect.signature(forward)
-        forward = forward.bind(self, *args, **kwargs)
-        forward.apply_defaults()
-        arguments = forward.arguments.copy()
+        sig = inspect.signature(forward)
+        func = sig.bind(self, *args, **kwargs)
+        func.apply_defaults()
+        arguments = func.arguments.copy()
         arguments.pop(next(iter(arguments.keys())))
 
         if hasattr(self, "_forward_cache"):

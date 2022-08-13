@@ -484,13 +484,25 @@ class Molecule(Graph):
     def node_feature(self):
         return self.atom_feature
 
+    @node_feature.setter
+    def node_feature(self, value):
+        self.atom_feature = value
+
     @property
     def edge_feature(self):
         return self.bond_feature
 
+    @edge_feature.setter
+    def edge_feature(self, value):
+        self.bond_feature = value
+
     @property
     def graph_feature(self):
         return self.mol_feature
+
+    @graph_feature.setter
+    def graph_feature(self, value):
+        self.mol_feature = value
 
     @utils.cached_property
     def explicit_valence(self):

@@ -1,14 +1,13 @@
 import torch
 from torch import nn
 
-from torchdrug import core, models
+from torchdrug import core, models, utils
 from torchdrug.layers import functional
 from torchdrug.core import Registry as R
-from torchdrug.utils import doc
 
 
 @R.register("models.KBGAT")
-@doc.copy_args(models.GraphAttentionNetwork)
+@utils.copy_args(models.GraphAttentionNetwork)
 class KnowledgeBaseGraphAttentionNetwork(models.GraphAttentionNetwork, core.Configurable):
     """
     Knowledge Base Graph Attention Network proposed in

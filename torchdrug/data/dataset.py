@@ -12,7 +12,6 @@ import torch
 from torch.utils import data as torch_data
 
 from torchdrug import core, data, utils
-from torchdrug.utils import doc
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +24,7 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
     Each sample contains a molecule graph, and any number of prediction targets.
     """
 
-    @doc.copy_args(data.Molecule.from_molecule)
+    @utils.copy_args(data.Molecule.from_molecule)
     def load_smiles(self, smiles_list, targets, transform=None, lazy=False, verbose=0, **kwargs):
         """
         Load the dataset from SMILES and targets.
@@ -72,7 +71,7 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
             for field in targets:
                 self.targets[field].append(targets[field][i])
 
-    @doc.copy_args(load_smiles)
+    @utils.copy_args(load_smiles)
     def load_csv(self, csv_file, smiles_field="smiles", target_fields=None, verbose=0, **kwargs):
         """
         Load the dataset from a csv file.
@@ -218,7 +217,7 @@ class ReactionDataset(MoleculeDataset, core.Configurable):
     Each sample contains two molecule graphs, and any number of prediction targets.
     """
 
-    @doc.copy_args(data.Molecule.from_molecule)
+    @utils.copy_args(data.Molecule.from_molecule)
     def load_smiles(self, smiles_list, targets, transform=None, verbose=0, **kwargs):
         """
         Load the dataset from SMILES and targets.

@@ -2,11 +2,10 @@ import os
 
 from torchdrug import data, utils
 from torchdrug.core import Registry as R
-from torchdrug.utils import doc
 
 
 @R.register("datasets.HIV")
-@doc.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
 class HIV(data.MoleculeDataset):
     """
     Experimentally measured abilities to inhibit HIV replication.

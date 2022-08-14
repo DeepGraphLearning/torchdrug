@@ -12,12 +12,11 @@ from torch.utils import data as torch_data
 from torch_scatter import scatter_max
 
 from torchdrug import data, utils
-from torchdrug.utils import doc
 from torchdrug.core import Registry as R
 
 
 @R.register("datasets.USPTO50k")
-@doc.copy_args(data.ReactionDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(data.ReactionDataset.load_csv, ignore=("smiles_field", "target_fields"))
 class USPTO50k(data.ReactionDataset):
     """
     Chemical reactions extracted from USPTO patents.

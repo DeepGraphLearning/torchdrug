@@ -19,7 +19,10 @@ from torchdrug import layers
 
 logger = logging.getLogger(__name__)
 
-
+TASK_TO_STR = {
+    'qed': 'QED',
+    'plogp': 'Penalized logP'
+}
 @R.register("tasks.AutoregressiveGeneration")
 class AutoregressiveGeneration(tasks.Task, core.Configurable):
     """
@@ -141,9 +144,18 @@ class AutoregressiveGeneration(tasks.Task, core.Configurable):
 
         # generation takes less time when early_stop=True
         graph = self.generate(len(batch["graph"]), off_policy=True, early_stop=True)
+        if len(graph) == 0 or graph.num_nodes.max() == 1:
+            logger.error("Generation results collapse to singleton molecules")
 
-        if graph.num_nodes.max() == 1:
-            raise ValueError("Generation results collapse to singleton molecules")
+            # Imitate return variables
+            all_loss.requires_grad = True
+            for task in self.task:
+                metric.update({
+                    TASK_TO_STR.get(task, task): torch.tensor(0.),
+                    f'{TASK_TO_STR.get(task, task)} (max)': torch.tensor(0.),
+                })
+            metric.update({'PPO objective': all_loss})
+            return all_loss, metric
 
         reward = torch.zeros(len(graph), device=self.device)
         for task in self.task:
@@ -804,8 +816,18 @@ class GCPNGeneration(tasks.Task, core.Configurable):
 
         # generation takes less time when early_stop=True
         graph = self.generate(len(batch["graph"]), max_resample=20, off_policy=True, max_step=40 * 2, verbose=1)
-        if graph.num_nodes.max() == 1:
-            raise ValueError("Generation results collapse to singleton molecules")
+        if len(graph) == 0 or graph.num_nodes.max() == 1:
+            logger.error("Generation results collapse to singleton molecules")
+
+            # Imitate return variables
+            all_loss.requires_grad = True
+            for task in self.task:
+                metric.update({
+                    TASK_TO_STR.get(task, task): torch.tensor(0.),
+                    f'{TASK_TO_STR.get(task, task)} (max)': torch.tensor(0.),
+                })
+            metric.update({'PPO objective': all_loss})
+            return all_loss, metric
 
         reward = torch.zeros(len(graph), device=self.device)
         for task in self.task:

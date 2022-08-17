@@ -1,0 +1,21 @@
+name: torchdrug-env
+channels:
+  - conda-forge
+  - defaults
+  - pyg
+dependencies:
+  - python=3.8
+  - decorator
+  - numpy>=1.11
+  - rdkit
+  - matplotlib
+  - tqdm
+  - networkx
+  - ninja
+  - jinja2
+  - pip
+  - torch-scatter>=2.0.8
+
+  # pip only
+  - pip:
+    - torch==1.5.0

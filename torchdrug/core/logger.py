@@ -100,18 +100,21 @@ class WandbLogger(LoggingLogger):
         try:
             import wandb
         except ModuleNotFoundError:
-            raise ModuleNotFoundError("Wandb is not found. Please install it with `pip install wandb`")
+            raise ModuleNotFoundError(
+                "Wandb is not found. Please install it with `pip install wandb`")
 
         if wandb.run is not None:
             warnings.warn(
-                 "There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse"
+                "There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse"
                 " this run. If this is not desired, call `wandb.finish()` or `WandbLogger.finish()` before instantiating `WandbLogger`."
             )
             self.run = wandb.run
         else:
-            self.run = wandb.init(project=project, name=name, dir=dir, **kwargs)
+            self.run = wandb.init(
+                project=project, name=name, dir=dir, **kwargs)
 
-        self.run.define_metric("train/batch/*", step_metric="batch", summary="none")
+        self.run.define_metric(
+            "train/batch/*", step_metric="batch", summary="none")
         for split in ["train", "valid", "test"]:
             self.run.define_metric("%s/epoch/*" % split, step_metric="epoch")
 
@@ -151,9 +154,11 @@ class AimLogger(LoggingLogger):
         try:
             import aim
         except ModuleNotFoundError:
-            raise ModuleNotFoundError("Aim is not found. Please install it with `pip install aim`")
+            raise ModuleNotFoundError(
+                "Aim is not found. Please install it with `pip install aim`")
 
-        self.aim_run = aim.Run(repo = repo, experiment=experiment_name, run_hash=run_has)
+        self.aim_run = aim.Run(
+            repo=repo, experiment=experiment_name, run_hash=run_has)
 
         # self.run.define_metric("train/batch/*", step_metric="batch", summary="none")
         # for split in ["train", "valid", "test"]:
@@ -165,21 +170,23 @@ class AimLogger(LoggingLogger):
 
         print("_________Started Aim Logging_________")
         print(category)
-        context_type,context_specific  = category.split("/")
+        context_type, context_specific = category.split("/")
 
         print(record)
         print(self.aim_run.repo)
 
         if category == "train/epoch":
             for metric_name in sorted(record.keys()):
-                self.aim_run.track(record[metric_name], step=step_id, name=metric_name, context={f"{context_type}_average": context_specific}) 
-        elif category ==  "valid/epoch":
+                self.aim_run.track(record[metric_name], step=step_id, name=metric_name, context={
+                                   f"{context_type}_average": context_specific})
+        elif category == "valid/epoch":
             for metric_name in sorted(record.keys()):
                 self.aim_run[metric_name] = record[metric_name].item()
         else:
             for metric_name in sorted(record.keys()):
-                self.aim_run.track(record[metric_name], step=step_id, name=metric_name, context={context_type: context_specific}) 
-        
+                self.aim_run.track(record[metric_name], step=step_id, name=metric_name, context={
+                                   context_type: context_specific})
+
         print("_________Ended Aim Logging_________")
 
     def log_config(self, confg_dict):

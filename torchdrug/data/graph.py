@@ -334,7 +334,7 @@ class Graph(core._MetaContainer):
         edge_index = edge2graph.argsort()
         edge_index = edge_index[edge_mask[edge_index]]
 
-        prepend = -torch.tensor([-1], device=self.device)
+        prepend = torch.tensor([-1], device=self.device)
         is_first_node = torch.diff(node2graph[index], prepend=prepend) > 0
         graph_index = self.node2graph[index[is_first_node]]
 

@@ -9,11 +9,10 @@ import torch
 from torchdrug import data, utils
 from torchdrug.data import feature
 from torchdrug.core import Registry as R
-from torchdrug.utils import doc
 
 
 @R.register("datasets.QM9")
-@doc.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
 class QM9(data.MoleculeDataset):
     """
     Geometric, energetic, electronic and thermodynamic properties of DFT-modeled small molecules.

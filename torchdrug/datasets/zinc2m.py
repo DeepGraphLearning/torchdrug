@@ -5,11 +5,10 @@ import shutil
 
 from torchdrug import data, utils
 from torchdrug.core import Registry as R
-from torchdrug.utils import doc
 
 
 @R.register("datasets.ZINC2m")
-@doc.copy_args(data.MoleculeDataset.load_smiles, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(data.MoleculeDataset.load_smiles, ignore=("smiles_field", "target_fields"))
 class ZINC2m(data.MoleculeDataset):
     """
     ZINC compound database for virtual screening.

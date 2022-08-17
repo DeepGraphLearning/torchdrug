@@ -10,11 +10,10 @@ import torch
 from torchdrug import data, utils
 from torchdrug.data import feature
 from torchdrug.core import Registry as R
-from torchdrug.utils import doc
 
 
 @R.register("datasets.QM8")
-@doc.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
 class QM8(data.MoleculeDataset):
     """
     Electronic spectra and excited state energy of small molecules.

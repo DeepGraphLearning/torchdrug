@@ -1,12 +1,11 @@
 import os
 
 from torchdrug import data, utils
-from torchdrug.utils import doc
 from torchdrug.core import Registry as R
 
 
 @R.register("datasets.BACE")
-@doc.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
 class BACE(data.MoleculeDataset):
     r"""
     Binary binding results for a set of inhibitors of human :math:`\beta`-secretase 1(BACE-1).

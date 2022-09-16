@@ -375,7 +375,7 @@ def variadic_sort(input, size, descending=False):
         input (Tensor): input of shape :math:`(B, ...)`
         size (LongTensor): size of sets of shape :math:`(N,)`
         descending (bool, optional): return ascending or descending order
-
+    
     Returns
         (Tensor, LongTensor): sorted values and indexes
     """
@@ -385,8 +385,11 @@ def variadic_sort(input, size, descending=False):
     mask = ~torch.isinf(input)
     max = input[mask].max().item()
     min = input[mask].min().item()
-    safe_input = input.clamp(2 * min - max, 2 * max - min)
-    offset = (max - min) * 4
+    abs_max = input[mask].abs().max().item()
+    # special case: max = min
+    gap = max - min + abs_max * 1e-6
+    safe_input = input.clamp(min - gap, max + gap)
+    offset = gap * 4
     if descending:
         offset = -offset
     input_ext = safe_input + offset * index2sample

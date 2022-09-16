@@ -13,7 +13,6 @@ from torchdrug.layers import functional
 class MultiLayerPerceptron(nn.Module):
     """
     Multi-layer Perceptron.
-
     Note there is no batch normalization, activation or dropout in the last layer.
 
     Parameters:
@@ -323,3 +322,18 @@ class Sequential(nn.Sequential):
                 args.append(output)
 
         return output
+
+
+class SinusoidalPositionEmbedding(nn.Module):
+
+    def __init__(self, output_dim):
+        super(SinusoidalPositionEmbedding, self).__init__()
+        inverse_frequency = 1 / (10000 ** (torch.arange(0.0, output_dim, 2.0) / output_dim))
+        self.register_buffer("inverse_frequency", inverse_frequency)
+
+    def forward(self, input):
+        # input: [B, L, ...]
+        positions = torch.arange(input.shape[1] - 1, -1, -1.0, dtype=input.dtype, device=input.device)
+        sinusoidal_input = torch.outer(positions, self.inverse_frequency)
+        position_embedding = torch.cat([sinusoidal_input.sin(), sinusoidal_input.cos()], -1)
+        return position_embedding

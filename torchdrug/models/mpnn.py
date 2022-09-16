@@ -40,6 +40,7 @@ class MessagePassingNeuralNetwork(nn.Module, core.Configurable):
         else:
             feature_dim = hidden_dim
         self.output_dim = feature_dim * 2
+        self.node_output_dim = feature_dim
         self.num_layer = num_layer
         self.short_cut = short_cut
         self.concat_hidden = concat_hidden

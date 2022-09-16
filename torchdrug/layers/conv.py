@@ -779,3 +779,56 @@ class ChebyshevConv(MessagePassingBase):
     def combine(self, input, update):
         output = input + update
         return output
+
+
+class GeometricRelationalGraphConv(RelationalGraphConv):
+    """
+    Geometry-aware relational graph convolution operator from
+    `Protein Representation Learning by Geometric Structure Pretraining`_.
+
+    .. _Protein Representation Learning by Geometric Structure Pretraining:
+        https://arxiv.org/pdf/2203.06125.pdf
+
+    Parameters:
+        input_dim (int): input dimension
+        output_dim (int): output dimension
+        num_relation (int): number of relations
+        edge_input_dim (int, optional): dimension of edge features
+        batch_norm (bool, optional): apply batch normalization on nodes or not
+        activation (str or function, optional): activation function
+    """
+
+    def __init__(self, input_dim, output_dim, num_relation, edge_input_dim=None, batch_norm=False, activation="relu"):
+        super(GeometricRelationalGraphConv, self).__init__(input_dim, output_dim, num_relation, edge_input_dim,
+                                                           batch_norm, activation)
+
+    def aggregate(self, graph, message):
+        assert graph.num_relation == self.num_relation
+
+        node_out = graph.edge_list[:, 1] * self.num_relation + graph.edge_list[:, 2]
+        edge_weight = graph.edge_weight.unsqueeze(-1)
+        update = scatter_add(message * edge_weight, node_out, dim=0, dim_size=graph.num_node * self.num_relation)
+        update = update.view(graph.num_node, self.num_relation * self.input_dim)
+
+        return update
+
+    def message_and_aggregate(self, graph, input):
+        assert graph.num_relation == self.num_relation
+
+        node_in, node_out, relation = graph.edge_list.t()
+        node_out = node_out * self.num_relation + relation
+        adjacency = utils.sparse_coo_tensor(torch.stack([node_in, node_out]), graph.edge_weight,
+                                            (graph.num_node, graph.num_node * graph.num_relation))
+        update = torch.sparse.mm(adjacency.t(), input)
+        if self.edge_linear:
+            edge_input = graph.edge_feature.float()
+            if self.edge_linear.in_features > self.edge_linear.out_features:
+                edge_input = self.edge_linear(edge_input)
+            edge_weight = graph.edge_weight.unsqueeze(-1)
+            edge_update = scatter_add(edge_input * edge_weight, node_out, dim=0,
+                                      dim_size=graph.num_node * graph.num_relation)
+            if self.edge_linear.in_features <= self.edge_linear.out_features:
+                edge_update = self.edge_linear(edge_update)
+            update += edge_update
+
+        return update.view(graph.num_node, self.num_relation * self.input_dim)

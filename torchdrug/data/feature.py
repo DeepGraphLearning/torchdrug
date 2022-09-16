@@ -23,6 +23,10 @@ bond_type_vocab = {b: i for i, b in enumerate(bond_type_vocab)}
 bond_dir_vocab = range(len(Chem.rdchem.BondDir.values))
 bond_stereo_vocab = range(len(Chem.rdchem.BondStereo.values))
 
+# orderd by molecular mass
+residue_vocab = ["GLY", "ALA", "SER", "PRO", "VAL", "THR", "CYS", "ILE", "LEU", "ASN",
+                 "ASP", "GLN", "LYS", "GLU", "MET", "HIS", "PHE", "ARG", "TYR", "TRP"]
+
 
 def onehot(x, vocab, allow_unknown=False):
     if x in vocab:
@@ -191,7 +195,7 @@ def atom_position(atom):
     """
     Atom position in the molecular conformation.
     Return 3D position if available, otherwise 2D position is returned.
-    
+
     Note it takes much time to compute the conformation for large molecules.
     """
     mol = atom.GetOwningMol()
@@ -213,6 +217,19 @@ def atom_pretrain(atom):
     """
     return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + \
            onehot(atom.GetChiralTag(), chiral_tag_vocab)
+
+
+@R.register("features.atom.residue_symbol")
+def atom_residue_symbol(atom):
+    """Residue symbol as atom feature. Only support atoms in a protein.
+
+    Features:
+        GetSymbol(): one-hot embedding for the atomic symbol
+        GetResidueName(): one-hot embedding for the residue symbol
+    """
+    residue = atom.GetPDBResidueInfo()
+    return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + \
+           onehot(residue.GetResidueName() if residue else -1, residue_vocab, allow_unknown=True)
 
 
 @R.register("features.bond.default")
@@ -238,7 +255,7 @@ def bond_default(bond):
 def bond_length(bond):
     """
     Bond length in the molecular conformation.
-    
+
     Note it takes much time to compute the conformation for large molecules.
     """
     mol = bond.GetOwningMol()
@@ -278,6 +295,26 @@ def bond_pretrain(bond):
            onehot(bond.GetBondDir(), bond_dir_vocab)
 
 
+@R.register("features.residue.symbol")
+def residue_symbol(residue):
+    """Symbol residue feature.
+
+    Features:
+        GetResidueName(): one-hot embedding for the residue symbol
+    """
+    return onehot(residue.GetResidueName(), residue_vocab, allow_unknown=True)
+
+
+@R.register("features.residue.default")
+def residue_default(residue):
+    """Default atom feature.
+
+    Features:
+        GetResidueName(): one-hot embedding for the residue symbol
+    """
+    return residue_symbol(residue)
+
+
 @R.register("features.molecule.ecfp")
 def ExtendedConnectivityFingerprint(mol, radius=2, length=1024):
     """Extended Connectivity Fingerprint molecule feature.
@@ -300,8 +337,9 @@ ECFP = ExtendedConnectivityFingerprint
 __all__ = [
     "atom_default", "atom_center_identification", "atom_synthon_completion",
     "atom_symbol", "atom_explicit_property_prediction", "atom_property_prediction",
-    "atom_position", "atom_pretrain",
+    "atom_position", "atom_pretrain", "atom_residue_symbol",
     "bond_default", "bond_length", "bond_property_prediction", "bond_pretrain",
+    "residue_symbol", "residue_default",
     "ExtendedConnectivityFingerprint", "molecule_default",
     "ECFP",
 ]

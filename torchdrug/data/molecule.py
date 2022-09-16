@@ -542,7 +542,7 @@ class Molecule(Graph):
         return is_valid
 
     def __repr__(self):
-        fields = ["num_atom=%d" % self.num_node, "num_bond=%d" % self.num_edge]
+        fields = ["num_atom=%d" % self.num_atom, "num_bond=%d" % self.num_bond]
         if self.device.type != "cpu":
             fields.append("device='%s'" % self.device)
         return "%s(%s)" % (self.__class__.__name__, ", ".join(fields))
@@ -980,8 +980,8 @@ class PackedMolecule(PackedGraph, Molecule):
 
     def __repr__(self):
         fields = ["batch_size=%d" % self.batch_size,
-                  "num_atoms=%s" % pretty.long_array(self.num_nodes.tolist()),
-                  "num_bonds=%s" % pretty.long_array(self.num_edges.tolist())]
+                  "num_atoms=%s" % pretty.long_array(self.num_atoms.tolist()),
+                  "num_bonds=%s" % pretty.long_array(self.num_bonds.tolist())]
         if self.device.type != "cpu":
             fields.append("device='%s'" % self.device)
         return "%s(%s)" % (self.__class__.__name__, ", ".join(fields))

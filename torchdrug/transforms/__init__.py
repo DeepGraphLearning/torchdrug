@@ -1,6 +1,7 @@
-from .transform import TargetNormalize, RemapAtomType, RandomBFSOrder, Shuffle, VirtualNode, VirtualAtom, Compose
+from .transform import NormalizeTarget, RemapAtomType, RandomBFSOrder, Shuffle, VirtualNode, \
+        VirtualAtom, TruncateProtein, ProteinView, Compose
 
 __all__ = [
-    "TargetNormalize", "RemapAtomType", "RandomBFSOrder", "Shuffle",
-    "VirtualNode", "VirtualAtom", "Compose",
+    "NormalizeTarget", "RemapAtomType", "RandomBFSOrder", "Shuffle",
+    "VirtualNode", "VirtualAtom", "TruncateProtein", "ProteinView", "Compose",
 ]

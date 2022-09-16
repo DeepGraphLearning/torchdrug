@@ -33,7 +33,7 @@ class CenterIdentification(tasks.Task, core.Configurable):
         num_mlp_layer (int, optional): number of MLP layers
     """
 
-    _option_members = set(["feature"])
+    _option_members = {"feature"}
 
     def __init__(self, model, feature=("reaction", "graph", "atom", "bond"), num_mlp_layer=2):
         super(CenterIdentification, self).__init__()
@@ -302,7 +302,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         num_mlp_layer (int, optional): number of MLP layers
     """
 
-    _option_members = set(["feature"])
+    _option_members = {"feature"}
 
     def __init__(self, model, feature=("reaction", "graph", "atom"), num_mlp_layer=2):
         super(SynthonCompletion, self).__init__()
@@ -1066,7 +1066,7 @@ class Retrosynthesis(tasks.Task, core.Configurable):
         metric (str or list of str, optional): metric(s). Available metrics are ``top-K``.
     """
 
-    _option_members = set(["metric"])
+    _option_members = {"metric"}
 
     def __init__(self, center_identification, synthon_completion, center_topk=2, num_synthon_beam=10, max_prediction=20,
                  metric=("top-1", "top-3", "top-5", "top-10")):

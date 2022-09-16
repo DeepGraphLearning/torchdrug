@@ -1,10 +1,13 @@
 from .task import Task
 
-from .property_prediction import PropertyPrediction, Unsupervised
-from .pretrain import EdgePrediction, AttributeMasking, ContextPrediction
+from .property_prediction import PropertyPrediction, MultipleBinaryClassification, \
+    NodePropertyPrediction, InteractionPrediction, Unsupervised
+from .pretrain import EdgePrediction, AttributeMasking, ContextPrediction, DistancePrediction, \
+    AnglePrediction, DihedralPrediction
 from .generation import AutoregressiveGeneration, GCPNGeneration
 from .retrosynthesis import CenterIdentification, SynthonCompletion, Retrosynthesis
 from .reasoning import KnowledgeGraphCompletion
+from .contact_prediction import ContactPrediction
 
 
 _criterion_name = {
@@ -36,9 +39,12 @@ def _get_metric_name(metric):
 
 
 __all__ = [
-    "PropertyPrediction", "Unsupervised",
-    "EdgePrediction", "AttributeMasking", "ContextPrediction",
+    "PropertyPrediction", "MultipleBinaryClassification", "NodePropertyPrediction", "InteractionPrediction",
+    "Unsupervised",
+    "EdgePrediction", "AttributeMasking", "ContextPrediction", "DistancePrediction", "AnglePrediction",
+    "DihedralPrediction",
     "AutoregressiveGeneration", "GCPNGeneration",
     "CenterIdentification", "SynthonCompletion", "Retrosynthesis",
     "KnowledgeGraphCompletion",
+    "ContactPrediction",
 ]

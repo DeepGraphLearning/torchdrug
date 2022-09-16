@@ -962,14 +962,14 @@ class GCPNGeneration(tasks.Task, core.Configurable):
 
         node1_pred = scatter_max(node1_logits, index_dict["extended_node2graph"])[1]
         node1_acc = node1_pred == index_dict["node1_index_per_graph"]
-        metric["node1 acc"] = node1_acc[label4_target==0].float().mean()
+        metric["node1 acc"] = node1_acc[label4_target == 0].float().mean()
 
         node2_pred = scatter_max(node2_logits, index_dict["extended_node2graph"])[1]
         node2_acc = node2_pred == index_dict["node2_index_per_graph"]
-        metric["node2 acc"] = node2_acc[label4_target==0].float().mean()
+        metric["node2 acc"] = node2_acc[label4_target == 0].float().mean()
 
         edge_acc = torch.argmax(edge_logits, -1) == label3_target
-        metric["edge acc"] = edge_acc[label4_target==0].float().mean()
+        metric["edge acc"] = edge_acc[label4_target == 0].float().mean()
         return metric
 
     # generation step
@@ -979,17 +979,16 @@ class GCPNGeneration(tasks.Task, core.Configurable):
     @torch.no_grad()    
     def _construct_dist(self, prob_, graph):
         max_size = max(graph.num_nodes) + self.id2atom.size(0)
-        probs = torch.zeros((len(graph.num_nodes), max_size),device=prob_.device).view(-1)
-        #start = torch.arange(graph.num_nodes.size(0), device=self.device) * max_size
+        probs = torch.zeros((len(graph), max_size), device=prob_.device).view(-1)
         start = (graph.num_cum_nodes - graph.num_nodes)[graph.node2graph]
         start = torch.arange(graph.num_node, device=self.device) - start
         index = torch.arange(graph.num_nodes.size(0), device=self.device) * max_size
         index = index[graph.node2graph] + start 
         probs[index] = prob_[:graph.num_node] 
 
-        start_extend = torch.arange(self.id2atom.size(0), device=self.device).repeat(graph.num_nodes.size()) # (num_graph * 16)
-        index_extend = torch.arange(graph.num_nodes.size(0), device=self.device) * max_size + graph.num_nodes
-        index2graph = torch.arange(graph.num_nodes.size(0), device=self.device).unsqueeze(1).repeat(1, self.id2atom.size(0)).view(-1)
+        start_extend = torch.arange(len(self.id2atom), device=self.device).repeat(graph.num_nodes.size()) # (num_graph * 16)
+        index_extend = torch.arange(len(graph), device=self.device) * max_size + graph.num_nodes
+        index2graph = torch.arange(len(graph), device=self.device).repeat_interleave(len(self.id2atom))
         index_extend = index_extend[index2graph] + start_extend
         probs[index_extend] = prob_[graph.num_node:]
         probs = probs.view(len(graph.num_nodes), max_size)
@@ -997,7 +996,6 @@ class GCPNGeneration(tasks.Task, core.Configurable):
 
     @torch.no_grad()
     def _sample_action(self, graph, off_policy):
-
         if off_policy:
             model = self.agent_model
             new_atom_embeddings = self.agent_new_atom_embeddings
@@ -1016,20 +1014,17 @@ class GCPNGeneration(tasks.Task, core.Configurable):
         # step1: get feature
         output = model(graph, graph.node_feature.float())
 
-        extended_node2graph = torch.arange(graph.num_nodes.size(0), 
-                device=self.device).unsqueeze(1).repeat([1, self.id2atom.size(0)]).view(-1) # (num_graph * 16)
+        extended_node2graph = torch.arange(len(graph), device=self.device).repeat_interleave(len(self.id2atom)) # (num_graph * 16)
         extended_node2graph = torch.cat((graph.node2graph, extended_node2graph)) # (num_node + 16 * num_graph)
 
         graph_feature_per_node = output["graph_feature"][extended_node2graph]
 
         # step2: predict stop
-        stop_feature = output["graph_feature"] #(num_graph, n_out)
-        stop_logits = mlp_stop(stop_feature) #(num_graph, 2)
-        stop_prob = F.softmax(stop_logits, -1) #(num_graph, 2)
-        #print('stop_prob', stop_prob)
+        stop_feature = output["graph_feature"] # (num_graph, n_out)
+        stop_logits = mlp_stop(stop_feature) # (num_graph, 2)
+        stop_prob = F.softmax(stop_logits, -1) # (num_graph, 2)
         stop_prob_dist = torch.distributions.Categorical(stop_prob)
         stop_pred = stop_prob_dist.sample()
-        #stop_pred = torch.argmax(stop_logits, -1) # (num_graph)
         # step3: predict first node: node1
 
         node1_feature = output["node_feature"] #(num_node, n_out)
@@ -1047,40 +1042,37 @@ class GCPNGeneration(tasks.Task, core.Configurable):
         node1_logits = torch.where(mask>0, node1_logits, -10000.0*torch.ones(node1_logits.size(), device=self.device))
 
         node1_prob = scatter_softmax(node1_logits, extended_node2graph) # (num_node + 16 * num_graph)
-        node1_prob_dist, tmp = self._construct_dist(node1_prob, graph) #(num_graph, max)
-        #print('node1', tmp)
+        node1_prob_dist, tmp = self._construct_dist(node1_prob, graph) # (num_graph, max)
 
         node1_pred = node1_prob_dist.sample() #(num_graph)
         node1_index_per_graph = node1_pred + (graph.num_cum_nodes - graph.num_nodes)
         # step4: predict second node: node2
         node1_index = node1_index_per_graph[extended_node2graph] # (num_node + 16 * num_graph)
-        node2_feature_node1 = node1_feature[node1_index] #(num_node + 16 * num_graph, n_out)
+        node2_feature_node1 = node1_feature[node1_index] # (num_node + 16 * num_graph, n_out)
 
-        node2_feature = torch.cat((node2_feature_node1, node2_feature_node2), 1) #(num_node + 16 * num_graph, 2n_out) 
-        node2_logits = mlp_node2(node2_feature).squeeze(1)  #(num_node + 16 * num_graph)        
+        node2_feature = torch.cat((node2_feature_node1, node2_feature_node2), 1) # (num_node + 16 * num_graph, 2n_out)
+        node2_logits = mlp_node2(node2_feature).squeeze(1)  # (num_node + 16 * num_graph)
 
-        #mask the selected node1
+        # mask the selected node1
         mask = torch.zeros(node2_logits.size(), device=self.device)
         mask[node1_index_per_graph] = 1
         node2_logits = torch.where(mask==0, node2_logits, -10000.0*torch.ones(node2_logits.size(), device=self.device))
         node2_prob = scatter_softmax(node2_logits, extended_node2graph) # (num_node + 16 * num_graph)
-        node2_prob_dist, tmp = self._construct_dist(node2_prob, graph) #(num_graph, max)
-        #print('node2', tmp)
-        node2_pred = node2_prob_dist.sample() #(num_graph)
+        node2_prob_dist, tmp = self._construct_dist(node2_prob, graph) # (num_graph, max)
+        node2_pred = node2_prob_dist.sample() # (num_graph,)
         is_new_node = node2_pred - graph.num_nodes
         graph_offset = torch.arange(graph.num_nodes.size(0), device=self.device)
         node2_index_per_graph = torch.where(is_new_node >= 0,
-                    graph.num_node + graph_offset * self.id2atom.size(0) + is_new_node,
-                    node2_pred + graph.num_cum_nodes - graph.num_nodes)
+                                            graph.num_node + graph_offset * self.id2atom.size(0) + is_new_node,
+                                            node2_pred + graph.num_cum_nodes - graph.num_nodes)
 
 
         # step5: predict edge type
-        edge_feature_node1 = node2_feature_node2[node1_index_per_graph] #(num_graph, n_out)
-        edge_feature_node2 = node2_feature_node2[node2_index_per_graph] # #(num_graph, n_out)
-        edge_feature = torch.cat((edge_feature_node1, edge_feature_node2), 1) #(num_graph, 2n_out)
+        edge_feature_node1 = node2_feature_node2[node1_index_per_graph] # (num_graph, n_out)
+        edge_feature_node2 = node2_feature_node2[node2_index_per_graph] # (num_graph, n_out)
+        edge_feature = torch.cat((edge_feature_node1, edge_feature_node2), 1) # (num_graph, 2n_out)
         edge_logits = mlp_edge(edge_feature)
-        edge_prob = F.softmax(edge_logits, -1) #(num_graph, 3)
-        #print('edge', edge_prob)
+        edge_prob = F.softmax(edge_logits, -1) # (num_graph, 3)
         edge_prob_dist = torch.distributions.Categorical(edge_prob)
         edge_pred = edge_prob_dist.sample()        
 
@@ -1114,14 +1106,9 @@ class GCPNGeneration(tasks.Task, core.Configurable):
         graph_feature_per_node = output["graph_feature"][extended_node2graph]
 
         # step2: predict stop
-        stop_feature = output["graph_feature"] #(num_graph, n_out)
-        stop_logits = mlp_stop(stop_feature) #(num_graph, 2)
-        stop_pred = torch.argmax(stop_logits, -1) # (num_graph)
-        #stop_prob = F.softmax(stop_logits, -1) #(num_graph, 2)
-        #print('stop_prob', stop_prob)
-        #stop_prob_dist = torch.distributions.Categorical(stop_prob)
-        #stop_pred = stop_prob_dist.sample()
-        #stop_pred = torch.argmax(stop_logits, -1) # (num_graph)
+        stop_feature = output["graph_feature"] # (num_graph, n_out)
+        stop_logits = mlp_stop(stop_feature) # (num_graph, 2)
+        stop_pred = torch.argmax(stop_logits, -1) # (num_graph,)
         # step3: predict first node: node1
 
         node1_feature = output["node_feature"] #(num_node, n_out)
@@ -1132,26 +1119,21 @@ class GCPNGeneration(tasks.Task, core.Configurable):
 
         node1_feature = torch.cat((node1_feature, graph_feature_per_node), 1)
 
-        node1_logits = mlp_node1(node1_feature).squeeze(1)  #(num_node + 16 * num_graph)
-        #mask the extended part
+        node1_logits = mlp_node1(node1_feature).squeeze(1)  # (num_node + 16 * num_graph)
+        # mask the extended part
         mask = torch.zeros(node1_logits.size(), device=self.device)
         mask[:graph.num_node] = 1
         node1_logits = torch.where(mask>0, node1_logits, -10000.0*torch.ones(node1_logits.size(), device=self.device))
 
         node1_index_per_graph = scatter_max(node1_logits, extended_node2graph)[1] # (num_node + 16 * num_graph)
         node1_pred = node1_index_per_graph - (graph.num_cum_nodes - graph.num_nodes)
-        #node1_prob = scatter_softmax(node1_logits, extended_node2graph) # (num_node + 16 * num_graph)
-        #node1_prob_dist, tmp = self._construct_dist(node1_prob, graph) #(num_graph, max)
-        #print('node1', tmp)
 
-        #node1_pred = node1_prob_dist.sample() #(num_graph)
-        #node1_index_per_graph = node1_pred + (graph.num_cum_nodes - graph.num_nodes)
         # step4: predict second node: node2
         node1_index = node1_index_per_graph[extended_node2graph] # (num_node + 16 * num_graph)
-        node2_feature_node1 = node1_feature[node1_index] #(num_node + 16 * num_graph, n_out)
+        node2_feature_node1 = node1_feature[node1_index] # (num_node + 16 * num_graph, n_out)
 
-        node2_feature = torch.cat((node2_feature_node1, node2_feature_node2), 1) #(num_node + 16 * num_graph, 2n_out) 
-        node2_logits = mlp_node2(node2_feature).squeeze(1)  #(num_node + 16 * num_graph)        
+        node2_feature = torch.cat((node2_feature_node1, node2_feature_node2), 1) # (num_node + 16 * num_graph, 2n_out
+        node2_logits = mlp_node2(node2_feature).squeeze(1)  # (num_node + 16 * num_graph)
 
         #mask the selected node1
         mask = torch.zeros(node2_logits.size(), device=self.device)
@@ -1160,28 +1142,15 @@ class GCPNGeneration(tasks.Task, core.Configurable):
         node2_index_per_graph = scatter_max(node2_logits, extended_node2graph)[1] # (num_node + 16 * num_graph)
 
         is_new_node =  node2_index_per_graph - graph.num_node # non negative if is new node
-        #node2_prob = scatter_softmax(node2_logits, extended_node2graph) # (num_node + 16 * num_graph)
-        #node2_prob_dist, tmp = self._construct_dist(node2_prob, graph) #(num_graph, max)
-        #print('node2', tmp)
-        #node2_pred = node2_prob_dist.sample() #(num_graph)
-        #is_new_node = node2_pred - graph.num_nodes
         graph_offset = torch.arange(graph.num_nodes.size(0), device=self.device)
         node2_pred = torch.where(is_new_node>=0, graph.num_nodes + is_new_node - graph_offset * self.id2atom.size(0),
                             node2_index_per_graph - (graph.num_cum_nodes - graph.num_nodes))
-        #node2_index_per_graph = torch.where(is_new_node >= 0,
-        #            graph.num_node + graph_offset * self.id2atom.size(0) + is_new_node,
-        #            node2_pred + graph.num_cum_nodes - graph.num_nodes)
-
 
         # step5: predict edge type
         edge_feature_node1 = node2_feature_node2[node1_index_per_graph] #(num_graph, n_out)
         edge_feature_node2 = node2_feature_node2[node2_index_per_graph] # #(num_graph, n_out)
         edge_feature = torch.cat((edge_feature_node1, edge_feature_node2), 1) #(num_graph, 2n_out)
         edge_logits = mlp_edge(edge_feature)
-        #edge_prob = F.softmax(edge_logits, -1) #(num_graph, 3)
-        #print('edge', edge_prob)
-        #edge_prob_dist = torch.distributions.Categorical(edge_prob)
-        #edge_pred = edge_prob_dist.sample()        
         edge_pred = torch.argmax(edge_logits, -1)
 
         return stop_pred, node1_pred, node2_pred, edge_pred        
@@ -1201,16 +1170,18 @@ class GCPNGeneration(tasks.Task, core.Configurable):
             # maximal resample time
             mask = ~is_valid
             if max_resample == 1:
-                tmp_stop_action, tmp_node1_action, tmp_node2_action, tmp_edge_action = self._top1_action(graph, off_policy)
+                tmp_stop_action, tmp_node1_action, tmp_node2_action, tmp_edge_action = \
+                    self._top1_action(graph, off_policy)
             else:
-                tmp_stop_action, tmp_node1_action, tmp_node2_action, tmp_edge_action = self._sample_action(graph, off_policy)
+                tmp_stop_action, tmp_node1_action, tmp_node2_action, tmp_edge_action = \
+                    self._sample_action(graph, off_policy)
 
             stop_action[mask] = tmp_stop_action[mask]
             node1_action[mask] = tmp_node1_action[mask]
             node2_action[mask] = tmp_node2_action[mask]
             edge_action[mask] = tmp_edge_action[mask]
 
-            stop_action[graph.num_nodes <= 5] = torch.zeros(len(graph), dtype=torch.long, device=self.device)[graph.num_nodes <= 5]
+            stop_action[graph.num_nodes <= 5] = 0
             # tmp add new nodes
             has_new_node = (node2_action >= graph.num_nodes) & (stop_action == 0)
             new_atom_id = (node2_action - graph.num_nodes)[has_new_node]
@@ -1259,7 +1230,7 @@ class GCPNGeneration(tasks.Task, core.Configurable):
             num_invalid = len(graph) - is_valid.sum().item()
             num_working = len(graph)
             logger.warning("%d / %d molecules are invalid even after %d resampling" %
-                            (num_invalid, num_working, max_resample))            
+                           (num_invalid, num_working, max_resample))
 
         # apply the true action
         # inherit attributes

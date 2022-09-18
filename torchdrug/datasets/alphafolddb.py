@@ -134,7 +134,6 @@ class AlphaFoldDB(data.ProteinDataset):
             protein = data.Protein.from_pdb(self.pdb_files[index], self.kwargs)
         else:
             protein = self.data[index].clone()
-        # Zhaocheng: I didn't see any code that creates sparse residue features
         if hasattr(protein, "residue_feature"):
             with protein.residue():
                 protein.residue_feature = protein.residue_feature.to_dense()

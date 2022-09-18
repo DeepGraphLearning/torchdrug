@@ -141,6 +141,103 @@ PCQM4M
     :members:
 
 
+Protein Property Prediction Datasets
+------------------------------------
+
+BetaLactamase
+^^^^^^^^^^^^^
+.. autoclass:: BetaLactamase
+    :members:
+
+Fluorescence
+^^^^^^^^^^^^
+.. autoclass:: Fluorescence
+    :members:
+
+Stability
+^^^^^^^^^
+.. autoclass:: Stability
+    :members:
+
+Solubility
+^^^^^^^^^^
+.. autoclass:: Solubility
+    :members:
+
+BinaryLocalization
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: BinaryLocalization
+    :members:
+
+SubcellularLocalization
+^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: SubcellularLocalization
+    :members:
+
+EnzymeCommission
+^^^^^^^^^^^^^^^^
+.. autoclass:: EnzymeCommission
+    :members:
+
+GeneOntology
+^^^^^^^^^^^^
+.. autoclass:: GeneOntology
+    :members:
+
+AlphaFoldDB
+^^^^^^^^^^^
+.. autoclass:: AlphaFoldDB
+    :members:
+
+Protein Structure Prediction Datasets
+-------------------------------------
+
+Fold
+^^^^
+.. autoclass:: Fold
+    :members:
+
+SecondaryStructure
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: SecondaryStructure
+    :members:
+
+ProteinNet
+^^^^^^^^^^
+.. autoclass:: ProteinNet
+    :members:
+
+Protein-Protein Prediction Datasets
+-----------------------------------
+
+HumanPPI
+^^^^^^^^
+.. autoclass:: HumanPPI
+    :members:
+
+YeastPPI
+^^^^^^^^
+.. autoclass:: YeastPPI
+    :members:
+
+PPIAffinity
+^^^^^^^^^^^
+.. autoclass:: PPIAffinity
+    :members:
+
+Protein Ligand Prediction Datasets
+----------------------------------
+
+BindingDB
+^^^^^^^^^
+.. autoclass:: BindingDB
+    :members:
+
+PDBBind
+^^^^^^^
+.. autoclass:: PDBBind
+    :members:
+
 Retrosynthesis Datasets
 -----------------------
 

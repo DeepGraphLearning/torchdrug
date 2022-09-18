@@ -50,6 +50,11 @@ ContinuousFilterConv
 .. autoclass:: ContinuousFilterConv
     :members:
 
+GeometricRelationalGraphConv
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: GeometricRelationalGraphConv
+    :members:
+
 GraphAttentionConv
 ^^^^^^^^^^^^^^^^^^
 .. autoclass:: GraphAttentionConv
@@ -152,6 +157,25 @@ ConditionalFlow
     :members:
 
 
+Sequence Encoder Blocks
+-----------------------
+
+ProteinResNetBlock
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: ProteinResNetBlock
+    :members:
+
+SelfAttentionBlock
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: SelfAttentionBlock
+    :members:
+
+ProteinBERTBlock
+^^^^^^^^^^^^^^^^
+.. autoclass:: ProteinBERTBlock
+    :members:
+
+
 Distribution Layers
 -------------------
 
@@ -162,6 +186,69 @@ These layers belong to `torchdrug.layers.distribution`.
 IndependentGaussian
 ^^^^^^^^^^^^^^^^^^^
 .. autoclass:: IndependentGaussian
+    :members:
+
+
+Graph Construction Layers
+-------------------------
+
+These layers belong to `torchdrug.layers.geometry`.
+
+.. currentmodule:: torchdrug.layers.geometry
+
+GraphConstruction
+^^^^^^^^^^^^^^^^^
+.. autoclass:: GraphConstruction
+    :members:
+
+SpatialLineGraph
+^^^^^^^^^^^^^^^^
+.. autoclass:: SpatialLineGraph
+    :members:
+
+BondEdge
+^^^^^^^^
+.. autoclass:: BondEdge
+    :members:
+
+KNNEdge
+^^^^^^^
+.. autoclass:: KNNEdge
+    :members:
+
+SpatialEdge
+^^^^^^^^^^^
+.. autoclass:: SpatialEdge
+    :members:
+
+SequentialEdge
+^^^^^^^^^^^^^^
+.. autoclass:: SequentialEdge
+    :members:
+
+AlphaCarbonNode
+^^^^^^^^^^^^^^^
+.. autoclass:: AlphaCarbonNode
+    :members:
+
+IdentityNode
+^^^^^^^^^^^^
+.. autoclass:: IdentityNode
+    :members:
+
+RandomEdgeMask
+^^^^^^^^^^^^^^
+.. autoclass:: RandomEdgeMask
+    :members:
+
+SubsequenceNode
+^^^^^^^^^^^^^^^
+.. autoclass:: SubsequenceNode
+    :members:
+
+SubspaceNode
+^^^^^^^^^^^^
+.. autoclass:: SubspaceNode
     :members:
 
 

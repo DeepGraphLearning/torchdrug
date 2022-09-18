@@ -16,6 +16,11 @@ Molecule
 .. autoclass:: Molecule
     :members:
 
+Protein
+^^^^^^^
+.. autoclass:: Protein
+    :members:
+
 PackedGraph
 ^^^^^^^^^^^
 .. autoclass:: PackedGraph
@@ -24,6 +29,11 @@ PackedGraph
 PackedMolecule
 ^^^^^^^^^^^^^^
 .. autoclass:: PackedMolecule
+    :members:
+
+PackedProtein
+^^^^^^^^^^^^^
+.. autoclass:: PackedProtein
     :members:
 
 Dictionary
@@ -43,6 +53,21 @@ KnowledgeGraphDataset
 MoleculeDataset
 ^^^^^^^^^^^^^^^
 .. autoclass:: MoleculeDataset
+    :members:
+
+ProteinDataset
+^^^^^^^^^^^^^^
+.. autoclass:: ProteinDataset
+    :members:
+
+ProteinPairDataset
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: ProteinPairDataset
+    :members:
+
+ProteinLigandDataset
+^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: ProteinLigandDataset
     :members:
 
 NodeClassificationDataset
@@ -104,6 +129,8 @@ Atom Features
 
 .. autofunction:: atom_synthon_completion
 
+.. autofunction:: atom_residue_symbol
+
 Bond Features
 ^^^^^^^^^^^^^
 .. autofunction:: bond_default
@@ -113,6 +140,12 @@ Bond Features
 .. autofunction:: bond_property_prediction
 
 .. autofunction:: bond_pretrain
+
+Residue Features
+^^^^^^^^^^^^^^^^
+.. autofunction:: residue_default
+
+.. autofunction:: residue_symbol
 
 Molecule Features
 ^^^^^^^^^^^^^^^^^

@@ -3,13 +3,27 @@ torchdrug.tasks
 
 .. currentmodule:: torchdrug.tasks
 
-
 Property Prediction Tasks
 -------------------------
 
 PropertyPrediction
 ^^^^^^^^^^^^^^^^^^
 .. autoclass:: PropertyPrediction
+    :members:
+
+MultipleBinaryClassification
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: MultipleBinaryClassification
+    :members:
+
+NodePropertyPrediction
+^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: NodePropertyPrediction
+    :members:
+
+InteractionPrediction
+^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: InteractionPrediction
     :members:
 
 
@@ -29,6 +43,21 @@ AttributeMasking
 ContextPrediction
 ^^^^^^^^^^^^^^^^^
 .. autoclass:: ContextPrediction
+    :members:
+
+DistancePrediction
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: DistancePrediction
+    :members:
+
+AnglePrediction
+^^^^^^^^^^^^^^^
+.. autoclass:: AnglePrediction
+    :members:
+
+DihedralPrediction
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: DihedralPrediction
     :members:
 
 Unsupervised
@@ -76,4 +105,13 @@ Knowledge Graph Reasoning Tasks
 KnowledgeGraphCompletion
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: KnowledgeGraphCompletion
+    :members:
+
+
+Protein-Protein Interaction Prediction Tasks
+--------------------------------------------
+
+ContactPrediction
+^^^^^^^^^^^^^^^^^
+.. autoclass:: ContactPrediction
     :members:

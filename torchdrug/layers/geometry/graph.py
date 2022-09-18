@@ -20,9 +20,10 @@ class GraphConstruction(nn.Module, core.Configurable):
         edge_layers (list of nn.Module, optional): modules to construct edges of the new graph
         edge_feature (str, optional): edge features in the new graph.
             Available features are ``residue_type``, ``gearnet``.
-            1. For ``residue_type``, the feature of the edge :math:`e_ij` between residue :math:`i` and residue
+
+            1. For ``residue_type``, the feature of the edge :math:`e_{ij}` between residue :math:`i` and residue
                 :math:`j` is the concatenation ``[residue_type(i), residue_type(j)]``.
-            2. For ``gearnet``, the feature of the edge :math:`e_ij` between residue :math:`i` and residue :math:`j`
+            2. For ``gearnet``, the feature of the edge :math:`e_{ij}` between residue :math:`i` and residue :math:`j`
                 is the concatenation ``[residue_type(i), residue_type(j), edge_type(e_ij),
                 sequential_distance(i,j), spatial_distance(i,j)]``.
     """

@@ -8,9 +8,9 @@ torchdrug.transforms
 Graph Transformations
 ---------------------
 
-TargetNormalize
+NormalizeTarget
 ^^^^^^^^^^^^^^^
-.. autoclass:: TargetNormalize
+.. autoclass:: NormalizeTarget
 
 RandomBFSOrder
 ^^^^^^^^^^^^^^
@@ -24,6 +24,7 @@ VirtualNode
 ^^^^^^^^^^^
 .. autoclass:: VirtualNode
 
+
 Molecule Transformations
 ------------------------
 
@@ -34,3 +35,15 @@ RemapAtomType
 VirtualAtom
 ^^^^^^^^^^^
 .. autoclass:: VirtualAtom
+
+
+Protein Transformations
+-----------------------
+
+TruncateProtein
+^^^^^^^^^^^^^^^
+.. autoclass:: TruncateProtein
+
+ProteinView
+^^^^^^^^^^^
+.. autoclass:: ProteinView

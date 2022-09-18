@@ -97,10 +97,57 @@ RGCN
 
 .. autoclass:: RGCN
 
+GearNet
+^^^^^^^
+.. autoclass:: GeometryAwareRelationalGraphNeuralNetwork
+    :members:
+
+.. autoclass:: GearNet
+
 SchNet
 ^^^^^^
 .. autoclass:: SchNet
     :members:
+
+
+Protein Sequence Encoders
+-------------------------
+
+ESM
+^^^
+.. autoclass:: EvolutionaryScaleModeling
+    :members:
+
+ProteinCNN
+^^^^^^^^^^
+.. autoclass:: ProteinConvolutionalNetwork
+    :members:
+
+ProteinResNet
+^^^^^^^^^^^^^
+.. autoclass:: ProteinResNet
+    :members:
+
+ProteinLSTM
+^^^^^^^^^^^
+.. autoclass:: ProteinLSTM
+    :members:
+
+ProteinBERT
+^^^^^^^^^^^
+.. autoclass:: ProteinBERT
+    :members:
+
+Statistic Feature Engineering
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: Statistic
+    :members:
+
+Physicochemical Feature Engineering
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: Physicochemical
+    :members:
+
 
 Normalizing Flows
 -----------------
@@ -112,10 +159,16 @@ GraphAutoregressiveFlow
 
 .. autoclass:: GraphAF
 
+
 Self-supervised Models
 ----------------------
 
 InfoGraph
 ^^^^^^^^^
 .. autoclass:: InfoGraph
+    :members:
+
+MultiviewContrast
+^^^^^^^^^^^^^^^^^
+.. autoclass:: MultiviewContrast
     :members:

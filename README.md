@@ -1,6 +1,10 @@
-[![TorchDrug](asset/logo.svg)](https://torchdrug.ai/)
-
-----------------------------
+[![TorchDrug](asset/torchdrug_logo_full.svg)](https://torchdrug.ai/)
+<h1 align="center">
+  with
+  <a href="https://torchprotein.ai/">
+    <img src="asset/torchprotein_logo_tight.svg" alt="TorchProtein" style="height:26px" />
+  </a>
+</h1>
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Tbnr1Fog_YjkqU1MOhcVLuxqZ4DC-c8-#forceEdit=true&sandboxMode=true)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-blue)](https://github.com/DeepGraphLearning/torchdrug/blob/master/CONTRIBUTING.md)
@@ -26,7 +30,7 @@ Installation
 ------------
 
 TorchDrug can be installed on either Linux, Windows or macOS. It is compatible with
-Python 3.7/3.8 and PyTorch >= 1.8.0.
+Python 3.7/3.8/3.9 and PyTorch >= 1.8.0.
 
 ### From Conda ###
 

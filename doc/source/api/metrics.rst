@@ -3,7 +3,6 @@ torchdrug.metrics
 
 .. currentmodule:: torchdrug.metrics
 
-
 Basic Metrics
 -------------
 
@@ -32,15 +31,35 @@ Accuracy
 
 Matthews Correlation Coefficient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofuction:: matthews_corrcoef
+.. autofunction:: matthews_corrcoef
 
 Pearson Correlation Coefficient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: pearsonr
 
-Spearman Correlation Coefficient
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Spearman's Rank Correlation Coefficient
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: spearmanr
+
+Variadic Accuracy
+^^^^^^^^^^^^^^^^^
+.. autofunction:: variadic_accuracy
+
+Variadic Area Under ROC
+^^^^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: variadic_area_under_roc
+
+Variadic Area Under PRC
+^^^^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: variadic_area_under_prc
+
+Variadic Top Precision
+^^^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: variadic_top_precision
+
+F1 Max
+^^^^^^
+.. autofunction:: f1_max
 
 
 Chemical Metrics

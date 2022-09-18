@@ -68,9 +68,6 @@ class PropertyPrediction(tasks.Task, core.Configurable):
             mean.append(value.float().mean())
             std.append(value.float().std())
             weight.append(w)
-            # Zhaocheng: Can we add assertion here?
-            # If I understand correctly, the first two cases only allow len(self.task) == 1?
-            # Oxer: Why? I haven't seen any bugs for the case len(self.task) > 1.
             if value.ndim > 1:
                 num_class.append(value.shape[1])
             elif value.dtype == torch.long:

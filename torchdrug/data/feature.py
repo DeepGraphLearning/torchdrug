@@ -307,7 +307,7 @@ def residue_symbol(residue):
 
 @R.register("features.residue.default")
 def residue_default(residue):
-    """Default atom feature.
+    """Default residue feature.
 
     Features:
         GetResidueName(): one-hot embedding for the residue symbol

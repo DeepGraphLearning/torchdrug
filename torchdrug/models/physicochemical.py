@@ -88,7 +88,7 @@ class Physicochemical(nn.Module, core.Configurable):
         Returns:
             dict with ``graph_feature`` field: graph representations of shape :math:`(n, d)`
         """
-        input = graph.residue_type
+        input = graph.edge_residue_type
         
         x = self.property[input]    # num_residue * 8
         x_mean = scatter_mean(x, graph.residue2graph, dim=0, dim_size=graph.batch_size)    # batch_size * 8

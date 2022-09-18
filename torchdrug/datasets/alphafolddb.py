@@ -6,7 +6,7 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.AlphaFoldDB")
-@utils.copy_args(data.ProteinDataset.load_pdbs, ignore=("filtered_pdb",))
+@utils.copy_args(data.ProteinDataset.load_pdbs)
 class AlphaFoldDB(data.ProteinDataset):
     """
     3D protein structures predicted by AlphaFold.

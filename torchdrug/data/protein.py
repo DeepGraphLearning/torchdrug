@@ -252,13 +252,7 @@ class Protein(Molecule):
                    meta_dict=protein.meta_dict, **protein.data_dict)
 
     @classmethod
-    def from_sequence_fast(cls, sequence):
-        """
-        A faster version of creating a protein from a sequence.
-
-        Parameters:
-            sequence (str): string
-        """
+    def _residue_from_sequence(cls, sequence):
         residue_type = []
         residue_feature = []
         sequence = sequence + "G"
@@ -278,9 +272,15 @@ class Protein(Molecule):
     @classmethod
     @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
     def from_sequence(cls, sequence, atom_feature="default", bond_feature="default", residue_feature="default",
-                      mol_feature=None, kekulize=False, residue_only=False):
+                      mol_feature=None, kekulize=False):
         """
         Create a protein from a sequence.
+
+        .. note::
+
+            It takes considerable time to construct proteins with a large number of atoms and bonds.
+            If you only need residue information, you may speed up the construction by setting
+            ``atom_feature`` and ``bond_feature`` to ``None``.
 
         Parameters:
             sequence (str): protein sequence
@@ -292,14 +292,9 @@ class Protein(Molecule):
                 Note this only affects the relation in ``edge_list``.
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
-            residue_only (bool, optional): only store residue information without atom information.
-                This can speed up the processing.
         """
-        if residue_only:
-            if residue_feature != "default":
-                raise ValueError("`residue_only` only supports the default residue feature, "
-                                 "but found `%s` for `residue_feature`" % residue_feature)
-            return cls.from_sequence_fast(sequence)
+        if atom_feature is None and bond_feature is None and residue_feature == "default":
+            return cls._residue_from_sequence(sequence)
         
         mol = Chem.MolFromSequence(sequence)
         if mol is None:
@@ -324,7 +319,7 @@ class Protein(Molecule):
                 Note this only affects the relation in ``edge_list``.
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
-            sanitize (bool, optional): whether to sanitize the molecule.
+            sanitize (bool, optional): whether to sanitize the molecule
         """
         if not os.path.exists(pdb_file):
             raise FileNotFoundError("No such file `%s`" % pdb_file)
@@ -524,7 +519,7 @@ class Protein(Molecule):
                                 num_relation=num_relation, meta_dict=self.meta_dict, **data_dict)
 
     def residue2atom(self, residue_index):
-        """Map residue id to atom ids."""
+        """Map residue ids to atom ids."""
         residue_index = self._standarize_index(residue_index, self.num_residue)
         if not hasattr(self, "node_inverted_index"):
             self.node_inverted_index = self._build_node_inverted_index()
@@ -992,7 +987,7 @@ class PackedProtein(PackedMolecule, Protein):
                    offsets=protein._offsets, meta_dict=protein.meta_dict, **protein.data_dict)
 
     @classmethod
-    def from_sequence_fast(cls, sequences):
+    def _residue_from_sequence(cls, sequences):
         num_residues = []
         residue_type = []
         residue_feature = []
@@ -1021,9 +1016,15 @@ class PackedProtein(PackedMolecule, Protein):
     @classmethod
     @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
     def from_sequence(cls, sequences, atom_feature="default", bond_feature="default", residue_feature="default",
-                      mol_feature=None, kekulize=False, residue_only=False):
+                      mol_feature=None, kekulize=False):
         """
         Create a packed protein from a list of sequences.
+
+        .. note::
+
+            It takes considerable time to construct proteins with a large number of atoms and bonds.
+            If you only need residue information, you may speed up the construction by setting
+            ``atom_feature`` and ``bond_feature`` to ``None``.
 
         Parameters:
             sequences (str): list of protein sequences
@@ -1035,14 +1036,9 @@ class PackedProtein(PackedMolecule, Protein):
                 Note this only affects the relation in ``edge_list``.
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
-            residue_only (bool, optional): only store residue information without atom information.
-                This can speed up the processing.
         """
-        if residue_only:
-            if residue_feature != "default":
-                raise ValueError("`residue_only` only supports the default residue feature, "
-                                 "but found `%s` for `residue_feature`" % residue_feature)
-            return cls.from_sequence_fast(sequences)
+        if atom_feature is None and bond_feature is None and residue_feature == "default":
+            return cls._residue_from_sequence(sequences)
 
         mols = []
         for sequence in sequences:
@@ -1056,7 +1052,7 @@ class PackedProtein(PackedMolecule, Protein):
     @classmethod
     @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
     def from_pdb(cls, pdb_files, atom_feature="default", bond_feature="default", residue_feature="default",
-                 mol_feature=None, kekulize=False):
+                 mol_feature=None, kekulize=False, sanitize=False):
         """
         Create a protein from a list of PDB files.
 
@@ -1070,10 +1066,11 @@ class PackedProtein(PackedMolecule, Protein):
                 Note this only affects the relation in ``edge_list``.
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
+            sanitize (bool, optional): whether to sanitize the molecule
         """
         mols = []
         for pdb_file in pdb_files:
-            mol = Chem.MolFromPDBFile(pdb_file)
+            mol = Chem.MolFromPDBFile(pdb_file, sanitize=sanitize)
             mols.append(mol)
 
         return cls.from_molecule(mols, atom_feature, bond_feature, residue_feature, mol_feature, kekulize)

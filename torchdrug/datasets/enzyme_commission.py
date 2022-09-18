@@ -10,7 +10,7 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.EnzymeCommission")
-@utils.copy_args(data.ProteinDataset.load_pdbs, ignore=("filtered_pdb",))
+@utils.copy_args(data.ProteinDataset.load_pdbs)
 class EnzymeCommission(data.ProteinDataset):
     """
     A set of proteins with their 3D structures and EC numbers, which describes their
@@ -23,7 +23,7 @@ class EnzymeCommission(data.ProteinDataset):
 
     Parameters:
         path (str): the path to store the dataset
-        test_cutoff (float): the test cutoff used to split the dataset
+        test_cutoff (float, optional): the test cutoff used to split the dataset
         verbose (int, optional): output verbose level
         **kwargs
     """
@@ -47,13 +47,14 @@ class EnzymeCommission(data.ProteinDataset):
         pkl_file = os.path.join(path, self.processed_file)
 
         csv_file = os.path.join(path, "nrPDB-EC_test.csv")
-        filtered_pdb = set()
+        pdb_ids = []
         with open(csv_file, "r") as fin:
             reader = csv.reader(fin, delimiter=",")
             idx = self.test_cutoffs.index(test_cutoff) + 1
             _ = next(reader)
             for line in reader:
-                if line[idx] == "0": filtered_pdb.add(line[0])
+                if line[idx] == "0":
+                    pdb_ids.append(line[0])
 
         if os.path.exists(pkl_file):
             self.load_pickle(pkl_file, verbose=verbose, **kwargs)
@@ -64,8 +65,8 @@ class EnzymeCommission(data.ProteinDataset):
                 pdb_files += sorted(glob.glob(os.path.join(split_path, split, "*.pdb")))
             self.load_pdbs(pdb_files, verbose=verbose, **kwargs)
             self.save_pickle(pkl_file, verbose=verbose)
-        if len(filtered_pdb) > 0:
-            self.filter_pdb(filtered_pdb)
+        if len(pdb_ids) > 0:
+            self.filter_pdb(pdb_ids)
 
         tsv_file = os.path.join(path, "nrPDB-EC_annot.tsv")
         pdb_ids = [os.path.basename(pdb_file).split("_")[0] for pdb_file in self.pdb_files]
@@ -74,12 +75,13 @@ class EnzymeCommission(data.ProteinDataset):
         splits = [os.path.basename(os.path.dirname(pdb_file)) for pdb_file in self.pdb_files]
         self.num_samples = [splits.count("train"), splits.count("valid"), splits.count("test")]
 
-    def filter_pdb(self, filtered_pdb):
+    def filter_pdb(self, pdb_ids):
+        pdb_ids = set(pdb_ids)
         sequences = []
         pdb_files = []
         data = []
         for sequence, pdb_file, protein in zip(self.sequences, self.pdb_files, self.data):
-            if os.path.basename(pdb_file).split("_")[0] in filtered_pdb:
+            if os.path.basename(pdb_file).split("_")[0] in pdb_ids:
                 continue
             sequences.append(sequence)
             pdb_files.append(pdb_file)

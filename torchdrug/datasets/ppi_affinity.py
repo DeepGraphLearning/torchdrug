@@ -7,7 +7,7 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.PPIAffinity")
-@utils.copy_args(data.ProteinPairDataset.load_lmdbs, ignore=("sequence_fields", "target_fields"))
+@utils.copy_args(data.ProteinPairDataset.load_lmdbs, ignore=("sequence_field", "target_fields"))
 class PPIAffinity(data.ProteinPairDataset):
     r"""
     The binding affinity values measured by :math:`p_{K_d}` between two proteins.

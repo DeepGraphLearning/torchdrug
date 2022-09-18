@@ -1,7 +1,6 @@
 import copy
 import logging
 from collections import deque
-from random import randint
 
 import torch
 
@@ -253,7 +252,7 @@ class TruncateProtein(core.Configurable):
             graph = item[key]
             if graph.num_residue > self.truncate_length:
                 if self.random:
-                    start = randint(0, graph.num_residue - self.truncate_length)
+                    start = torch.randint(graph.num_residue - self.truncate_length, (1,)).item()
                 else:
                     start = 0
                 end = start + self.truncate_length

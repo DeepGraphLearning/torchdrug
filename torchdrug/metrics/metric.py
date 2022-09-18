@@ -371,10 +371,6 @@ def spearmanr(pred, target):
     """
     Spearman correlation between prediction and target.
 
-    .. note::
-
-        This function is not differentiable.
-
     Parameters:
         pred (Tensor): prediction of shape :math: `(N,)`
         target (Tensor): target of shape :math: `(N,)`

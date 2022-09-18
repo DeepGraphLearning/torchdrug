@@ -116,6 +116,13 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
         self.load_smiles(smiles, targets, verbose=verbose, **kwargs)
 
     def load_pickle(self, pkl_file, verbose=0):
+        """
+        Load the dataset from a pickle file.
+
+        Parameters:
+            pkl_file (str): file name
+            verbose (int, optional): output verbose level
+        """
         with utils.smart_open(pkl_file, "rb") as fin:
             num_sample, tasks = pickle.load(fin)
 
@@ -133,6 +140,13 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
                     self.targets[task] = value
 
     def save_pickle(self, pkl_file, verbose=0):
+        """
+        Save the dataset to a pickle file.
+
+        Parameters:
+            pkl_file (str): file name
+            verbose (int, optional): output verbose level
+        """
         with utils.smart_open(pkl_file, "wb") as fout:
             num_sample = len(self.data)
             tasks = self.targets.keys()
@@ -659,16 +673,16 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
                 self.targets[field].append(targets[field][i])
 
     @utils.copy_args(load_sequence)
-    def load_lmdbs(self, lmdb_files, number_field="num_examples", sequence_field="primary", target_fields=None,
+    def load_lmdbs(self, lmdb_files, sequence_field="primary", target_fields=None, number_field="num_examples",
                    transform=None, lazy=False, verbose=0, **kwargs):
         """
         Load the dataset from lmdb files.
 
         Parameters:
             lmdb_files (list of str): list of lmdb files
-            number_field (str, optional): name of the field of sample count in lmdb files
             sequence_field (str, optional): name of the field of protein sequence in lmdb files
             target_fields (list of str, optional): name of target fields in lmdb files
+            number_field (str, optional): name of the field of sample count in lmdb files
             transform (Callable, optional): protein sequence transformation function
             lazy (bool, optional): if lazy mode is used, the proteins are processed in the dataloader.
                 This may slow down the data loading process, but save a lot of CPU memory and dataset loading time.
@@ -701,12 +715,13 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
         self.num_samples = num_samples
 
     @utils.copy_args(data.Protein.from_molecule)
-    def load_pdbs(self, pdb_files, transform=None, lazy=False, verbose=0, **kwargs):
+    def load_pdbs(self, pdb_files, sanitize=True, transform=None, lazy=False, verbose=0, **kwargs):
         """
         Load the dataset from pdb files.
 
         Parameters:
             pdb_files (list of str): pdb file names
+            sanitize (bool, optional): whether to sanitize the molecule
             transform (Callable, optional): protein sequence transformation function
             lazy (bool, optional): if lazy mode is used, the proteins are processed in the dataloader.
                 This may slow down the data loading process, but save a lot of CPU memory and dataset loading time.
@@ -729,7 +744,6 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
             pdb_files = tqdm(pdb_files, "Constructing proteins from pdbs")
         for i, pdb_file in enumerate(pdb_files):
             if not lazy or i == 0:
-                sanitize = kwargs.pop("sanitize", True)
                 mol = Chem.MolFromPDBFile(pdb_file, sanitize=sanitize)
                 if not mol:
                     logger.debug("Can't construct molecule from pdb file `%s`. Ignore this sample." % pdb_file)
@@ -779,10 +793,10 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
     @utils.copy_args(data.Protein.from_molecule)
     def load_pickle(self, pkl_file, transform=None, lazy=False, verbose=0, **kwargs):
         """
-        Load the dataset from pickle files.
+        Load the dataset from a pickle file.
 
         Parameters:
-            pkl_file (str): pickle file name
+            pkl_file (str): file name
             transform (Callable, optional): protein sequence transformation function
             lazy (bool, optional): if lazy mode is used, the proteins are processed in the dataloader.
                 This may slow down the data loading process, but save a lot of CPU memory and dataset loading time.
@@ -808,13 +822,6 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
                 self.data.append(protein)
 
     def save_pickle(self, pkl_file, verbose=0):
-        """
-        Save the dataset to pickle files.
-
-        Parameters:
-            pkl_file (str): pickle file name
-            verbose (int, optional): output verbose level
-        """
         with utils.smart_open(pkl_file, "wb") as fout:
             num_sample = len(self.data)
             pickle.dump(num_sample, fout)
@@ -890,16 +897,16 @@ class ProteinPairDataset(ProteinDataset, core.Configurable):
                 self.targets[field].append(targets[field][i])
 
     @utils.copy_args(load_sequence)
-    def load_lmdbs(self, lmdb_files, number_field="num_examples", sequence_field="primary", target_fields=None,
+    def load_lmdbs(self, lmdb_files, sequence_field="primary", target_fields=None, number_field="num_examples",
                    transform=None, lazy=False, verbose=0, **kwargs):
         """
         Load the dataset from lmdb files.
 
         Parameters:
             lmdb_files (list of str): file names
-            number_field (str, optional): name of the field of sample count in lmdb files
             sequence_field (str or list of str, optional): names of the fields of protein sequence in lmdb files
             target_fields (list of str, optional): name of target fields in lmdb files
+            number_field (str, optional): name of the field of sample count in lmdb files
             transform (Callable, optional): protein sequence transformation function
             lazy (bool, optional): if lazy mode is used, the protein pairs are processed in the dataloader.
                 This may slow down the data loading process, but save a lot of CPU memory and dataset loading time.
@@ -1022,17 +1029,17 @@ class ProteinLigandDataset(ProteinDataset, core.Configurable):
         return num_samples
 
     @utils.copy_args(load_sequence)
-    def load_lmdbs(self, lmdb_files, number_field="num_examples", sequence_field="target", smiles_field="drug",
-                   target_fields=None, transform=None, lazy=False, verbose=0, **kwargs):
+    def load_lmdbs(self, lmdb_files, sequence_field="target", smiles_field="drug", target_fields=None,
+                   number_field="num_examples", transform=None, lazy=False, verbose=0, **kwargs):
         """
         Load the dataset from lmdb files.
 
         Parameters:
             lmdb_files (list of str): file names
-            number_field (str, optional): name of the field of sample count in lmdb files
             sequence_field (str, optional): name of the field of protein sequence in lmdb files
             smiles_field (str, optional): name of the field of ligand SMILES string in lmdb files
             target_fields (list of str, optional): name of target fields in lmdb files
+            number_field (str, optional): name of the field of sample count in lmdb files
             transform (Callable, optional): protein sequence transformation function
             lazy (bool, optional): if lazy mode is used, the protein-ligand pairs are processed in the dataloader.
                 This may slow down the data loading process, but save a lot of CPU memory and dataset loading time.

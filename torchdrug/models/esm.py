@@ -100,7 +100,7 @@ class EvolutionaryScaleModeling(nn.Module, core.Configurable):
             dict with ``residue_feature`` and ``graph_feature`` fields:
                 residue representations of shape :math:`(|V_{res}|, d)`, graph representations of shape :math:`(n, d)`
         """
-        input = graph.residue_type
+        input = graph.edge_residue_type
         input = self.mapping[input]
         size = graph.num_residues
         if (size > self.max_input_length).any():

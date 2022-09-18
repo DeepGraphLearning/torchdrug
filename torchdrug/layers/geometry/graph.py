@@ -11,14 +11,15 @@ from torchdrug.core import Registry as R
 @R.register("layers.GraphConstruction")
 class GraphConstruction(nn.Module, core.Configurable):
     """
-    Model to construct a new graph from an existing graph.
+    Construct a new graph from an existing graph.
 
     See `torchdrug.layers.geometry` for a full list of available node and edge layers.
 
     Parameters:
         node_layers (list of nn.Module, optional): modules to construct nodes of the new graph
         edge_layers (list of nn.Module, optional): modules to construct edges of the new graph
-        edge_feature (str, optional): number of relations. Available feature types are ``residue_type``, ``gearnet``.
+        edge_feature (str, optional): edge features in the new graph.
+            Available features are ``residue_type``, ``gearnet``.
             1. For ``residue_type``, the feature of the edge :math:`e_ij` between residue :math:`i` and residue
                 :math:`j` is the concatenation ``[residue_type(i), residue_type(j)]``.
             2. For ``gearnet``, the feature of the edge :math:`e_ij` between residue :math:`i` and residue :math:`j`
@@ -41,22 +42,22 @@ class GraphConstruction(nn.Module, core.Configurable):
         self.edge_layers = edge_layers
         self.edge_feature = edge_feature
 
-    def residue_type(self, graph, edge_list):
+    def edge_residue_type(self, graph, edge_list):
         node_in, node_out, _ = edge_list.t()
         residue_in, residue_out = graph.atom2residue[node_in], graph.atom2residue[node_out]
-        in_residue_type = graph.residue_type[residue_in]
-        out_residue_type = graph.residue_type[residue_out]
+        in_residue_type = graph.edge_residue_type[residue_in]
+        out_residue_type = graph.edge_residue_type[residue_out]
 
         return torch.cat([
             functional.one_hot(in_residue_type, len(data.Protein.residue2id)),
             functional.one_hot(out_residue_type, len(data.Protein.residue2id))
         ], dim=-1)
 
-    def gearnet(self, graph, edge_list, num_relation):
+    def edge_gearnet(self, graph, edge_list, num_relation):
         node_in, node_out, r = edge_list.t()
         residue_in, residue_out = graph.atom2residue[node_in], graph.atom2residue[node_out]
-        in_residue_type = graph.residue_type[residue_in]
-        out_residue_type = graph.residue_type[residue_out]
+        in_residue_type = graph.edge_residue_type[residue_in]
+        out_residue_type = graph.edge_residue_type[residue_out]
         sequential_dist = torch.abs(residue_in - residue_out)
         spatial_dist = (graph.node_position[node_in] - graph.node_position[node_out]).norm(dim=-1)
 
@@ -102,11 +103,9 @@ class GraphConstruction(nn.Module, core.Configurable):
         offsets = (graph.num_cum_nodes - graph.num_nodes).repeat_interleave(num_edges)
 
         if self.edge_feature == "residue_type":
-            edge_feature = self.residue_type(graph, edge_list)
+            edge_feature = self.edge_residue_type(graph, edge_list)
         elif self.edge_feature == "gearnet":
-            edge_feature = self.gearnet(graph, edge_list, num_relation)
-        elif hasattr(self, self.edge_feature):
-            edge_feature = getattr(self, self.edge_feature)(graph, edge_list, num_relation)
+            edge_feature = self.edge_gearnet(graph, edge_list, num_relation)
         else:
             raise ValueError("Unknown edge feature `%s`" % self.edge_feature)
         data_dict, meta_dict = graph.data_by_meta(include=("node", "residue", "node reference", "residue reference"))

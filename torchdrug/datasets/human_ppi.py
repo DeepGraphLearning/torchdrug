@@ -7,7 +7,7 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.HumanPPI")
-@utils.copy_args(data.ProteinPairDataset.load_lmdbs, ignore=("sequence_fields", "target_fields"))
+@utils.copy_args(data.ProteinPairDataset.load_lmdbs, ignore=("sequence_field", "target_fields"))
 class HumanPPI(data.ProteinPairDataset):
     """
     Binary labels indicating whether two human proteins interact or not.

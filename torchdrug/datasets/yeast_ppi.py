@@ -7,7 +7,7 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.YeastPPI")
-@utils.copy_args(data.ProteinPairDataset.load_lmdbs, ignore=("sequence_fields", "target_fields"))
+@utils.copy_args(data.ProteinPairDataset.load_lmdbs, ignore=("sequence_field", "target_fields"))
 class YeastPPI(data.ProteinPairDataset):
     """
     Binary labels indicating whether two yeast proteins interact or not.

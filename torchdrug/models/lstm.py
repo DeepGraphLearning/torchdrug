@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from torchdrug import core, layers
+from torchdrug import core
 from torchdrug.layers import functional
 from torchdrug.core import Registry as R
 

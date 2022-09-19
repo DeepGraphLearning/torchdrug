@@ -147,6 +147,41 @@ Retrosynthesis
    :class:`SynthonCompletion <torchdrug.tasks.SynthonCompletion>`,
    :class:`Retrosynthesis <torchdrug.tasks.Retrosynthesis>`
 
+Protein Representation Learning
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+1. `Evaluating Protein Transfer Learning with TAPE <TAPE_>`_
+
+   Roshan Rao, Nicholas Bhattacharya, Neil Thomas, Yan Duan, Xi Chen, John Canny, Pieter Abbeel, Yun S Song. NeurIPS 2019.
+
+   :class:`SinusoidalPositionEmbedding <torchdrug.layers.SinusoidalPositionEmbedding>`
+   :class:`SelfAttentionBlock <torchdrug.layers.SelfAttentionBlock>`
+   :class:`ProteinResNetBlock <torchdrug.layers.ProteinResNetBlock>`
+   :class:`ProteinBERTBlock <torchdrug.layers.ProteinBERTBlock>`
+   :class:`ProteinResNet <torchdrug.models.ProteinResNet>`
+   :class:`ProteinLSTM <torchdrug.models.ProteinLSTM>`
+   :class:`ProteinBERT <torchdrug.models.ProteinBERT>`
+
+2. `Is Transfer Learning Necessary for Protein Landscape Prediction? <ProteinCNN_>`_
+
+   Amir Shanehsazzadeh, David Belanger, David Dohan. arXiv 2020.
+
+   :class:`ProteinCNN <torchdrug.models.ProteinCNN>`
+
+3. `Biological Structure and Function Emerge from Scaling Unsupervised Learning to 250 Million Protein Sequences <ESM_>`_
+
+   Alexander Rives,  Joshua Meier, Tom Sercu, Siddharth Goyal, Zeming Lin, Jason Liu, Demi Guo, Myle Ott, C. Lawrence Zitnick, Jerry Ma, Rob Fergus. PNAS 2021.
+
+   :class:`EvolutionaryScaleModeling <torchdrug.models.EvolutionaryScaleModeling>`
+
+4. `Protein Representation Learning by Geometric Structure Pretraining <GearNet_>`_
+
+   Zuobai Zhang, Minghao Xu, Arian Jamasb, Vijil Chenthamarakshan, Aurélie Lozano, Payel Das, Jian Tang. arXiv 2022.
+
+   :class:`GeometricRelationalGraphConv <torchdrug.layers.GeometricRelationalGraphConv>`
+   :class:`GeometryAwareRelationalGraphNeuralNetwork <torchdrug.models.GeometryAwareRelationalGraphNeuralNetwork>`
+   :mod:`torchdrug.layers.geometry`
+
 Knowledge Graph Reasoning
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 

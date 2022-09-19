@@ -46,8 +46,8 @@ class GraphConstruction(nn.Module, core.Configurable):
     def edge_residue_type(self, graph, edge_list):
         node_in, node_out, _ = edge_list.t()
         residue_in, residue_out = graph.atom2residue[node_in], graph.atom2residue[node_out]
-        in_residue_type = graph.edge_residue_type[residue_in]
-        out_residue_type = graph.edge_residue_type[residue_out]
+        in_residue_type = graph.residue_type[residue_in]
+        out_residue_type = graph.residue_type[residue_out]
 
         return torch.cat([
             functional.one_hot(in_residue_type, len(data.Protein.residue2id)),
@@ -57,8 +57,8 @@ class GraphConstruction(nn.Module, core.Configurable):
     def edge_gearnet(self, graph, edge_list, num_relation):
         node_in, node_out, r = edge_list.t()
         residue_in, residue_out = graph.atom2residue[node_in], graph.atom2residue[node_out]
-        in_residue_type = graph.edge_residue_type[residue_in]
-        out_residue_type = graph.edge_residue_type[residue_out]
+        in_residue_type = graph.residue_type[residue_in]
+        out_residue_type = graph.residue_type[residue_out]
         sequential_dist = torch.abs(residue_in - residue_out)
         spatial_dist = (graph.node_position[node_in] - graph.node_position[node_out]).norm(dim=-1)
 

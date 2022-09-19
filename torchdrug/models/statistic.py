@@ -58,7 +58,7 @@ class Statistic(nn.Module, core.Configurable):
         Returns:
             dict with ``graph_feature`` field: graph representations of shape :math:`(n, d)`
         """
-        input = graph.edge_residue_type
+        input = graph.residue_type
         
         index = input[:-1] * self.num_residue_type + input[1:]
         index = graph.residue2graph[:-1] * self.input_dim + index

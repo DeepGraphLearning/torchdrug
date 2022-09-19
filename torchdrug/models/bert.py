@@ -67,7 +67,7 @@ class ProteinBERT(nn.Module, core.Configurable):
             dict with ``residue_feature`` and ``graph_feature`` fields:
                 residue representations of shape :math:`(|V_{res}|, d)`, graph representations of shape :math:`(n, d)`
         """
-        input = graph.edge_residue_type
+        input = graph.residue_type
         size_ext = graph.num_residues
         # Prepend BOS
         bos = torch.ones(graph.batch_size, dtype=torch.long, device=self.device) * self.num_residue_type

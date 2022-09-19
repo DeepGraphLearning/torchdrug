@@ -74,7 +74,7 @@ class MultiLayerPerceptron(nn.Module):
 class GaussianSmearing(nn.Module):
     r"""
     Gaussian smearing from
-    `SchNet: A continuous-filter convolutional neural network for modeling quantum interactions`_.
+    `SchNet: A continuous-filter convolutional neural network for modeling quantum interactions`_.``
 
     There are two modes for Gaussian smearing.
 
@@ -167,7 +167,7 @@ class PairNorm(nn.Module):
 class InstanceNorm(nn.modules.instancenorm._InstanceNorm):
     """
     Instance normalization for graphs. This layer follows the definition in
-    `GraphNorm: A Principled Approach to Accelerating Graph Neural Network Training`.
+    `GraphNorm: A Principled Approach to Accelerating Graph Neural Network Training`_.
 
     .. _GraphNorm\: A Principled Approach to Accelerating Graph Neural Network Training:
         https://arxiv.org/pdf/2009.03294.pdf
@@ -325,6 +325,15 @@ class Sequential(nn.Sequential):
 
 
 class SinusoidalPositionEmbedding(nn.Module):
+    """
+    Positional embedding based on sine and cosine functions, proposed in `Attention Is All You Need`_.
+
+    .. _Attention Is All You Need:
+        https://arxiv.org/pdf/1706.03762.pdf
+
+    Parameters:
+        output_dim (int): output dimension
+    """
 
     def __init__(self, output_dim):
         super(SinusoidalPositionEmbedding, self).__init__()
@@ -332,6 +341,7 @@ class SinusoidalPositionEmbedding(nn.Module):
         self.register_buffer("inverse_frequency", inverse_frequency)
 
     def forward(self, input):
+        """"""
         # input: [B, L, ...]
         positions = torch.arange(input.shape[1] - 1, -1, -1.0, dtype=input.dtype, device=input.device)
         sinusoidal_input = torch.outer(positions, self.inverse_frequency)

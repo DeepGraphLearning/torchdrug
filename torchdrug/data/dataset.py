@@ -715,13 +715,12 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
         self.num_samples = num_samples
 
     @utils.copy_args(data.Protein.from_molecule)
-    def load_pdbs(self, pdb_files, sanitize=True, transform=None, lazy=False, verbose=0, **kwargs):
+    def load_pdbs(self, pdb_files, transform=None, lazy=False, verbose=0, **kwargs):
         """
         Load the dataset from pdb files.
 
         Parameters:
             pdb_files (list of str): pdb file names
-            sanitize (bool, optional): whether to sanitize the molecule
             transform (Callable, optional): protein sequence transformation function
             lazy (bool, optional): if lazy mode is used, the proteins are processed in the dataloader.
                 This may slow down the data loading process, but save a lot of CPU memory and dataset loading time.
@@ -744,7 +743,7 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
             pdb_files = tqdm(pdb_files, "Constructing proteins from pdbs")
         for i, pdb_file in enumerate(pdb_files):
             if not lazy or i == 0:
-                mol = Chem.MolFromPDBFile(pdb_file, sanitize=sanitize)
+                mol = Chem.MolFromPDBFile(pdb_file)
                 if not mol:
                     logger.debug("Can't construct molecule from pdb file `%s`. Ignore this sample." % pdb_file)
                     continue

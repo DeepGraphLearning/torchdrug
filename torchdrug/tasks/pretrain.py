@@ -133,10 +133,10 @@ class AttributeMasking(tasks.Task, core.Configurable):
             input = graph.node_feature.float()
             input[node_index] = 0
         else:
-            target = graph.edge_residue_type[node_index]
+            target = graph.residue_type[node_index]
             with graph.residue():
                 graph.residue_feature[node_index] = 0
-                graph.edge_residue_type[node_index] = 0
+                graph.residue_type[node_index] = 0
             # Generate masked edge features. Any better implementation?
             if self.graph_construction_model:
                 graph = self.graph_construction_model.apply_edge_layer(graph)

@@ -21,6 +21,11 @@ MutualInformation
 .. autoclass:: MutualInformation
     :members:
 
+SinusoidalPositionEmbedding
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: SinusoidalPositionEmbedding
+    :members:
+
 PairNorm
 ^^^^^^^^
 .. autoclass:: PairNorm

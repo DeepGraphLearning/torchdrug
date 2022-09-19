@@ -305,7 +305,7 @@ class Protein(Molecule):
     @classmethod
     @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
     def from_pdb(cls, pdb_file, atom_feature="default", bond_feature="default", residue_feature="default",
-                 mol_feature=None, kekulize=False, sanitize=False):
+                 mol_feature=None, kekulize=False):
         """
         Create a protein from a PDB file.
 
@@ -319,11 +319,10 @@ class Protein(Molecule):
                 Note this only affects the relation in ``edge_list``.
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
-            sanitize (bool, optional): whether to sanitize the molecule
         """
         if not os.path.exists(pdb_file):
             raise FileNotFoundError("No such file `%s`" % pdb_file)
-        mol = Chem.MolFromPDBFile(pdb_file, sanitize=sanitize)
+        mol = Chem.MolFromPDBFile(pdb_file)
         if mol is None:
             raise ValueError("RDKit cannot read PDB file `%s`" % pdb_file)
         return cls.from_molecule(mol, atom_feature, bond_feature, residue_feature, mol_feature, kekulize)
@@ -1052,7 +1051,7 @@ class PackedProtein(PackedMolecule, Protein):
     @classmethod
     @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
     def from_pdb(cls, pdb_files, atom_feature="default", bond_feature="default", residue_feature="default",
-                 mol_feature=None, kekulize=False, sanitize=False):
+                 mol_feature=None, kekulize=False):
         """
         Create a protein from a list of PDB files.
 
@@ -1066,11 +1065,10 @@ class PackedProtein(PackedMolecule, Protein):
                 Note this only affects the relation in ``edge_list``.
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
-            sanitize (bool, optional): whether to sanitize the molecule
         """
         mols = []
         for pdb_file in pdb_files:
-            mol = Chem.MolFromPDBFile(pdb_file, sanitize=sanitize)
+            mol = Chem.MolFromPDBFile(pdb_file)
             mols.append(mol)
 
         return cls.from_molecule(mols, atom_feature, bond_feature, residue_feature, mol_feature, kekulize)

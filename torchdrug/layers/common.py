@@ -74,7 +74,7 @@ class MultiLayerPerceptron(nn.Module):
 class GaussianSmearing(nn.Module):
     r"""
     Gaussian smearing from
-    `SchNet: A continuous-filter convolutional neural network for modeling quantum interactions`_.``
+    `SchNet: A continuous-filter convolutional neural network for modeling quantum interactions`_.
 
     There are two modes for Gaussian smearing.
 

@@ -13,7 +13,7 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         url="https://torchdrug.ai/",
         author="TorchDrug Team",
-        version="0.1.3",
+        version="0.2.0",
         license="Apache-2.0",
         keywords=["deep-learning", "pytorch", "drug-discovery"],
         packages=setuptools.find_packages(),
@@ -31,6 +31,7 @@ if __name__ == "__main__":
         install_requires=[
             "torch>=1.8.0",
             "torch-scatter>=2.0.8",
+            "torch-cluster>=1.5.9",
             "decorator",
             "numpy>=1.11",
             "rdkit-pypi>=2020.9",
@@ -39,6 +40,8 @@ if __name__ == "__main__":
             "networkx",
             "ninja",
             "jinja2",
+            "lmdb",
+            "fair-esm",
         ],
         python_requires=">=3.7,<3.10",
         classifiers=[

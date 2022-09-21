@@ -128,14 +128,12 @@ Afterwards, we can now define the NeuralLP model with the following codes:
 
 .. code:: python
 
-    from torchdrug.models.neurallp import NeuralLogicProgramming
-    model = NeuralLogicProgramming(num_entity=dataset.num_entity,
-                                   num_relation=dataset.num_relation,
-                                   embedding_dim=128,
-                                   num_step=3,
-                                   num_lstm_layer=1)
+    model = models.NeuralLP(num_relation=dataset.num_relation,
+                            hidden_dim=128,
+                            num_step=3,
+                            num_lstm_layer=2)
 
-Here, ``embedding_dim`` is the dimension of entity and relation embeddings used in
+Here, ``hidden_dim`` is the dimension of entity and relation embeddings used in
 NeuralLP. ``num_step`` is the maximum length of the chain-like rules (i.e., the
 maximum number of relations in the body of a chain-like rule), which is typically
 set to 3. ``num_lstm_layer`` is the number of LSTM layers used in NeuralLP.
@@ -164,7 +162,7 @@ by running the following code:
 
 .. code:: python
 
-    optimizer = torch.optim.Adam(task.parameters(), lr=1.0e-2)
+    optimizer = torch.optim.Adam(task.parameters(), lr=1.0e-3)
     solver = core.Engine(task, train_set, valid_set, test_set, optimizer,
                          gpus=[0, 1, 2, 3], batch_size=64)
     solver.train(num_epoch=10)

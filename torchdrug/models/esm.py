@@ -77,7 +77,8 @@ class EvolutionaryScaleModeling(nn.Module, core.Configurable):
             regression_data = torch.load(regression_file, map_location="cpu")
         else:
             regression_data = None
-        return esm.pretrained.load_model_and_alphabet_core(model_data, regression_data)
+        model_name = os.path.basename(self.url[model])
+        return esm.pretrained.load_model_and_alphabet_core(model_name, model_data, regression_data)
 
     def construct_mapping(self, alphabet):
         mapping = [0] * len(data.Protein.id2residue_symbol)

@@ -43,7 +43,8 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         self.criterion = criterion
         self.metric = metric
         self.num_mlp_layer = num_mlp_layer
-        self.normalization = normalization
+        # For classification tasks, we disable normalization tricks.
+        self.normalization = normalization and ("ce" not in criterion) and ("bce" not in criterion)
         self.num_class = (num_class,) if isinstance(num_class, int) else num_class
         self.graph_construction_model = graph_construction_model
         self.verbose = verbose
@@ -88,7 +89,7 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         all_loss = torch.tensor(0, dtype=torch.float32, device=self.device)
         metric = {}
 
-        standard_pred = self._standard_predict(batch, all_loss, metric)
+        pred = self.predict(batch, all_loss, metric)
 
         if all([t not in batch for t in self.task]):
             # unlabeled data
@@ -100,11 +101,14 @@ class PropertyPrediction(tasks.Task, core.Configurable):
 
         for criterion, weight in self.criterion.items():
             if criterion == "mse":
-                loss = F.mse_loss(standard_pred, (target - self.mean) / self.std, reduction="none")
+                if self.normalization:
+                    loss = F.mse_loss((pred - self.mean) / self.std, (target - self.mean) / self.std, reduction="none")
+                else:
+                    loss = F.mse_loss(pred, target, reduction="none")
             elif criterion == "bce":
-                loss = F.binary_cross_entropy_with_logits(standard_pred, target, reduction="none")
+                loss = F.binary_cross_entropy_with_logits(pred, target, reduction="none")
             elif criterion == "ce":
-                loss = F.cross_entropy(standard_pred, target.long().squeeze(-1), reduction="none").unsqueeze(-1)
+                loss = F.cross_entropy(pred, target.long().squeeze(-1), reduction="none").unsqueeze(-1)
             else:
                 raise ValueError("Unknown criterion `%s`" % criterion)
             loss = functional.masked_mean(loss, labeled, dim=0)
@@ -119,19 +123,14 @@ class PropertyPrediction(tasks.Task, core.Configurable):
 
         return all_loss, metric
 
-    def _standard_predict(self, batch, all_loss=None, metric=None):
-        """ prediction standardized by `mean` and `std` computed by `preprocess`,
-        mainly used for training.
-        """
-        pred = self.predict(batch, all_loss, metric)
-        return (pred - self.mean) / self.std
-
     def predict(self, batch, all_loss=None, metric=None):
         graph = batch["graph"]
         if self.graph_construction_model:
             graph = self.graph_construction_model(graph)
         output = self.model(graph, graph.node_feature.float(), all_loss=all_loss, metric=metric)
         pred = self.mlp(output["graph_feature"])
+        if self.normalization:
+            pred = pred * self.std + self.mean
         return pred
 
     def target(self, batch):
@@ -143,8 +142,6 @@ class PropertyPrediction(tasks.Task, core.Configurable):
     def evaluate(self, pred, target):
         labeled = ~torch.isnan(target)
 
-        if self.normalization:
-            pred = pred * self.std + self.mean
         metric = {}
         for _metric in self.metric:
             if _metric == "mae":
@@ -352,7 +349,8 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
         self.model = model
         self.criterion = criterion
         self.metric = metric
-        self.normalization = normalization
+        # For classification tasks, we disable normalization tricks.
+        self.normalization = normalization and ("ce" not in criterion) and ("bce" not in criterion)
         self.num_mlp_layer = num_mlp_layer
         self.num_class = num_class
         self.verbose = verbose
@@ -389,6 +387,8 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
         else:
             output_feature = output.get("residue_feature", output.get("node_feature"))
         pred = self.mlp(output_feature)
+        if self.normalization:
+            pred = pred * self.std + self.mean
         return pred
 
     def target(self, batch):
@@ -410,8 +410,9 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
         for criterion, weight in self.criterion.items():
             if criterion == "mse":
                 if self.normalization:
-                    target = (target - self.mean) / self.std
-                loss = F.mse_loss(pred, target, reduction="none")
+                    loss = F.mse_loss((pred - self.mean) / self.std, (target - self.mean) / self.std, reduction="none")
+                else:
+                    loss = F.mse_loss(pred, target, reduction="none")
             elif criterion == "bce":
                 loss = F.binary_cross_entropy_with_logits(pred, target["label"].float(), reduction="none")
             elif criterion == "ce":
@@ -525,6 +526,8 @@ class InteractionPrediction(PropertyPrediction):
         graph2 = batch["graph2"]
         output2 = self.model2(graph2, graph2.node_feature.float(), all_loss=all_loss, metric=metric)
         pred = self.mlp(torch.cat([output1["graph_feature"], output2["graph_feature"]], dim=-1))
+        if self.normalization:
+            pred = pred * self.std + self.mean
         return pred
 
 

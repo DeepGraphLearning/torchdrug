@@ -57,6 +57,13 @@
 .. Retrosynthesis
 .. _G2Gs: https://arxiv.org/pdf/2003.12725.pdf
 
+.. Protein Representation Learning
+.. _TAPE: https://proceedings.neurips.cc/paper/2019/file/37f65c068b7723cd7809ee2d31d7861c-Paper.pdf
+.. _ProteinCNN: https://arxiv.org/pdf/2011.03443.pdf
+.. _ESM: https://www.biorxiv.org/content/10.1101/622803v1.full.pdf
+.. _GearNet: https://arxiv.org/pdf/2203.06125.pdf
+
+.. Knowledge Graph Reasoning
 .. _TransE: http://papers.nips.cc/paper/5071-translating-embeddings-for-modeling-multi-relational-data.pdf
 .. _DistMult: https://arxiv.org/pdf/1412.6575.pdf
 .. _ComplEx: http://proceedings.mlr.press/v48/trouillon16.pdf

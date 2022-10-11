@@ -29,9 +29,24 @@ ATOM_SYMBOL = ["Null",
     "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs",
     "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"]
 
+# ordered by molecular mass
+RESIDUE_NAME = ["Glycine", "Alanine", "Serine", "Proline", "Valine", "Threonine", "Cysteine", "Isoleucine",
+                "Leucine", "Asparagine", "Aspartic acid", "Glutamine", "Lysine", "Glutamic acid", "Methionine",
+                "Histidine", "Phenylalanine", "Arginine", "Tyrosine", "Tryptophan"]
+
+RESIDUE_INITIAL = ["G", "A", "S", "P", "V", "T", "C", "I", "L", "N", "D", "Q", "K", "E", "M", "H", "F", "R", "Y", "W"]
+
+RESIDUE_ATOM_NAME = ["C", "CA", "CB", "CD", "CD1", "CD2", "CE", "CE1", "CE2", "CE3", "CG", "CG1", "CG2", "CH2",
+                     "CZ", "CZ2", "CZ3", "N", "ND1", "ND2", "NE", "NE1", "NE2", "NH1", "NH2", "NZ", "O", "OD1",
+                     "OD2", "OE1", "OE2", "OG", "OG1", "OH", "OXT", "SD", "SG"]
+
 NUM_ATOM = len(ATOM_NAME)
+NUM_AMINO_ACID = len(RESIDUE_NAME)
 
 for i, name in enumerate(ATOM_NAME):
     if i == 0:
         continue
+    setattr(module, name.upper(), i)
+
+for i, name in enumerate(RESIDUE_NAME):
     setattr(module, name.upper(), i)

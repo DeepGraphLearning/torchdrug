@@ -1,10 +1,15 @@
-[![TorchDrug](asset/logo.svg)](https://torchdrug.ai/)
+[![TorchDrug](asset/torchdrug_logo_full.svg)](https://torchdrug.ai/)
+<h1 align="center">
+  with
+  <a href="https://torchprotein.ai/">
+    <img src="asset/torchprotein_logo_tight.svg" alt="TorchProtein" style="height:26px" />
+  </a>
+</h1>
 
-----------------------------
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Tbnr1Fog_YjkqU1MOhcVLuxqZ4DC-c8-#forceEdit=true&sandboxMode=true)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Tbnr1Fog_YjkqU1MOhcVLuxqZ4DC-c8-#forceEdit=true&sandboxMode=true)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-blue)](https://github.com/DeepGraphLearning/torchdrug/blob/master/CONTRIBUTING.md)
 [![License Apache-2.0](https://img.shields.io/github/license/DeepGraphLearning/torchdrug?color=blue)](https://github.com/DeepGraphLearning/torchdrug/blob/master/LICENSE)
+[![PyPI downloads](https://static.pepy.tech/personalized-badge/torchdrug?period=total&units=international_system&left_color=grey&right_color=blue&left_text=downloads)](https://pypi.org/project/torchdrug/)
 [![TorchDrug Twitter](https://img.shields.io/twitter/url?label=TorchDrug&style=social&url=https%3A%2F%2Ftwitter.com%2FDrugTorch)](https://twitter.com/DrugTorch)
 
 [Docs] | [Tutorials] | [Benchmarks] | [Papers Implemented]
@@ -26,7 +31,7 @@ Installation
 ------------
 
 TorchDrug can be installed on either Linux, Windows or macOS. It is compatible with
-Python 3.7/3.8 and PyTorch >= 1.8.0.
+Python 3.7/3.8/3.9 and PyTorch >= 1.8.0.
 
 ### From Conda ###
 
@@ -38,7 +43,7 @@ conda install torchdrug -c milagraph -c conda-forge -c pytorch -c pyg
 
 ```bash
 pip3 install torch==1.9.0
-pip3 install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.9.0+cu102.html
+pip3 install torch-scatter torch-cluster -f https://pytorch-geometric.com/whl/torch-1.9.0+cu102.html
 pip3 install torchdrug
 ```
 

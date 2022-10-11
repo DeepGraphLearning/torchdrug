@@ -74,7 +74,7 @@ utilization of hardware. They can also be transferred between CPUs and GPUs usin
 
 .. code:: bash
 
-    PackedMolecule(batch_size=4, num_nodes=[12, 6, 14, 9], num_edges=[22, 10, 30, 18],
+    PackedMolecule(batch_size=4, num_atoms=[12, 6, 14, 9], num_bonds=[22, 10, 30, 18],
                    device='cuda:0')
 
 Just like original PyTorch tensors, graphs support a wide range of indexing

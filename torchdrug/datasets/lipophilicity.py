@@ -2,11 +2,10 @@ import os
 
 from torchdrug import data, utils
 from torchdrug.core import Registry as R
-from torchdrug.utils import doc
 
 
 @R.register("datasets.Lipophilicity")
-@doc.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
 class Lipophilicity(data.MoleculeDataset):
     """
     Experimental results of octanol/water distribution coefficient (logD at pH 7.4).

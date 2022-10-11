@@ -175,12 +175,104 @@ def chemical_validity(pred):
         validity.append(1 if mol else 0)
 
     return torch.tensor(validity, dtype=torch.float, device=pred.device)
+
+
+@R.register("metrics.variadic_auroc")
+def variadic_area_under_roc(pred, target, size):
+    """
+    Area under receiver operating characteristic curve (ROC) for sets with variadic sizes.
+
+    Suppose there are :math:`N` sets, and the sizes of all sets are summed to :math:`B`.
+
+    Parameters:
+        pred (Tensor): prediction of shape :math:`(B,)`
+        target (Tensor): target of shape :math:`(B,)`.
+        size (Tensor): size of sets of shape :math:`(N,)`
+    """
+    index2graph = functional._size_to_index(size)
+    _, order = functional.variadic_sort(pred, size, descending=True)
+    cum_size = (size.cumsum(0) - size)[index2graph]
+    target = target[order + cum_size]
+    total_hit = functional.variadic_sum(target, size)
+    total_hit = total_hit.cumsum(0) - total_hit
+    hit = target.cumsum(0) - total_hit[index2graph]
+    hit = torch.where(target == 0, hit, torch.zeros_like(hit))
+    all = functional.variadic_sum((target == 0).float(), size) * \
+            functional.variadic_sum((target == 1).float(), size)
+    auroc = functional.variadic_sum(hit, size) / (all + 1e-10)
+    return auroc
+
+
+@R.register("metrics.variadic_auprc")
+def variadic_area_under_prc(pred, target, size):
+    """
+    Area under precision-recall curve (PRC) for sets with variadic sizes.
+
+    Suppose there are :math:`N` sets, and the sizes of all sets are summed to :math:`B`.
+
+    Parameters:
+        pred (Tensor): prediction of shape :math:`(B,)`
+        target (Tensor): target of shape :math:`(B,)`.
+        size (Tensor): size of sets of shape :math:`(N,)`
+    """
+    index2graph = functional._size_to_index(size)
+    _, order = functional.variadic_sort(pred, size, descending=True)
+    cum_size = (size.cumsum(0) - size)[index2graph]
+    target = target[order + cum_size]
+    total_hit = functional.variadic_sum(target, size)
+    total_hit = total_hit.cumsum(0) - total_hit
+    hit = target.cumsum(0) - total_hit[index2graph]
+    total = torch.ones_like(target).cumsum(0) - (size.cumsum(0) - size)[index2graph]
+    precision = hit / total
+    precision = torch.where(target == 1, precision, torch.zeros_like(precision))
+    auprc = functional.variadic_sum(precision, size) / \
+            (functional.variadic_sum((target == 1).float(), size) + 1e-10)
+    return auprc
+    
+
+@R.register("metrics.f1_max")
+def f1_max(pred, target):
+    """
+    F1 score with the optimal threshold.
+
+    This function first enumerates all possible thresholds for deciding positive and negative
+    samples, and then pick the threshold with the maximal F1 score.
+
+    Parameters:
+        pred (Tensor): predictions of shape :math:`(B, N)`
+        target (Tensor): binary targets of shape :math:`(B, N)`
+    """
+    order = pred.argsort(descending=True, dim=1)
+    target = target.gather(1, order)
+    precision = target.cumsum(1) / torch.ones_like(target).cumsum(1)
+    recall = target.cumsum(1) / (target.sum(1, keepdim=True) + 1e-10)
+    is_start = torch.zeros_like(target).bool()
+    is_start[:, 0] = 1
+    is_start = torch.scatter(is_start, 1, order, is_start)
+
+    all_order = pred.flatten().argsort(descending=True)
+    order = order + torch.arange(order.shape[0], device=order.device).unsqueeze(1) * order.shape[1]
+    order = order.flatten()
+    inv_order = torch.zeros_like(order)
+    inv_order[order] = torch.arange(order.shape[0], device=order.device)
+    is_start = is_start.flatten()[all_order]
+    all_order = inv_order[all_order]
+    precision = precision.flatten()
+    recall = recall.flatten()
+    all_precision = precision[all_order] - \
+                    torch.where(is_start, torch.zeros_like(precision), precision[all_order - 1])
+    all_precision = all_precision.cumsum(0) / is_start.cumsum(0)
+    all_recall = recall[all_order] - \
+                 torch.where(is_start, torch.zeros_like(recall), recall[all_order - 1])
+    all_recall = all_recall.cumsum(0) / pred.shape[0]
+    all_f1 = 2 * all_precision * all_recall / (all_precision + all_recall + 1e-10)
+    return all_f1.max()
     
 
 @R.register("metrics.accuracy")
 def accuracy(pred, target):
     """
-    Compute classification accuracy over sets with equal size.
+    Classification accuracy.
 
     Suppose there are :math:`N` sets and :math:`C` categories.
 
@@ -191,16 +283,56 @@ def accuracy(pred, target):
     return (pred.argmax(dim=-1) == target).float().mean()
 
 
-@R.register("metrics.mcc")
-def matthews_corrcoef(pred, target, eps=1e-6):
+@R.register("metrics.variadic_accuracy")
+def variadic_accuracy(input, target, size):
     """
-    Matthews correlation coefficient between target and prediction.
+    Classification accuracy for categories with variadic sizes.
 
-    Definition follows matthews_corrcoef for K classes in sklearn.
-    For details, see: 'https://scikit-learn.org/stable/modules/model_evaluation.html#matthews-corrcoef'
+    Suppose there are :math:`N` samples, and the number of categories in all samples is summed to :math:`B`.
 
     Parameters:
-        pred (Tensor): prediction of shape :math: `(N,)`
+        input (Tensor): prediction of shape :math:`(B,)`
+        target (Tensor): target of shape :math:`(N,)`. Each target is a relative index in a sample.
+        size (Tensor): number of categories of shape :math:`(N,)`
+    """
+    index2graph = functional._size_to_index(size)
+
+    input_class = scatter_max(input, index2graph)[1]
+    target_index = target + size.cumsum(0) - size
+    accuracy = (input_class == target_index).float()
+    return accuracy
+
+
+@R.register("metrics.variadic_top_precision")
+def variadic_top_precision(pred, target, size, k):
+    """
+    Top-k precision for sets with variadic sizes.
+
+    Suppose there are :math:`N` sets, and the sizes of all sets are summed to :math:`B`.
+
+    Parameters:
+        pred (Tensor): prediction of shape :math:`(B,)`
+        target (Tensor): target of shape :math:`(B,)`
+        size (Tensor): size of sets of shape :math:`(N,)`
+        k (LongTensor): the k in "top-k" for different sets of shape :math:`(N,)`
+    """
+    index = functional.variadic_topk(pred, size, k, largest=True)[1]
+    index = index + (size.cumsum(0) - size).repeat_interleave(k)
+    precision = functional.variadic_sum(target[index], k) / k
+    precision[size < k] = 0
+    return precision
+
+
+@R.register("metrics.mcc")
+def matthews_corrcoef(pred, target):
+    """
+    Matthews correlation coefficient between prediction and target.
+
+    Definition follows matthews_corrcoef for K classes in sklearn.
+    For details, see: `https://scikit-learn.org/stable/modules/model_evaluation.html#matthews-corrcoef`
+
+    Parameters:
+        pred (Tensor): prediction of shape :math: `(N, K)`
         target (Tensor): target of shape :math: `(N,)`
     """
     num_class = pred.size(-1)
@@ -212,14 +344,13 @@ def matthews_corrcoef(pred, target, eps=1e-6):
     p = confusion_matrix.sum(dim=0)
     c = confusion_matrix.trace()
     s = confusion_matrix.sum()
-    return (c * s - t @ p) / ((s * s - p @ p) * (s * s - t @ t) + eps).sqrt()
+    return (c * s - t @ p) / ((s * s - p @ p) * (s * s - t @ t) + 1e-10).sqrt()
 
 
 @R.register("metrics.pearsonr")
 def pearsonr(pred, target):
     """
-    Pearson correlation between target and prediction.
-    Mimics `scipy.stats.pearsonr`.
+    Pearson correlation between prediction and target.
 
     Parameters:
         pred (Tensor): prediction of shape :math: `(N,)`
@@ -236,10 +367,9 @@ def pearsonr(pred, target):
 
 
 @R.register("metrics.spearmanr")
-def spearmanr(pred, target, eps=1e-6):
+def spearmanr(pred, target):
     """
-    Spearman correlation between target and prediction.
-    Implement in PyTorch, but non-diffierentiable. (validation metric only)
+    Spearman correlation between prediction and target.
 
     Parameters:
         pred (Tensor): prediction of shape :math: `(N,)`
@@ -262,25 +392,5 @@ def spearmanr(pred, target, eps=1e-6):
     covariance = (pred * target).mean() - pred.mean() * target.mean()
     pred_std = pred.std(unbiased=False)
     target_std = target.std(unbiased=False)
-    spearmanr = covariance / (pred_std * target_std + eps)
+    spearmanr = covariance / (pred_std * target_std + 1e-10)
     return spearmanr
-
-
-@R.register("metrics.variadic_accuracy")
-def variadic_accuracy(input, target, size):
-    """
-    Compute classification accuracy over variadic sizes of categories.
-
-    Suppose there are :math:`N` samples, and the number of categories in all samples is summed to :math:`B`.
-
-    Parameters:
-        input (Tensor): prediction of shape :math:`(B,)`
-        target (Tensor): target of shape :math:`(N,)`. Each target is a relative index in a sample.
-        size (Tensor): number of categories of shape :math:`(N,)`
-    """
-    index2graph = functional._size_to_index(size)
-
-    input_class = scatter_max(input, index2graph)[1]
-    target_index = target + size.cumsum(0) - size
-    accuracy = (input_class == target_index).float()
-    return accuracy

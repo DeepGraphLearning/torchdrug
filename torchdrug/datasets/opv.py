@@ -8,11 +8,10 @@ from torch.utils import data as torch_data
 
 from torchdrug import data, utils
 from torchdrug.core import Registry as R
-from torchdrug.utils import doc
 
 
 @R.register("datasets.OPV")
-@doc.copy_args(data.MoleculeDataset.load_smiles)
+@utils.copy_args(data.MoleculeDataset.load_smiles)
 class OPV(data.MoleculeDataset):
     """
     Quantum mechanical calculations on organic photovoltaic candidate molecules.

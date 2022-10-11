@@ -484,13 +484,25 @@ class Molecule(Graph):
     def node_feature(self):
         return self.atom_feature
 
+    @node_feature.setter
+    def node_feature(self, value):
+        self.atom_feature = value
+
     @property
     def edge_feature(self):
         return self.bond_feature
 
+    @edge_feature.setter
+    def edge_feature(self, value):
+        self.bond_feature = value
+
     @property
     def graph_feature(self):
         return self.mol_feature
+
+    @graph_feature.setter
+    def graph_feature(self, value):
+        self.mol_feature = value
 
     @utils.cached_property
     def explicit_valence(self):
@@ -530,7 +542,7 @@ class Molecule(Graph):
         return is_valid
 
     def __repr__(self):
-        fields = ["num_atom=%d" % self.num_node, "num_bond=%d" % self.num_edge]
+        fields = ["num_atom=%d" % self.num_atom, "num_bond=%d" % self.num_bond]
         if self.device.type != "cpu":
             fields.append("device='%s'" % self.device)
         return "%s(%s)" % (self.__class__.__name__, ", ".join(fields))
@@ -968,8 +980,8 @@ class PackedMolecule(PackedGraph, Molecule):
 
     def __repr__(self):
         fields = ["batch_size=%d" % self.batch_size,
-                  "num_atoms=%s" % pretty.long_array(self.num_nodes.tolist()),
-                  "num_bonds=%s" % pretty.long_array(self.num_edges.tolist())]
+                  "num_atoms=%s" % pretty.long_array(self.num_atoms.tolist()),
+                  "num_bonds=%s" % pretty.long_array(self.num_bonds.tolist())]
         if self.device.type != "cpu":
             fields.append("device='%s'" % self.device)
         return "%s(%s)" % (self.__class__.__name__, ", ".join(fields))

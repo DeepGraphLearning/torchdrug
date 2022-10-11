@@ -53,7 +53,7 @@ class NeuralLogicProgramming(nn.Module, core.Configurable):
         query = self.query(q_index)
 
         hidden, hx = self.lstm(query)
-        memory = functional.one_hot(h_index, graph.num_entity).unsqueeze(0)
+        memory = functional.one_hot(h_index, graph.num_node).unsqueeze(0)
 
         for i in range(self.num_step):
             key = hidden[i]

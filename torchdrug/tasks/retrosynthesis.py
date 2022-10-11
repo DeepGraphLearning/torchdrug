@@ -33,7 +33,7 @@ class CenterIdentification(tasks.Task, core.Configurable):
         num_mlp_layer (int, optional): number of MLP layers
     """
 
-    _option_members = set(["feature"])
+    _option_members = {"feature"}
 
     def __init__(self, model, feature=("reaction", "graph", "atom", "bond"), num_mlp_layer=2):
         super(CenterIdentification, self).__init__()
@@ -203,7 +203,7 @@ class CenterIdentification(tasks.Task, core.Configurable):
         center_topk_shifted = torch.cat([-torch.ones(1, dtype=torch.long, device=self.device),
                                          center_topk[:-1]])
         product_id_shifted = torch.cat([-torch.ones(1, dtype=torch.long, device=self.device),
-                                         graph.product_id[:-1]])
+                                        graph.product_id[:-1]])
         is_duplicate = (center_topk == center_topk_shifted) & (graph.product_id == product_id_shifted)
         node_index = node_index[~is_edge]
         edge_index = edge_index[is_edge]
@@ -302,7 +302,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         num_mlp_layer (int, optional): number of MLP layers
     """
 
-    _option_members = set(["feature"])
+    _option_members = {"feature"}
 
     def __init__(self, model, feature=("reaction", "graph", "atom"), num_mlp_layer=2):
         super(SynthonCompletion, self).__init__()
@@ -847,11 +847,11 @@ class SynthonCompletion(tasks.Task, core.Configurable):
             data_dict.pop(key)
         # pad 0 for node / edge attributes
         for k, v in data_dict.items():
-            if meta_dict[k] == "node":
+            if "node" in meta_dict[k]:
                 shape = (len(new_atom_type), *v.shape[1:])
                 new_data = torch.zeros(shape, dtype=v.dtype, device=self.device)
                 data_dict[k] = functional._extend(v, graph.num_nodes, new_data, has_new_node)[0]
-            if meta_dict[k] == "edge":
+            if "edge" in meta_dict[k]:
                 shape = (len(new_edge_list) * 2, *v.shape[1:])
                 new_data = torch.zeros(shape, dtype=v.dtype, device=self.device)
                 data_dict[k] = functional._extend(v, graph.num_edges, new_data, has_new_edge * 2)[0]
@@ -1066,7 +1066,7 @@ class Retrosynthesis(tasks.Task, core.Configurable):
         metric (str or list of str, optional): metric(s). Available metrics are ``top-K``.
     """
 
-    _option_members = set(["metric"])
+    _option_members = {"metric"}
 
     def __init__(self, center_identification, synthon_completion, center_topk=2, num_synthon_beam=10, max_prediction=20,
                  metric=("top-1", "top-3", "top-5", "top-10")):

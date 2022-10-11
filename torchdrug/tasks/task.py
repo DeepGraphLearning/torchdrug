@@ -23,10 +23,13 @@ class Task(nn.Module):
             value = self._standarize_option(value, key)
         super(Task, self).__setattr__(key, value)
 
+    def preprocess(self, train_set, valid_set, test_set):
+        pass
+
     def predict_and_target(self, batch, all_loss=None, metric=None):
         return self.predict(batch, all_loss, metric), self.target(batch)
 
-    def predict(self, batch):
+    def predict(self, batch, all_loss=None, metric=None):
         raise NotImplementedError
 
     def target(self, batch):

@@ -2,7 +2,7 @@ Installation
 ============
 
 TorchDrug can be installed on either Linux, Windows or macOS. It is compatible with
-Python 3.7/3.8 and PyTorch >= 1.8.0.
+Python 3.7/3.8/3.9 and PyTorch >= 1.8.0.
 
 For Windows
 
@@ -30,7 +30,7 @@ and CUDA is ``10.2``, the command should be
 
 .. code:: bash
 
-    pip3 install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.8.0+cu102.html
+    pip3 install torch-scatter torch-cluster -f https://pytorch-geometric.com/whl/torch-1.8.0+cu102.html
 
 Replace the versions in the above url according to your case. If you don't have GPUs
 or CUDA installed, treat the CUDA version in the url as ``cpu``. See

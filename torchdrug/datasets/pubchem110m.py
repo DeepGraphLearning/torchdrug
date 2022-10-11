@@ -4,11 +4,10 @@ from tqdm import tqdm
 
 from torchdrug import data, utils
 from torchdrug.core import Registry as R
-from torchdrug.utils import doc
 
 
 @R.register("datasets.PubChem110m")
-@doc.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
 class PubChem110m(data.MoleculeDataset):
     """
     PubChem.

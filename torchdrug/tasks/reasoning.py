@@ -30,7 +30,7 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
             Set ``None`` to use the whole training set as both facts and labels.
         sample_weight (bool, optional): whether to down-weight triplets from entities of large degrees
     """
-    _option_members = ["criterion", "metric"]
+    _option_members = {"criterion", "metric"}
 
     def __init__(self, model, criterion="bce", metric=("mr", "mrr", "hits@1", "hits@3", "hits@10"),
                  num_negative=128, margin=6, adversarial_temperature=0, strict_negative=True, filtered_ranking=True,

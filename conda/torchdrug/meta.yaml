@@ -17,7 +17,7 @@ requirements:
     - decorator
     - numpy >=1.11
     - rdkit >=2020.09
-    - matplotlib
+    - matplotlib-base
     - tqdm
     - networkx
     - ninja

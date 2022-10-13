@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from torchdrug import core, layers, tasks, metrics
+from torchdrug import core, layers, tasks, metrics, utils
 from torchdrug.core import Registry as R
 from torchdrug.layers import functional
 
@@ -22,7 +22,7 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         task (str, list or dict, optional): training task(s).
             For dict, the keys are tasks and the values are the corresponding weights.
         criterion (str, list or dict, optional): training criterion(s). For dict, the keys are criterions and the values
-            are the corresponding weights. Available criterions are ``mse`` and ``bce``.
+            are the corresponding weights. Available criterions are ``mse``, ``bce`` and ``ce``.
         metric (str or list of str, optional): metric(s).
             Available metrics are ``mae``, ``rmse``, ``auprc`` and ``auroc``.
         num_mlp_layer (int, optional): number of layers in mlp prediction head
@@ -72,7 +72,11 @@ class PropertyPrediction(tasks.Task, core.Configurable):
             if value.ndim > 1:
                 num_class.append(value.shape[1])
             elif value.dtype == torch.long:
-                num_class.append(value.max().item() + 1)
+                task_class = value.max().item()
+                if task_class == 1 and "bce" in self.criterion:
+                    num_class.append(1)
+                else:
+                    num_class.append(task_class + 1)
             else:
                 num_class.append(1)
 
@@ -331,7 +335,7 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
     Parameters:
         model (nn.Module): graph representation model
         criterion (str, list or dict, optional): training criterion(s). For dict, the keys are criterions and the values
-            are the corresponding weights. Available criterions are ``mse`` and ``bce``.
+            are the corresponding weights. Available criterions are ``mse``, ``bce`` and ``ce``.
         metric (str or list of str, optional): metric(s).
             Available metrics are ``mae``, ``rmse``, ``auprc`` and ``auroc``.
         num_mlp_layer (int, optional): number of layers in mlp prediction head
@@ -364,7 +368,9 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
         mean = values.float().mean()
         std = values.float().std()
         if values.dtype == torch.long:
-            num_class = values.max().item() + 1
+            num_class = values.max().item()
+            if num_class > 1 or "bce" not in self.criterion:
+                num_class += 1
         else:
             num_class = 1
 
@@ -458,31 +464,20 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
 
 
 @R.register("tasks.InteractionPrediction")
+@utils.copy_args(PropertyPrediction, ignore=("graph_construction_model",))
 class InteractionPrediction(PropertyPrediction):
     """
     Predict the interaction property of graph pairs.
 
     Parameters:
         model (nn.Module): graph representation model
-        model2 (nn.Module, optional): graph representation model for the second item. If ``None``, use tied-weight 
-            model for the second item. 
-        task (str, list or dict, optional): training task(s).
-            For dict, the keys are tasks and the values are the corresponding weights.
-        criterion (str, list or dict, optional): training criterion(s). For dict, the keys are criterions and the values
-            are the corresponding weights. Available criterions are ``mse`` and ``bce``.
-        metric (str or list of str, optional): metric(s).
-            Available metrics are ``mae``, ``rmse``, ``auprc`` and ``auroc``.
-        num_mlp_layer (int, optional): number of layers in mlp prediction head
-        normalization (bool, optional): whether to normalize the target
-        num_class (int, optional): number of classes
-        verbose (int, optional): output verbose level
+        model2 (nn.Module, optional): graph representation model for the second item. If ``None``, use tied-weight
+            model for the second item.
+        **kwargs
     """
 
-    def __init__(self, model, model2=None, task=(), criterion="mse", metric=("mae", "rmse"),
-                 num_mlp_layer=1, normalization=True, num_class=None, verbose=0):
-        super(InteractionPrediction, self).__init__(model, task=task, criterion=criterion, 
-            metric=metric, num_mlp_layer=num_mlp_layer, normalization=normalization, 
-            num_class=num_class, verbose=verbose)
+    def __init__(self, model, model2=None, **kwargs):
+        super(InteractionPrediction, self).__init__(model, **kwargs)
         self.model2 = model2 or model
 
     def preprocess(self, train_set, valid_set, test_set):
@@ -508,7 +503,11 @@ class InteractionPrediction(PropertyPrediction):
             if value.ndim > 1:
                 num_class.append(value.shape[1])
             elif value.dtype == torch.long:
-                num_class.append(value.max().item() + 1)
+                task_class = value.max().item()
+                if task_class == 1 and "bce" in self.criterion:
+                    num_class.append(1)
+                else:
+                    num_class.append(task_class + 1)
             else:
                 num_class.append(1)
 

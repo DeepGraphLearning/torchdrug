@@ -207,7 +207,7 @@ def deprecated_alias(**alias):
                 type_str = match.group()
             else:
                 type_str = ""
-            alias_docs.append("%s%s: Deprecated alias of ``%s``" % (key, type_str, value))
+            alias_docs.append("%s%s: deprecated alias of ``%s``" % (key, type_str, value))
 
         if parameters[-1].kind == inspect.Parameter.VAR_KEYWORD:
             new_params = parameters[:-1] + alias_params + parameters[-1:]

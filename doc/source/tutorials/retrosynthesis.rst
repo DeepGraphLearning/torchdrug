@@ -30,10 +30,10 @@ completion.
     from torchdrug import data, datasets, utils
 
     reaction_dataset = datasets.USPTO50k("~/molecule-datasets/",
-                                         node_feature="center_identification",
+                                         atom_feature="center_identification",
                                          kekulize=True)
     synthon_dataset = datasets.USPTO50k("~/molecule-datasets/", as_synthon=True,
-                                        node_feature="synthon_completion",
+                                        atom_feature="synthon_completion",
                                         kekulize=True)
 
 Then we visualize some samples from the dataset. For the reaction dataset, we can

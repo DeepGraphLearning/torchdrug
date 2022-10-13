@@ -111,8 +111,8 @@ Here we specify some features during the construction of the molecule graph.
 
 .. code:: python
 
-    mol = data.Molecule.from_smiles("C1=CC=CC=C1", node_feature="default",
-                                    edge_feature="default", graph_feature="ecfp")
+    mol = data.Molecule.from_smiles("C1=CC=CC=C1", atom_feature="default",
+                                    bond_feature="default", mol_feature="ecfp")
     print(mol.node_feature.shape)
     print(mol.edge_feature.shape)
     print(mol.graph_feature.shape)

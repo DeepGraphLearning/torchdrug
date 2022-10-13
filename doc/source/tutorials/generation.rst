@@ -29,7 +29,7 @@ You are encouraged to dump the preprocessed dataset to save the time for future 
     from torchdrug import datasets
 
     dataset = datasets.ZINC250k("~/molecule-datasets/", kekulize=True,
-                                node_feature="symbol")
+                                atom_feature="symbol")
     # with open("path_to_dump/zinc250k.pkl", "wb") as fout:
     #     pickle.dump(dataset, fout)
     # with open("path_to_dump/zinc250k.pkl", "rb") as fin:
@@ -132,7 +132,7 @@ For Penalized logP optimization, the code is as follows:
     from collections import defaultdict
 
     dataset = datasets.ZINC250k("~/molecule-datasets/", kekulize=True,
-                                node_feature="symbol")
+                                atom_feature="symbol")
 
     model = models.RGCN(input_dim=dataset.node_feature_dim, 
                         num_relation=dataset.num_bond_type,
@@ -286,7 +286,7 @@ For Penalized logP optimization, the code is as follows:
 
     dataset = datasets.ZINC250k("~/molecule-datasets/", 
                                 kekulize=True, 
-                                node_feature="symbol")
+                                atom_feature="symbol")
 
     model = models.RGCN(input_dim=dataset.num_atom_type,
                         num_relation=dataset.num_bond_type,

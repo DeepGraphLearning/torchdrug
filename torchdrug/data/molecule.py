@@ -1,5 +1,6 @@
 import math
 import warnings
+from copy import copy
 from collections import Sequence
 
 from matplotlib import pyplot as plt
@@ -47,8 +48,6 @@ class Molecule(Graph):
     id2bond = {v: k for k, v in bond2id.items()}
     empty_mol = Chem.MolFromSmiles("")
     dummy_mol = Chem.MolFromSmiles("CC")
-    dummy_atom = dummy_mol.GetAtomWithIdx(0)
-    dummy_bond = dummy_mol.GetBondWithIdx(0)
 
     def __init__(self, edge_list=None, atom_type=None, bond_type=None, atom_feature=None, bond_feature=None,
                  mol_feature=None, formal_charge=None, explicit_hs=None, chiral_tag=None, radical_electrons=None,
@@ -152,7 +151,9 @@ class Molecule(Graph):
         """
         if mol is None:
             mol = cls.empty_mol
-
+        # some RDKit operations are in-place
+        # copy the object to avoid undesired behavior in the caller
+        mol = copy(mol)
         if with_hydrogen:
             mol = Chem.AddHs(mol)
         if kekulize:
@@ -169,7 +170,12 @@ class Molecule(Graph):
         radical_electrons = []
         atom_map = []
         _atom_feature = []
-        atoms = [mol.GetAtomWithIdx(i) for i in range(mol.GetNumAtoms())] + [cls.dummy_atom]
+        dummy_atom = copy(cls.dummy_mol).GetAtomWithIdx(0)
+        atoms = [mol.GetAtomWithIdx(i) for i in range(mol.GetNumAtoms())] + [dummy_atom]
+        if mol.GetNumConformers() > 0:
+            node_position = torch.tensor(mol.GetConformer().GetPositions())
+        else:
+            node_position = None
         for atom in atoms:
             atom_type.append(atom.GetAtomicNum())
             formal_charge.append(atom.GetFormalCharge())
@@ -188,10 +194,6 @@ class Molecule(Graph):
         explicit_hs = torch.tensor(explicit_hs)[:-1]
         chiral_tag = torch.tensor(chiral_tag)[:-1]
         radical_electrons = torch.tensor(radical_electrons)[:-1]
-        if mol.GetNumConformers() > 0:
-            node_position = torch.tensor(mol.GetConformer().GetPositions())
-        else:
-            node_position = None
         if len(atom_feature) > 0:
             _atom_feature = torch.tensor(_atom_feature)[:-1]
         else:
@@ -202,7 +204,8 @@ class Molecule(Graph):
         bond_stereo = []
         stereo_atoms = []
         _bond_feature = []
-        bonds = [mol.GetBondWithIdx(i) for i in range(mol.GetNumBonds())] + [cls.dummy_bond]
+        dummy_bond = copy(cls.dummy_mol).GetBondWithIdx(0)
+        bonds = [mol.GetBondWithIdx(i) for i in range(mol.GetNumBonds())] + [dummy_bond]
         for bond in bonds:
             type = str(bond.GetBondType())
             stereo = bond.GetStereo()
@@ -713,12 +716,16 @@ class PackedMolecule(PackedGraph, Molecule):
         for mol in mols:
             if mol is None:
                 mol = cls.empty_mol
-
+            # some RDKit operations are in-place
+            # copy the object to avoid undesired behavior in the caller
+            mol = copy(mol)
             if with_hydrogen:
                 mol = Chem.AddHs(mol)
             if kekulize:
                 Chem.Kekulize(mol)
 
+            if mol.GetNumConformers() > 0:
+                node_position += mol.GetConformer().GetPositions().tolist()
             for atom in mol.GetAtoms():
                 atom_type.append(atom.GetAtomicNum())
                 formal_charge.append(atom.GetFormalCharge())
@@ -731,8 +738,6 @@ class PackedMolecule(PackedGraph, Molecule):
                     func = R.get("features.atom.%s" % name)
                     feature += func(atom)
                 _atom_feature.append(feature)
-            if mol.GetNumConformers() > 0:
-                node_position += mol.GetConformer().GetPositions().tolist()
 
             for bond in mol.GetBonds():
                 type = str(bond.GetBondType())

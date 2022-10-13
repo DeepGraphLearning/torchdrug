@@ -42,8 +42,8 @@ We use GIN as our graph represenation model, and wrap it with InfoGraph.
 
     from torchdrug import core, datasets, tasks, models
 
-    dataset = datasets.ClinTox("~/molecule-datasets/", node_feature="pretrain",
-                               edge_feature="pretrain")
+    dataset = datasets.ClinTox("~/molecule-datasets/", atom_feature="pretrain",
+                               bond_feature="pretrain")
 
     gin_model = models.GIN(input_dim=dataset.node_feature_dim,
                            hidden_dims=[300, 300, 300, 300, 300],
@@ -83,8 +83,8 @@ Again, we use GIN as our graph representation model.
 
     from torchdrug import core, datasets, tasks, models
 
-    dataset = datasets.ClinTox("~/molecule-datasets/", node_feature="pretrain",
-                               edge_feature="pretrain")
+    dataset = datasets.ClinTox("~/molecule-datasets/", atom_feature="pretrain",
+                               bond_feature="pretrain")
 
     model = models.GIN(input_dim=dataset.node_feature_dim,
                        hidden_dims=[300, 300, 300, 300, 300],
@@ -129,7 +129,7 @@ pretrain in order to make it compatible with the pretrained model.
 .. code:: python
     
     dataset = datasets.BACE("~/molecule-datasets/",
-                            node_feature="pretrain", edge_feature="pretrain")
+                            atom_feature="pretrain", bond_feature="pretrain")
     lengths = [int(0.8 * len(dataset)), int(0.1 * len(dataset))]
     lengths += [len(dataset) - sum(lengths)]
     train_set, valid_set, test_set = data.ordered_scaffold_split(dataset, lengths)

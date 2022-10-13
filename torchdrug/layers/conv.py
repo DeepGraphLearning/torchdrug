@@ -138,7 +138,7 @@ class GraphConv(MessagePassingBase):
             edge_input = self.edge_linear(graph.edge_feature.float())
             edge_input = torch.cat([edge_input, torch.zeros(graph.num_node, self.input_dim, device=graph.device)])
             message += edge_input
-        message /= degree_in[node_in].sqrt()
+        message /= (degree_in[node_in].sqrt() + 1e-10)
         return message
 
     def aggregate(self, graph, message):
@@ -148,7 +148,7 @@ class GraphConv(MessagePassingBase):
         edge_weight = edge_weight.unsqueeze(-1)
         degree_out = graph.degree_out.unsqueeze(-1) + 1
         update = scatter_add(message * edge_weight, node_out, dim=0, dim_size=graph.num_node)
-        update = update / degree_out.sqrt()
+        update = update / (degree_out.sqrt() + 1e-10)
         return update
 
     def message_and_aggregate(self, graph, input):
@@ -158,19 +158,16 @@ class GraphConv(MessagePassingBase):
         edge_weight = torch.cat([graph.edge_weight, torch.ones(graph.num_node, device=graph.device)])
         degree_in = graph.degree_in + 1
         degree_out = graph.degree_out + 1
-        edge_weight = edge_weight / (degree_in[node_in] * degree_out[node_out]).sqrt()
+        edge_weight = edge_weight / ((degree_in[node_in] * degree_out[node_out]).sqrt() + 1e-10)
         adjacency = utils.sparse_coo_tensor(torch.stack([node_in, node_out]), edge_weight,
                                             (graph.num_node, graph.num_node))
         update = torch.sparse.mm(adjacency.t(), input)
         if self.edge_linear:
             edge_input = graph.edge_feature.float()
-            if self.edge_linear.in_features > self.edge_linear.out_features:
-                edge_input = self.edge_linear(edge_input)
+            edge_input = torch.cat([self.edge_linear(edge_input), torch.zeros(graph.num_node, self.input_dim, device=graph.device)])
             edge_weight = edge_weight.unsqueeze(-1)
-            edge_update = scatter_add(edge_input * edge_weight, graph.edge_list[:, 1], dim=0,
-                                      dim_size=graph.num_node)
-            if self.edge_linear.in_features <= self.edge_linear.out_features:
-                edge_update = self.edge_linear(edge_update)
+            node_out = torch.cat([graph.edge_list[:, 1], torch.arange(graph.num_node, device=graph.device)])
+            edge_update = scatter_add(edge_input * edge_weight, node_out, dim=0, dim_size=graph.num_node)
             update += edge_update
 
         return update
@@ -343,12 +340,9 @@ class GraphIsomorphismConv(MessagePassingBase):
         if self.edge_linear:
             edge_input = graph.edge_feature.float()
             edge_weight = graph.edge_weight.unsqueeze(-1)
-            if self.edge_linear.in_features > self.edge_linear.out_features:
-                edge_input = self.edge_linear(edge_input)
+            edge_input = self.edge_linear(edge_input)
             edge_update = scatter_add(edge_input * edge_weight, graph.edge_list[:, 1], dim=0,
                                       dim_size=graph.num_node)
-            if self.edge_linear.in_features <= self.edge_linear.out_features:
-                edge_update = self.edge_linear(edge_update)
             update += edge_update
 
         return update
@@ -430,13 +424,10 @@ class RelationalGraphConv(MessagePassingBase):
         update = torch.sparse.mm(adjacency.t(), input)
         if self.edge_linear:
             edge_input = graph.edge_feature.float()
-            if self.edge_linear.in_features > self.edge_linear.out_features:
-                edge_input = self.edge_linear(edge_input)
+            edge_input = self.edge_linear(edge_input)
             edge_weight = edge_weight.unsqueeze(-1)
             edge_update = scatter_add(edge_input * edge_weight, node_out, dim=0,
                                       dim_size=graph.num_node * graph.num_relation)
-            if self.edge_linear.in_features <= self.edge_linear.out_features:
-                edge_update = self.edge_linear(edge_update)
             update += edge_update
 
         return update.view(graph.num_node, self.num_relation * self.input_dim)
@@ -508,12 +499,9 @@ class NeuralFingerprintConv(MessagePassingBase):
         if self.edge_linear:
             edge_input = graph.edge_feature.float()
             edge_weight = graph.edge_weight.unsqueeze(-1)
-            if self.edge_linear.in_features > self.edge_linear.out_features:
-                edge_input = self.edge_linear(edge_input)
+            edge_input = self.edge_linear(edge_input)
             edge_update = scatter_add(edge_input * edge_weight, graph.edge_list[:, 1], dim=0,
                                       dim_size=graph.num_node)
-            if self.edge_linear.in_features <= self.edge_linear.out_features:
-                edge_update = self.edge_linear(edge_update)
             update += edge_update
 
         return update
@@ -572,7 +560,7 @@ class ContinuousFilterConv(MessagePassingBase):
         self.rbf_layer = nn.Linear(num_gaussian, hidden_dim)
         self.output_layer = nn.Linear(hidden_dim, output_dim)
         if edge_input_dim:
-            self.edge_linear = nn.Linear(edge_input_dim, input_dim)
+            self.edge_linear = nn.Linear(edge_input_dim, hidden_dim)
         else:
             self.edge_linear = None
 
@@ -601,13 +589,10 @@ class ContinuousFilterConv(MessagePassingBase):
         update = functional.generalized_rspmm(adjacency, rbf_weight, self.input_layer(input))
         if self.edge_linear:
             edge_input = graph.edge_feature.float()
-            if self.edge_linear.in_features > self.edge_linear.out_features:
-                edge_input = self.edge_linear(edge_input)
+            edge_input = self.edge_linear(edge_input)
             edge_weight = graph.edge_weight.unsqueeze(-1) * rbf_weight
             edge_update = scatter_add(edge_input * edge_weight, graph.edge_list[:, 1], dim=0,
                                       dim_size=graph.num_node)
-            if self.edge_linear.in_features <= self.edge_linear.out_features:
-                edge_update = self.edge_linear(edge_update)
             update += edge_update
 
         return update
@@ -729,7 +714,7 @@ class ChebyshevConv(MessagePassingBase):
         message = input[node_in]
         if self.edge_linear:
             message += self.edge_linear(graph.edge_feature.float())
-        message /= degree_in[node_in].sqrt()
+        message /= (degree_in[node_in].sqrt() + 1e-10)
         return message
 
     def aggregate(self, graph, message):
@@ -738,23 +723,20 @@ class ChebyshevConv(MessagePassingBase):
         degree_out = graph.degree_out.unsqueeze(-1)
         # because self-loop messages have a different scale, they are processed in combine()
         update = -scatter_add(message * edge_weight, node_out, dim=0, dim_size=graph.num_node)
-        update = update / degree_out.sqrt()
+        update = update / (degree_out.sqrt() + 1e-10)
         return update
 
     def message_and_aggregate(self, graph, input):
         node_in, node_out = graph.edge_list.t()[:2]
-        edge_weight = -graph.edge_weight / (graph.degree_in[node_in] * graph.degree_out[node_out]).sqrt()
+        edge_weight = -graph.edge_weight / ((graph.degree_in[node_in] * graph.degree_out[node_out]).sqrt() + 1e-10)
         adjacency = utils.sparse_coo_tensor(graph.edge_list.t()[:2], edge_weight, (graph.num_node, graph.num_node))
         update = torch.sparse.mm(adjacency.t(), input)
         if self.edge_linear:
             edge_input = graph.edge_feature.float()
-            if self.edge_linear.in_features > self.edge_linear.out_features:
-                edge_input = self.edge_linear(edge_input)
+            edge_input = self.edge_linear(edge_input)
             edge_weight = edge_weight.unsqueeze(-1)
             edge_update = scatter_add(edge_input * edge_weight, graph.edge_list[:, 1], dim=0,
                                       dim_size=graph.num_node)
-            if self.edge_linear.in_features <= self.edge_linear.out_features:
-                edge_update = self.edge_linear(edge_update)
             update += edge_update
 
         return update
@@ -822,13 +804,10 @@ class GeometricRelationalGraphConv(RelationalGraphConv):
         update = torch.sparse.mm(adjacency.t(), input)
         if self.edge_linear:
             edge_input = graph.edge_feature.float()
-            if self.edge_linear.in_features > self.edge_linear.out_features:
-                edge_input = self.edge_linear(edge_input)
+            edge_input = self.edge_linear(edge_input)
             edge_weight = graph.edge_weight.unsqueeze(-1)
             edge_update = scatter_add(edge_input * edge_weight, node_out, dim=0,
                                       dim_size=graph.num_node * graph.num_relation)
-            if self.edge_linear.in_features <= self.edge_linear.out_features:
-                edge_update = self.edge_linear(edge_update)
             update += edge_update
 
         return update.view(graph.num_node, self.num_relation * self.input_dim)

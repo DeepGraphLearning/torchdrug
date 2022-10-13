@@ -19,10 +19,7 @@ from torchdrug import layers
 
 logger = logging.getLogger(__name__)
 
-TASK_TO_STR = {
-    'qed': 'QED',
-    'plogp': 'Penalized logP'
-}
+
 @R.register("tasks.AutoregressiveGeneration")
 class AutoregressiveGeneration(tasks.Task, core.Configurable):
     """
@@ -147,14 +144,18 @@ class AutoregressiveGeneration(tasks.Task, core.Configurable):
         if len(graph) == 0 or graph.num_nodes.max() == 1:
             logger.error("Generation results collapse to singleton molecules")
 
-            # Imitate return variables
-            all_loss.requires_grad = True
+            all_loss.requires_grad_()
+            nan = torch.tensor(float("nan"), device=self.device)
             for task in self.task:
-                metric.update({
-                    TASK_TO_STR.get(task, task): torch.tensor(0.),
-                    f'{TASK_TO_STR.get(task, task)} (max)': torch.tensor(0.),
-                })
-            metric.update({'PPO objective': all_loss})
+                if task == "plogp":
+                    metric["Penalized logP"] = nan
+                    metric["Penalized logP (max)"] = nan
+                elif task == "qed":
+                    metric["QED"] = nan
+                    metric["QED (max)"] = nan
+            metric["node PPO objective"] = nan
+            metric["edge PPO objective"] = nan
+
             return all_loss, metric
 
         reward = torch.zeros(len(graph), device=self.device)
@@ -819,14 +820,17 @@ class GCPNGeneration(tasks.Task, core.Configurable):
         if len(graph) == 0 or graph.num_nodes.max() == 1:
             logger.error("Generation results collapse to singleton molecules")
 
-            # Imitate return variables
-            all_loss.requires_grad = True
+            all_loss.requires_grad_()
+            nan = torch.tensor(float("nan"), device=self.device)
             for task in self.task:
-                metric.update({
-                    TASK_TO_STR.get(task, task): torch.tensor(0.),
-                    f'{TASK_TO_STR.get(task, task)} (max)': torch.tensor(0.),
-                })
-            metric.update({'PPO objective': all_loss})
+                if task == "plogp":
+                    metric["Penalized logP"] = nan
+                    metric["Penalized logP (max)"] = nan
+                elif task == "qed":
+                    metric["QED"] = nan
+                    metric["QED (max)"] = nan
+            metric["PPO objective"] = nan
+
             return all_loss, metric
 
         reward = torch.zeros(len(graph), device=self.device)

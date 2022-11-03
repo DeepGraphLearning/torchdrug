@@ -148,7 +148,7 @@ for name, cls in inspect.getmembers(scheduler):
     if inspect.isclass(cls) and issubclass(cls, Scheduler):
         cls = core.make_configurable(cls, ignore_args=("optimizer",))
         cls = R.register("scheduler.%s" % name)(cls)
-        patch(scheduler, name, cls)
+        setattr(optim, name, cls)
 
 Dataset = dataset.Dataset
 for name, cls in inspect.getmembers(dataset):

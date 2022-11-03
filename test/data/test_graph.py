@@ -334,11 +334,11 @@ class GraphTest(unittest.TestCase):
 
     def test_reference(self):
         node_out = torch.arange(1, self.num_node)
-        node_in = (node_out - 1) // 2
+        node_in = torch.div(node_out - 1, 2, rounding_mode="floor")
         edge_list = torch.stack([node_in, node_out], dim=-1)
         tree = data.Graph(edge_list, num_node=self.num_node)
         with tree.node(), tree.node_reference():
-            tree.dad = (torch.arange(self.num_node) - 1) // 2
+            tree.dad = torch.div(torch.arange(self.num_node) - 1, 2, rounding_mode="floor")
 
         mask = torch.arange(1, self.num_node)
         graph = tree.subgraph(mask)

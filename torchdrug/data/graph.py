@@ -539,7 +539,7 @@ class Graph(core._MetaContainer):
             raise ValueError("Fail to build an inverted index table based on sorting. "
                              "The graph is too large.")
         scale = base.cumprod(0)
-        scale = scale[-1] // scale
+        scale = torch.div(scale[-1], scale, rounding_mode="floor")
         key = (keys * scale).sum(dim=-1)
         order = key.argsort()
         num_keys = key.unique(return_counts=True)[1]
@@ -725,7 +725,7 @@ class Graph(core._MetaContainer):
         local_inner_size = degree_in.repeat_interleave(size)
         edge_in_offset = (degree_out.cumsum(0) - degree_out).repeat_interleave(size)
         edge_out_offset = (degree_in.cumsum(0) - degree_in).repeat_interleave(size)
-        edge_in_index = local_index // local_inner_size + edge_in_offset
+        edge_in_index = torch.div(local_index, local_inner_size, rounding_mode="floor") + edge_in_offset
         edge_out_index = local_index % local_inner_size + edge_out_offset
 
         edge_in = edge_in[edge_in_index]
@@ -1055,7 +1055,7 @@ class PackedGraph(Graph):
         >>> graphs = batch.unpack()
 
     .. warning::
-        
+
         Edges of the same graph are guaranteed to be consecutive in the edge list.
         However, this class doesn't enforce any order on the edges.
 
@@ -1664,7 +1664,7 @@ class PackedGraph(Graph):
         local_inner_size = degree_in.repeat_interleave(size)
         edge_in_offset = (degree_out.cumsum(0) - degree_out).repeat_interleave(size)
         edge_out_offset = (degree_in.cumsum(0) - degree_in).repeat_interleave(size)
-        edge_in_index = local_index // local_inner_size + edge_in_offset
+        edge_in_index = torch.div(local_index, local_inner_size, rounding_mode="floor") + edge_in_offset
         edge_out_index = local_index % local_inner_size + edge_out_offset
 
         edge_in = edge_in[edge_in_index]

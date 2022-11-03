@@ -52,7 +52,7 @@ class EdgePrediction(tasks.Task, core.Configurable):
     def target(self, batch):
         graph = batch["graph"]
         target = torch.ones(graph.num_edge, device=self.device)
-        target[graph.num_edge // 2:] = 0
+        target[len(target) // 2:] = 0
         return target
 
     def evaluate(self, pred, target):

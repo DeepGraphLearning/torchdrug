@@ -155,9 +155,10 @@ class ContactPrediction(tasks.Task, core.Configurable):
                 score = (pred > 0) == label
                 score = functional.variadic_mean(score.float(), size).mean()
             elif _metric.startswith("prec@L"):
-                l = target['size'].sqrt().long()
+                l = target["size"].sqrt().long()
                 k = int(_metric[7:]) if len(_metric) > 7 else 1
-                score = metrics.variadic_top_precision(pred, label, size, l // k).mean()
+                l = torch.div(l, k, rounding_mode="floor")
+                score = metrics.variadic_top_precision(pred, label, size, l).mean()
             elif _metric.startswith("prec@"):
                 k = int(_metric[5:])
                 k = torch.full_like(size, k)

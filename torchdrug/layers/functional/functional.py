@@ -31,7 +31,7 @@ def masked_mean(input, mask, dim=None, keepdim=False):
         dim (int or tuple of int, optional): dimension to reduce
         keepdim (bool, optional): whether retain ``dim`` or not
     """
-    input = input.masked_scatter(~mask, torch.zeros_like(input)) # safe with nan
+    input = input.masked_scatter(~mask, torch.zeros_like(input))  # safe with nan
     if dim is None:
         return input.sum() / mask.sum().clamp(1)
     return input.sum(dim, keepdim=keepdim) / mask.sum(dim, keepdim=keepdim).clamp(1)
@@ -351,7 +351,7 @@ def variadic_topk(input, size, k, largest=True):
         padding2graph = _size_to_index(num_padding)
         mask = _extend(mask, num_actual, padding[padding2graph], num_padding)[0]
 
-    index = index_ext[mask] # (N * k, ...)
+    index = index_ext[mask]  # (N * k, ...)
     value = input.gather(0, index)
     if isinstance(k, torch.Tensor) and k.shape == size.shape:
         value = value.view(-1, *input.shape[1:])
@@ -375,7 +375,7 @@ def variadic_sort(input, size, descending=False):
         input (Tensor): input of shape :math:`(B, ...)`
         size (LongTensor): size of sets of shape :math:`(N,)`
         descending (bool, optional): return ascending or descending order
-    
+
     Returns
         (Tensor, LongTensor): sorted values and indexes
     """
@@ -471,7 +471,7 @@ def variadic_meshgrid(input1, size1, input2, size2):
     local_inner_size = size2.repeat_interleave(grid_size)
     offset1 = (size1.cumsum(0) - size1).repeat_interleave(grid_size)
     offset2 = (size2.cumsum(0) - size2).repeat_interleave(grid_size)
-    index1 = local_index // local_inner_size + offset1
+    index1 = torch.div(local_index, local_inner_size, rounding_mode="floor") + offset1
     index2 = local_index % local_inner_size + offset2
     return input1[index1], input2[index2]
 

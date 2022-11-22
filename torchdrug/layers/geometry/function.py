@@ -275,8 +275,7 @@ class SubsequenceNode(nn.Module, core.Configurable):
         starts = starts + graph.num_cum_residues - graph.num_residues
         ends = ends + graph.num_cum_residues - graph.num_residues
 
-        node_mask = functional.multi_slice_mask(starts, ends, graph.num_residue)
-        residue_mask = node_mask[graph.atom2residue]
+        residue_mask = functional.multi_slice_mask(starts, ends, graph.num_residue)
         graph = graph.subresidue(residue_mask)
 
         return graph

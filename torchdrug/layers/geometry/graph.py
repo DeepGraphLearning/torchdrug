@@ -107,10 +107,14 @@ class GraphConstruction(nn.Module, core.Configurable):
             edge_feature = self.edge_residue_type(graph, edge_list)
         elif self.edge_feature == "gearnet":
             edge_feature = self.edge_gearnet(graph, edge_list, num_relation)
+        elif self.edge_feature is None:
+            edge_feature = None
         else:
             raise ValueError("Unknown edge feature `%s`" % self.edge_feature)
-        data_dict, meta_dict = graph.data_by_meta(include=("node", "residue", "node reference", "residue reference"))
-
+        data_dict, meta_dict = graph.data_by_meta(include=(
+            "node", "residue", "node reference", "residue reference", "graph"
+        ))
+        
         if isinstance(graph, data.PackedProtein):
             data_dict["num_residues"] = graph.num_residues
         if isinstance(graph, data.PackedMolecule):

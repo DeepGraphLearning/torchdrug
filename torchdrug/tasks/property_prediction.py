@@ -28,6 +28,8 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         num_mlp_layer (int, optional): number of layers in mlp prediction head
         normalization (bool, optional): whether to normalize the target
         num_class (int, optional): number of classes
+        mlp_batch_norm (bool, optional): apply batch normalization in mlp or not
+        mlp_dropout (float, optional): dropout in mlp
         graph_construction_model (nn.Module, optional): graph construction model
         verbose (int, optional): output verbose level
     """
@@ -36,7 +38,8 @@ class PropertyPrediction(tasks.Task, core.Configurable):
     _option_members = {"task", "criterion", "metric"}
 
     def __init__(self, model, task=(), criterion="mse", metric=("mae", "rmse"), num_mlp_layer=1,
-                 normalization=True, num_class=None, graph_construction_model=None, verbose=0):
+                 normalization=True, num_class=None, mlp_batch_norm=False, mlp_dropout=0,
+                 graph_construction_model=None, verbose=0):
         super(PropertyPrediction, self).__init__()
         self.model = model
         self.task = task
@@ -46,6 +49,8 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         # For classification tasks, we disable normalization tricks.
         self.normalization = normalization and ("ce" not in criterion) and ("bce" not in criterion)
         self.num_class = (num_class,) if isinstance(num_class, int) else num_class
+        self.mlp_batch_norm = mlp_batch_norm
+        self.mlp_dropout = mlp_dropout
         self.graph_construction_model = graph_construction_model
         self.verbose = verbose
 
@@ -86,7 +91,8 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         self.num_class = self.num_class or num_class
 
         hidden_dims = [self.model.output_dim] * (self.num_mlp_layer - 1)
-        self.mlp = layers.MLP(self.model.output_dim, hidden_dims + [sum(self.num_class)])
+        self.mlp = layers.MLP(self.model.output_dim, hidden_dims + [sum(self.num_class)],
+                            batch_norm=self.mlp_batch_norm, dropout=self.mlp_dropout)
 
     def forward(self, batch):
         """"""

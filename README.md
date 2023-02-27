@@ -153,12 +153,17 @@ solver = core.Engine(task, train_set, valid_set, test_set, optimizer, gpus=[0, 1
 solver = core.Engine(task, train_set, valid_set, test_set, optimizer, gpus=[0, 1, 2, 3, 0, 1, 2, 3])
 ```
 
-Experiments can be easily tracked and managed through [Weights & Biases platform].
+Experiments can be easily tracked and managed through [Aim] or [Weights & Biases] platform.
+```python
+solver = core.Engine(task, train_set, valid_set, test_set, optimizer, logger="aim")
+```
+
 ```python
 solver = core.Engine(task, train_set, valid_set, test_set, optimizer, logger="wandb")
 ```
 
-[Weights & Biases platform]: https://wandb.ai/
+[Aim]: https://aimstack.io/
+[Weights & Biases]: https://wandb.ai/
 
 Contributing
 ------------

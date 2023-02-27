@@ -94,7 +94,8 @@ class Engine(core.Configurable):
                 train_set, valid_set, test_set = result
             new_params = list(task.parameters())
             if len(new_params) != len(old_params):
-                optimizer.add_param_group({"params": new_params[len(old_params):]})
+                optimizer.add_param_group(
+                    {"params": new_params[len(old_params):]})
         if self.world_size > 1:
             task = nn.SyncBatchNorm.convert_sync_batchnorm(task)
         if self.device.type == "cuda":
@@ -112,9 +113,13 @@ class Engine(core.Configurable):
                 logger = core.LoggingLogger()
             elif logger == "wandb":
                 logger = core.WandbLogger(project=task.__class__.__name__)
+            elif logger == "aim":
+                logger = core.AimLogger(
+                    experiment_name=task.__class__.__name__)
             else:
                 raise ValueError("Unknown logger `%s`" % logger)
-        self.meter = core.Meter(log_interval=log_interval, silent=self.rank > 0, logger=logger)
+        self.meter = core.Meter(log_interval=log_interval,
+                                silent=self.rank > 0, logger=logger)
         self.meter.log_config(self.config_dict())
 
     def train(self, num_epoch=1, batch_per_epoch=None):
@@ -128,8 +133,10 @@ class Engine(core.Configurable):
             num_epoch (int, optional): number of epochs
             batch_per_epoch (int, optional): number of batches per epoch
         """
-        sampler = torch_data.DistributedSampler(self.train_set, self.world_size, self.rank)
-        dataloader = data.DataLoader(self.train_set, self.batch_size, sampler=sampler, num_workers=self.num_worker)
+        sampler = torch_data.DistributedSampler(
+            self.train_set, self.world_size, self.rank)
+        dataloader = data.DataLoader(
+            self.train_set, self.batch_size, sampler=sampler, num_workers=self.num_worker)
         batch_per_epoch = batch_per_epoch or len(dataloader)
         model = self.model
         if self.world_size > 1:
@@ -137,7 +144,8 @@ class Engine(core.Configurable):
                 model = nn.parallel.DistributedDataParallel(model, device_ids=[self.device],
                                                             find_unused_parameters=True)
             else:
-                model = nn.parallel.DistributedDataParallel(model, find_unused_parameters=True)
+                model = nn.parallel.DistributedDataParallel(
+                    model, find_unused_parameters=True)
         model.train()
 
         for epoch in self.meter(num_epoch):
@@ -146,7 +154,8 @@ class Engine(core.Configurable):
             metrics = []
             start_id = 0
             # the last gradient update may contain less than gradient_interval batches
-            gradient_interval = min(batch_per_epoch - start_id, self.gradient_interval)
+            gradient_interval = min(
+                batch_per_epoch - start_id, self.gradient_interval)
 
             for batch_id, batch in enumerate(islice(dataloader, batch_per_epoch)):
                 if self.device.type == "cuda":
@@ -154,7 +163,8 @@ class Engine(core.Configurable):
 
                 loss, metric = model(batch)
                 if not loss.requires_grad:
-                    raise RuntimeError("Loss doesn't require grad. Did you define any loss in the task?")
+                    raise RuntimeError(
+                        "Loss doesn't require grad. Did you define any loss in the task?")
                 loss = loss / gradient_interval
                 loss.backward()
                 metrics.append(metric)
@@ -171,7 +181,8 @@ class Engine(core.Configurable):
 
                     metrics = []
                     start_id = batch_id + 1
-                    gradient_interval = min(batch_per_epoch - start_id, self.gradient_interval)
+                    gradient_interval = min(
+                        batch_per_epoch - start_id, self.gradient_interval)
 
             if self.scheduler:
                 self.scheduler.step()
@@ -192,8 +203,10 @@ class Engine(core.Configurable):
             logger.warning(pretty.separator)
             logger.warning("Evaluate on %s" % split)
         test_set = getattr(self, "%s_set" % split)
-        sampler = torch_data.DistributedSampler(test_set, self.world_size, self.rank)
-        dataloader = data.DataLoader(test_set, self.batch_size, sampler=sampler, num_workers=self.num_worker)
+        sampler = torch_data.DistributedSampler(
+            test_set, self.world_size, self.rank)
+        dataloader = data.DataLoader(
+            test_set, self.batch_size, sampler=sampler, num_workers=self.num_worker)
         model = self.model
 
         model.eval()
@@ -267,7 +280,8 @@ class Engine(core.Configurable):
         Construct an instance from the configuration dict.
         """
         if getattr(cls, "_registry_key", cls.__name__) != config["class"]:
-            raise ValueError("Expect config class to be `%s`, but found `%s`" % (cls.__name__, config["class"]))
+            raise ValueError("Expect config class to be `%s`, but found `%s`" % (
+                cls.__name__, config["class"]))
 
         optimizer_config = config.pop("optimizer")
         new_config = {}
@@ -277,7 +291,8 @@ class Engine(core.Configurable):
             if k != "class":
                 new_config[k] = v
         optimizer_config["params"] = new_config["task"].parameters()
-        new_config["optimizer"] = core.Configurable.load_config_dict(optimizer_config)
+        new_config["optimizer"] = core.Configurable.load_config_dict(
+            optimizer_config)
 
         return cls(**new_config)
 

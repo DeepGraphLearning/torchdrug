@@ -84,7 +84,6 @@ We need at least PyTorch >=1.13 `arm64` installed natively (via conda or pip). U
 
 ```bash
 pip install --no-cache-dir torch==1.13.0
-pip install git+https://github.com/rusty1s/pytorch_sparse.git
 pip install git+https://github.com/rusty1s/pytorch_scatter.git
 pip install git+https://github.com/rusty1s/pytorch_cluster.git
 

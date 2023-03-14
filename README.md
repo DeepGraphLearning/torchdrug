@@ -78,6 +78,21 @@ Import-VisualStudioVars -Architecture x64
 $env:LIB += ";C:\Program Files\Python37\libs"
 ```
 
+### Apple Silicon (M1/M2) ###
+
+We need at least PyTorch >=1.13 `arm64` installed natively (via conda or pip). Until `torch-scatter` and `torch-cluster` have `arm64` wheels, they can be compiled from the sources. See more details in the respective [issue](https://github.com/rusty1s/pytorch_scatter/issues/241).
+
+```bash
+pip install --no-cache-dir torch==1.13.0
+pip install git+https://github.com/rusty1s/pytorch_sparse.git
+pip install git+https://github.com/rusty1s/pytorch_scatter.git
+pip install git+https://github.com/rusty1s/pytorch_cluster.git
+
+pip install torchdrug
+```
+
+TorchDrug will run on Apple Silicon CPU, but the `mps` device will not work as some TorchDrug-specific tensor operations are not yet implemented for `mps`.
+
 Quick Start
 -----------
 

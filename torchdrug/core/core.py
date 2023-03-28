@@ -201,7 +201,7 @@ class Registry(object):
     @classmethod
     def get(cls, name):
         """
-        Get an object with a canonical name. Hierachical names are separated by ``.``.
+        Get an object with a canonical name. Hierarchical names are separated by ``.``.
         """
         entry = cls.table
         keys = name.split(".")
@@ -235,13 +235,22 @@ class Registry(object):
 class _Configurable(type):
 
     def config_dict(self):
+
+        def unroll_config_dict(obj):
+            if isinstance(type(obj), _Configurable):
+                obj = obj.config_dict()
+            elif isinstance(obj, (str, bytes)):
+                return obj
+            elif isinstance(obj, dict):
+                return type(obj)({k: unroll_config_dict(v) for k, v in obj.items()})
+            elif isinstance(obj, (list, tuple)):
+                return type(obj)(unroll_config_dict(x) for x in obj)
+            return obj
+
         cls = getattr(self, "_registry_key", self.__class__.__name__)
         config = {"class": cls}
-
         for k, v in self._config.items():
-            if isinstance(type(v), _Configurable):
-                v = v.config_dict()
-            config[k] = v
+            config[k] = unroll_config_dict(v)
         return config
 
     @classmethod

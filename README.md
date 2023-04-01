@@ -31,7 +31,7 @@ Installation
 ------------
 
 TorchDrug can be installed on either Linux, Windows or macOS. It is compatible with
-Python 3.7/3.8/3.9 and PyTorch >= 1.8.0.
+3.7 <= Python <= 3.10 and PyTorch >= 1.8.0.
 
 ### From Conda ###
 

@@ -1,7 +1,7 @@
 import math
 import warnings
 from copy import copy
-from collections import Sequence
+from collections.abc import Sequence
 
 from matplotlib import pyplot as plt
 from rdkit import Chem

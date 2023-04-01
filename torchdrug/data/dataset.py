@@ -5,7 +5,8 @@ import lmdb
 import pickle
 import logging
 import warnings
-from collections import defaultdict, Sequence
+from collections import defaultdict
+from collections.abc import Sequence
 
 from tqdm import tqdm
 

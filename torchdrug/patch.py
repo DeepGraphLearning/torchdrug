@@ -68,7 +68,7 @@ class PatchedModule(nn.Module):
         if '_buffers' not in self.__dict__:
             raise AttributeError(
                 "cannot assign buffer before Module.__init__() call")
-        elif not isinstance(name, torch._six.string_classes):
+        elif not isinstance(name, str):
             raise TypeError("buffer name should be a string. "
                             "Got {}".format(torch.typename(name)))
         elif '.' in name:
@@ -87,19 +87,6 @@ class PatchedModule(nn.Module):
                 self._non_persistent_buffers_set.discard(name)
             else:
                 self._non_persistent_buffers_set.add(name)
-
-
-class PatchedDistributedDataParallel(nn.parallel.DistributedDataParallel):
-
-    def _distributed_broadcast_coalesced(self, tensors, buffer_size, *args, **kwargs):
-        new_tensors = []
-        for tensor in tensors:
-            # do not broadcast graphs
-            # assume graphs are already init by each process
-            if isinstance(tensor, torch.Tensor):
-                new_tensors.append(tensor)
-        if new_tensors:
-            dist._broadcast_coalesced(self.process_group, new_tensors, buffer_size, *args, **kwargs)
 
 
 def _get_build_directory(name, verbose):
@@ -133,7 +120,6 @@ def patch(module, name, cls):
 
 
 patch(nn, "Module", PatchedModule)
-patch(nn.parallel, "DistributedDataParallel", PatchedDistributedDataParallel)
 patch(cpp_extension, "_get_build_directory", _get_build_directory)
 
 Optimizer = optim.Optimizer

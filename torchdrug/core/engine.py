@@ -97,6 +97,11 @@ class Engine(core.Configurable):
                 optimizer.add_param_group({"params": new_params[len(old_params):]})
         if self.world_size > 1:
             task = nn.SyncBatchNorm.convert_sync_batchnorm(task)
+            buffers_to_ignore = []
+            for name, buffer in task.named_buffers():
+                if not isinstance(buffer, torch.Tensor):
+                    buffers_to_ignore.append(name)
+            task._ddp_params_and_buffers_to_ignore = set(buffers_to_ignore)
         if self.device.type == "cuda":
             task = task.cuda(self.device)
 

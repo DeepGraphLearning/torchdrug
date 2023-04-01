@@ -1,4 +1,4 @@
-from collections import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 from torch import nn
 

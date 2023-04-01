@@ -170,14 +170,14 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
         pattern = torch.stack([pos_h_index, any, pos_r_index], dim=-1)
         edge_index, num_t_truth = self.graph.match(pattern)
         t_truth_index = self.graph.edge_list[edge_index, 1]
-        pos_index = functional._size_to_index(num_t_truth)
+        pos_index = torch.repeat_interleave(num_t_truth)
         t_mask = torch.ones(batch_size, self.num_entity, dtype=torch.bool, device=self.device)
         t_mask[pos_index, t_truth_index] = 0
 
         pattern = torch.stack([any, pos_t_index, pos_r_index], dim=-1)
         edge_index, num_h_truth = self.graph.match(pattern)
         h_truth_index = self.graph.edge_list[edge_index, 0]
-        pos_index = functional._size_to_index(num_h_truth)
+        pos_index = torch.repeat_interleave(num_h_truth)
         h_mask = torch.ones(batch_size, self.num_entity, dtype=torch.bool, device=self.device)
         h_mask[pos_index, h_truth_index] = 0
 
@@ -226,7 +226,7 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
         pattern = pattern[:batch_size // 2]
         edge_index, num_t_truth = self.fact_graph.match(pattern)
         t_truth_index = self.fact_graph.edge_list[edge_index, 1]
-        pos_index = functional._size_to_index(num_t_truth)
+        pos_index = torch.repeat_interleave(num_t_truth)
         t_mask = torch.ones(len(pattern), self.num_entity, dtype=torch.bool, device=self.device)
         t_mask[pos_index, t_truth_index] = 0
         neg_t_candidate = t_mask.nonzero()[:, 1]
@@ -237,7 +237,7 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
         pattern = pattern[batch_size // 2:]
         edge_index, num_h_truth = self.fact_graph.match(pattern)
         h_truth_index = self.fact_graph.edge_list[edge_index, 0]
-        pos_index = functional._size_to_index(num_h_truth)
+        pos_index = torch.repeat_interleave(num_h_truth)
         h_mask = torch.ones(len(pattern), self.num_entity, dtype=torch.bool, device=self.device)
         h_mask[pos_index, h_truth_index] = 0
         neg_h_candidate = h_mask.nonzero()[:, 1]

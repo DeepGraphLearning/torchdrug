@@ -124,7 +124,7 @@ class AttributeMasking(tasks.Task, core.Configurable):
         num_cum_nodes = num_nodes.cumsum(0)
         num_samples = (num_nodes * self.mask_rate).long().clamp(1)
         num_sample = num_samples.sum()
-        sample2graph = functional._size_to_index(num_samples)
+        sample2graph = torch.repeat_interleave(num_samples)
         node_index = (torch.rand(num_sample, device=self.device) * num_nodes[sample2graph]).long()
         node_index = node_index + (num_cum_nodes - num_nodes)[sample2graph]
 

@@ -213,7 +213,7 @@ class PropertyPrediction(tasks.Task, core.Configurable):
                     score.append(_score)
                 score = torch.stack(score)
             else:
-                raise ValueError("Unknown criterion `%s`" % _metric)
+                raise ValueError("Unknown metric `%s`" % _metric)
 
             name = tasks._get_metric_name(_metric)
             for t, s in zip(self.task, score):

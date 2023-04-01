@@ -31,7 +31,7 @@ def masked_mean(input, mask, dim=None, keepdim=False):
         dim (int or tuple of int, optional): dimension to reduce
         keepdim (bool, optional): whether retain ``dim`` or not
     """
-    input = input.masked_scatter(~mask, torch.zeros_like(input))  # safe with nan
+    input = input.masked_scatter(~mask, torch.zeros_like(input)) # safe with nan
     if dim is None:
         return input.sum() / mask.sum().clamp(1)
     return input.sum(dim, keepdim=keepdim) / mask.sum(dim, keepdim=keepdim).clamp(1)
@@ -78,7 +78,7 @@ def multi_slice(starts, ends):
     slices, order = slices.sort()
     values = values[order]
     depth = values.cumsum(0)
-    valid = (values == 1 & depth == 0) | (values == -1 & depth == 1)
+    valid = ((values == 1) & (depth == 1)) | ((values == -1) & (depth == 0))
     slices = slices[valid]
 
     starts, ends = slices.view(-1, 2).t()
@@ -122,23 +122,6 @@ def as_mask(indexes, length):
     mask = torch.zeros(length, dtype=torch.bool, device=indexes.device)
     mask[indexes] = 1
     return mask
-
-
-def _size_to_index(size):
-    """
-    Convert sizes to variadic indexes.
-
-    Example::
-
-        >>> index = _size_to_index(torch.tensor([3, 2, 1]))
-        >>> assert (index == torch.tensor([0, 0, 0, 1, 1, 2])).all()
-
-    Parameters:
-        size (LongTensor): size of each sample
-    """
-    range = torch.arange(len(size), device=size.device)
-    index2sample = range.repeat_interleave(size)
-    return index2sample
 
 
 def _extend(data, size, input, input_size):
@@ -186,7 +169,7 @@ def variadic_sum(input, size):
         input (Tensor): input of shape :math:`(B, ...)`
         size (LongTensor): size of sets of shape :math:`(N,)`
     """
-    index2sample = _size_to_index(size)
+    index2sample = torch.repeat_interleave(size)
     index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
     index2sample = index2sample.expand_as(input)
 
@@ -204,7 +187,7 @@ def variadic_mean(input, size):
         input (Tensor): input of shape :math:`(B, ...)`
         size (LongTensor): size of sets of shape :math:`(N,)`
     """
-    index2sample = _size_to_index(size)
+    index2sample = torch.repeat_interleave(size)
     index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
     index2sample = index2sample.expand_as(input)
 
@@ -225,7 +208,7 @@ def variadic_max(input, size):
     Returns
         (Tensor, LongTensor): max values and indexes
     """
-    index2sample = _size_to_index(size)
+    index2sample = torch.repeat_interleave(size)
     index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
     index2sample = index2sample.expand_as(input)
 
@@ -244,7 +227,7 @@ def variadic_log_softmax(input, size):
         input (Tensor): input of shape :math:`(B, ...)`
         size (LongTensor): number of categories of shape :math:`(N,)`
     """
-    index2sample = _size_to_index(size)
+    index2sample = torch.repeat_interleave(size)
     index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
     index2sample = index2sample.expand_as(input)
 
@@ -262,7 +245,7 @@ def variadic_softmax(input, size):
         input (Tensor): input of shape :math:`(B, ...)`
         size (LongTensor): number of categories of shape :math:`(N,)`
     """
-    index2sample = _size_to_index(size)
+    index2sample = torch.repeat_interleave(size)
     index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
     index2sample = index2sample.expand_as(input)
 
@@ -283,7 +266,7 @@ def variadic_cross_entropy(input, target, size, reduction="mean"):
         reduction (string, optional): reduction to apply to the output.
             Available reductions are ``none``, ``sum`` and ``mean``.
     """
-    index2sample = _size_to_index(size)
+    index2sample = torch.repeat_interleave(size)
     index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
     index2sample = index2sample.expand_as(input)
 
@@ -321,7 +304,7 @@ def variadic_topk(input, size, k, largest=True):
     Returns
         (Tensor, LongTensor): top-k values and indexes
     """
-    index2graph = _size_to_index(size)
+    index2graph = torch.repeat_interleave(size)
     index2graph = index2graph.view([-1] + [1] * (input.ndim - 1))
 
     mask = ~torch.isinf(input)
@@ -348,10 +331,10 @@ def variadic_topk(input, size, k, largest=True):
     if (num_padding > 0).any():
         # special case: size < k, pad with the last valid index
         padding = ends - 1
-        padding2graph = _size_to_index(num_padding)
+        padding2graph = torch.repeat_interleave(num_padding)
         mask = _extend(mask, num_actual, padding[padding2graph], num_padding)[0]
 
-    index = index_ext[mask]  # (N * k, ...)
+    index = index_ext[mask] # (N * k, ...)
     value = input.gather(0, index)
     if isinstance(k, torch.Tensor) and k.shape == size.shape:
         value = value.view(-1, *input.shape[1:])
@@ -375,11 +358,11 @@ def variadic_sort(input, size, descending=False):
         input (Tensor): input of shape :math:`(B, ...)`
         size (LongTensor): size of sets of shape :math:`(N,)`
         descending (bool, optional): return ascending or descending order
-
+    
     Returns
         (Tensor, LongTensor): sorted values and indexes
     """
-    index2sample = _size_to_index(size)
+    index2sample = torch.repeat_interleave(size)
     index2sample = index2sample.view([-1] + [1] * (input.ndim - 1))
 
     mask = ~torch.isinf(input)

@@ -189,7 +189,7 @@ def variadic_area_under_roc(pred, target, size):
         target (Tensor): target of shape :math:`(B,)`.
         size (Tensor): size of sets of shape :math:`(N,)`
     """
-    index2graph = functional._size_to_index(size)
+    index2graph = torch.repeat_interleave(size)
     _, order = functional.variadic_sort(pred, size, descending=True)
     cum_size = (size.cumsum(0) - size)[index2graph]
     target = target[order + cum_size]
@@ -215,7 +215,7 @@ def variadic_area_under_prc(pred, target, size):
         target (Tensor): target of shape :math:`(B,)`.
         size (Tensor): size of sets of shape :math:`(N,)`
     """
-    index2graph = functional._size_to_index(size)
+    index2graph = torch.repeat_interleave(size)
     _, order = functional.variadic_sort(pred, size, descending=True)
     cum_size = (size.cumsum(0) - size)[index2graph]
     target = target[order + cum_size]
@@ -295,7 +295,7 @@ def variadic_accuracy(input, target, size):
         target (Tensor): target of shape :math:`(N,)`. Each target is a relative index in a sample.
         size (Tensor): number of categories of shape :math:`(N,)`
     """
-    index2graph = functional._size_to_index(size)
+    index2graph = torch.repeat_interleave(size)
 
     input_class = scatter_max(input, index2graph)[1]
     target_index = target + size.cumsum(0) - size

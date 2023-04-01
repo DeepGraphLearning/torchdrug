@@ -727,7 +727,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         new_node_feature = torch.cat([new_node_feature, new_graph_feature], dim=-1)
         node_feature, num_nodes_ext = self._extend(node_feature, graph.num_nodes, new_node_feature)
 
-        node2graph_ext = functional._size_to_index(num_nodes_ext)
+        node2graph_ext = torch.repeat_interleave(num_nodes_ext)
         num_cum_nodes_ext = num_nodes_ext.cumsum(0)
         starts = num_cum_nodes_ext - num_nodes_ext + graph.num_nodes
         ends = num_cum_nodes_ext
@@ -872,7 +872,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
     def predict_reactant(self, batch, num_beam=10, max_prediction=20, max_step=20):
         if "synthon" in batch:
             synthon = batch["synthon"]
-            synthon2product = functional._size_to_index(batch["num_synthon"])
+            synthon2product = torch.repeat_interleave(batch["num_synthon"])
             assert (synthon2product < len(batch["reaction"])).all()
             reaction = batch["reaction"][synthon2product]
         else:
@@ -1023,7 +1023,7 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         node_feature, num_nodes_ext = self._extend(node_feature, graph.num_nodes, new_node_feature)
         assert (num_nodes_ext == size_ext).all()
 
-        node2graph_ext = functional._size_to_index(num_nodes_ext)
+        node2graph_ext = torch.repeat_interleave(num_nodes_ext)
         num_cum_nodes_ext = num_nodes_ext.cumsum(0)
         starts = num_cum_nodes_ext - num_nodes_ext + graph.num_nodes
         ends = num_cum_nodes_ext
@@ -1093,7 +1093,7 @@ class Retrosynthesis(tasks.Task, core.Configurable):
         synthon = synthon_batch["synthon"]
         num_synthon = synthon_batch["num_synthon"]
         assert (num_synthon >= 1).all() and (num_synthon <= 2).all()
-        synthon2split = functional._size_to_index(num_synthon)
+        synthon2split = torch.repeat_interleave(num_synthon)
         with synthon.graph():
             synthon.reaction_center = synthon_batch["reaction_center"][synthon2split]
             synthon.split_logp = synthon_batch["log_likelihood"][synthon2split]
@@ -1157,7 +1157,7 @@ class Retrosynthesis(tasks.Task, core.Configurable):
         reactant = reactant.repeat(self.max_prediction)
         reactant = reactant[reactant_id]
         assert num_synthon.sum() == len(reactant)
-        synthon2graph = functional._size_to_index(num_synthon)
+        synthon2graph = torch.repeat_interleave(num_synthon)
         first_synthon = num_synthon.cumsum(0) - num_synthon
         # inherit graph attributes from the first synthon
         data_dict = reactant.data_mask(graph_index=first_synthon, include="graph")[0]

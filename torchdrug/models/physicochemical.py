@@ -106,7 +106,7 @@ class Physicochemical(nn.Module, core.Configurable):
         starts = ends - steps
         mask_1 = functional.multi_slice_mask(starts, ends, graph.num_residue) # num_residue * nlag
 
-        index2sample = functional._size_to_index(size)
+        index2sample = torch.repeat_interleave(size)
         numerator = torch.zeros((graph.num_residue, self.nlag, x.shape[-1]), dtype=torch.float, device=graph.device)
         if self.type == "moran":
             _numerator = (x - x_mean[index2sample]).unsqueeze(1).expand(-1, self.nlag, -1)[mask_0] * \

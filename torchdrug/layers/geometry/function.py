@@ -240,7 +240,7 @@ class RandomEdgeMask(nn.Module, core.Configurable):
         """
         num_samples = (graph.num_edges * self.mask_rate).long().clamp(min=1)
         num_sample = num_samples.sum()
-        sample2graph = functional._size_to_index(num_samples)
+        sample2graph = torch.repeat_interleave(num_samples)
         edge_index = (torch.rand(num_sample, device=graph.device) * graph.num_edges[sample2graph]).long()
         edge_index = edge_index + (graph.num_cum_edges - graph.num_edges)[sample2graph]
         edge_mask = ~functional.as_mask(edge_index, graph.num_edge)

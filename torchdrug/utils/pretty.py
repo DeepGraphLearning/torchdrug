@@ -1,5 +1,44 @@
+import pprint
+from itertools import islice, chain
+
+
 separator = ">" * 30
 line = "-" * 30
+
+
+class Ellipsis(object):
+
+    def __repr__(self):
+        return "..."
+
+
+ellipsis = Ellipsis()
+
+
+class PrettyPrinter(pprint.PrettyPrinter):
+
+    truncation = 10
+    display = 3
+
+    def _format_items(self, items, stream, indent, allowance, context, level):
+        if self._compact and len(items) > self.truncation:
+            items = chain(islice(items, self.display), [ellipsis], islice(items, len(items) - self.display, None))
+        super(PrettyPrinter, self)._format_items(items, stream, indent, allowance, context, level)
+
+
+def print(object, *args, **kwargs):
+    """
+    Print a python object to a stream.
+    """
+    return PrettyPrinter(*args, **kwargs).pprint(object)
+
+
+def format(object, *args, **kwargs):
+    """
+    Format a python object as a string.
+    """
+    return PrettyPrinter(*args, **kwargs).pformat(object)
+
 
 def time(seconds):
     """

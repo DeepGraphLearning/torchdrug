@@ -1,4 +1,3 @@
-import pprint
 import logging
 import warnings
 
@@ -70,7 +69,7 @@ class LoggingLogger(LoggerBase):
                 self.logger.warning("%s: %g" % (k, record[k]))
 
     def log_config(self, config):
-        self.logger.warning(pprint.pformat(config))
+        self.logger.warning(pretty.format(config, compact=True))
 
 
 @R.register("core.WandbLogger")
@@ -104,8 +103,9 @@ class WandbLogger(LoggingLogger):
 
         if wandb.run is not None:
             warnings.warn(
-                 "There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse"
-                " this run. If this is not desired, call `wandb.finish()` or `WandbLogger.finish()` before instantiating `WandbLogger`."
+                "There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse "
+                "this run. If this is not desired, call `wandb.finish()` or `WandbLogger.finish()` before "
+                "instantiating `WandbLogger`."
             )
             self.run = wandb.run
         else:

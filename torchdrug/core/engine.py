@@ -137,6 +137,7 @@ class Engine(core.Configurable):
         dataloader = data.DataLoader(self.train_set, self.batch_size, sampler=sampler, num_workers=self.num_worker)
         batch_per_epoch = batch_per_epoch or len(dataloader)
         model = self.model
+        model.split = "train"
         if self.world_size > 1:
             if self.device.type == "cuda":
                 model = nn.parallel.DistributedDataParallel(model, device_ids=[self.device],
@@ -200,6 +201,7 @@ class Engine(core.Configurable):
         sampler = torch_data.DistributedSampler(test_set, self.world_size, self.rank)
         dataloader = data.DataLoader(test_set, self.batch_size, sampler=sampler, num_workers=self.num_worker)
         model = self.model
+        model.split = split
 
         model.eval()
         preds = []

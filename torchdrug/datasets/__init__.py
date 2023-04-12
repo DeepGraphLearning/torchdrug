@@ -43,6 +43,7 @@ from .alphafolddb import AlphaFoldDB
 
 from .fb15k import FB15k, FB15k237
 from .wn18 import WN18, WN18RR
+from .yago310 import YAGO310
 from .hetionet import Hetionet
 
 from .cora import Cora

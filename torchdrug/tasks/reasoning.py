@@ -16,7 +16,7 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
     This class provides routines for the family of knowledge graph embedding models.
 
     Parameters:
-        model (nn.Module): knowledge graph embedding model
+        model (nn.Module): knowledge graph completion model
         criterion (str, list or dict, optional): training criterion(s). For dict, the keys are criterions and the values
             are the corresponding weights. Available criterions are ``bce``, ``ce`` and ``ranking``.
         metric (str or list of str, optional): metric(s). Available metrics are ``mr``, ``mrr`` and ``hits@K``.
@@ -25,16 +25,18 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
         adversarial_temperature (float, optional): temperature for self-adversarial negative sampling.
             Set ``0`` to disable self-adversarial negative sampling.
         strict_negative (bool, optional): use strict negative sampling or not
-        filtered_ranking (bool, optional): use filtered or unfiltered ranking for evaluation
         fact_ratio (float, optional): split the training set into facts and labels.
             Set ``None`` to use the whole training set as both facts and labels.
         sample_weight (bool, optional): whether to down-weight triplets from entities of large degrees
+        filtered_ranking (bool, optional): use filtered or unfiltered ranking for evaluation
+        full_batch_eval (bool, optional): whether to feed test negative samples by full batch or mini batch.
+            Full batch speeds up evaluation significantly, but may cause OOM problems for some models and datasets.
     """
     _option_members = {"criterion", "metric"}
 
     def __init__(self, model, criterion="bce", metric=("mr", "mrr", "hits@1", "hits@3", "hits@10"),
-                 num_negative=128, margin=6, adversarial_temperature=0, strict_negative=True, filtered_ranking=True,
-                 fact_ratio=None, sample_weight=True):
+                 num_negative=128, margin=6, adversarial_temperature=0, strict_negative=True, fact_ratio=None,
+                 sample_weight=True, filtered_ranking=True, full_batch_eval=False):
         super(KnowledgeGraphCompletion, self).__init__()
         self.model = model
         self.criterion = criterion
@@ -43,9 +45,10 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
         self.margin = margin
         self.adversarial_temperature = adversarial_temperature
         self.strict_negative = strict_negative
-        self.filtered_ranking = filtered_ranking
         self.fact_ratio = fact_ratio
         self.sample_weight = sample_weight
+        self.filtered_ranking = filtered_ranking
+        self.full_batch_eval = full_batch_eval
 
     def preprocess(self, train_set, valid_set, test_set):
         if isinstance(train_set, torch_data.Subset):
@@ -131,13 +134,14 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
             all_index = torch.arange(self.num_entity, device=self.device)
             t_preds = []
             h_preds = []
-            for neg_index in all_index.split(self.num_negative):
+            num_negative = self.num_entity if self.full_batch_eval else self.num_negative
+            for neg_index in all_index.split(num_negative):
                 r_index = pos_r_index.unsqueeze(-1).expand(-1, len(neg_index))
                 h_index, t_index = torch.meshgrid(pos_h_index, neg_index)
                 t_pred = self.model(self.fact_graph, h_index, t_index, r_index, all_loss=all_loss, metric=metric)
                 t_preds.append(t_pred)
             t_pred = torch.cat(t_preds, dim=-1)
-            for neg_index in all_index.split(self.num_negative):
+            for neg_index in all_index.split(num_negative):
                 r_index = pos_r_index.unsqueeze(-1).expand(-1, len(neg_index))
                 t_index, h_index = torch.meshgrid(pos_t_index, neg_index)
                 h_pred = self.model(self.fact_graph, h_index, t_index, r_index, all_loss=all_loss, metric=metric)

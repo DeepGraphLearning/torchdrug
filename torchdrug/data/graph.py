@@ -1055,7 +1055,7 @@ class PackedGraph(Graph):
         >>> graphs = batch.unpack()
 
     .. warning::
-
+        
         Edges of the same graph are guaranteed to be consecutive in the edge list.
         However, this class doesn't enforce any order on the edges.
 
@@ -1494,15 +1494,13 @@ class PackedGraph(Graph):
     @utils.cached_property
     def node2graph(self):
         """Node id to graph id mapping."""
-        range = torch.arange(self.batch_size, device=self.device)
-        node2graph = range.repeat_interleave(self.num_nodes)
+        node2graph = torch.repeat_interleave(self.num_nodes)
         return node2graph
 
     @utils.cached_property
     def edge2graph(self):
         """Edge id to graph id mapping."""
-        range = torch.arange(self.batch_size, device=self.device)
-        edge2graph = range.repeat_interleave(self.num_edges)
+        edge2graph = torch.repeat_interleave(self.num_edges)
         return edge2graph
 
     @property

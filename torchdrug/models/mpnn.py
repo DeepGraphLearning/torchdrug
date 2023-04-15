@@ -50,7 +50,7 @@ class MessagePassingNeuralNetwork(nn.Module, core.Configurable):
                                            batch_norm, activation)
         self.gru = nn.GRU(hidden_dim, hidden_dim, num_gru_layer)
 
-        self.readout = layers.Set2Set(feature_dim, num_s2s_step)
+        self.readout = layers.Set2Set(feature_dim, num_step=num_s2s_step)
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """

@@ -38,7 +38,7 @@ class KNNEdge(nn.Module, core.Configurable):
 
     eps = 1e-10
 
-    def __init__(self, k=10, min_distance=5, max_distance=0):
+    def __init__(self, k=10, min_distance=5, max_distance=None):
         super(KNNEdge, self).__init__()
         self.k = k
         self.min_distance = min_distance
@@ -63,7 +63,7 @@ class KNNEdge(nn.Module, core.Configurable):
             mask = (graph.atom2residue[node_in] - graph.atom2residue[node_out]).abs() < self.min_distance
             edge_list = edge_list[~mask]
 
-        if self.max_distance > 0:
+        if self.max_distance:
             node_in, node_out = edge_list.t()[:2]
             mask = (graph.atom2residue[node_in] - graph.atom2residue[node_out]).abs() > self.max_distance
             edge_list = edge_list[~mask]
@@ -87,10 +87,11 @@ class SpatialEdge(nn.Module, core.Configurable):
 
     eps = 1e-10
 
-    def __init__(self, radius=5, min_distance=5, max_num_neighbors=32):
+    def __init__(self, radius=5, min_distance=5, max_distance=None, max_num_neighbors=32):
         super(SpatialEdge, self).__init__()
         self.radius = radius
         self.min_distance = min_distance
+        self.max_distance = max_distance
         self.max_num_neighbors = max_num_neighbors
 
     def forward(self, graph):
@@ -112,6 +113,11 @@ class SpatialEdge(nn.Module, core.Configurable):
             mask = (graph.atom2residue[node_in] - graph.atom2residue[node_out]).abs() < self.min_distance
             edge_list = edge_list[~mask]
 
+        if self.max_distance:
+            node_in, node_out = edge_list.t()[:2]
+            mask = (graph.atom2residue[node_in] - graph.atom2residue[node_out]).abs() > self.max_distance
+            edge_list = edge_list[~mask]
+        
         node_in, node_out = edge_list.t()[:2]
         mask = (graph.node_position[node_in] - graph.node_position[node_out]).norm(dim=-1) < self.eps
         edge_list = edge_list[~mask]
@@ -128,9 +134,10 @@ class SequentialEdge(nn.Module, core.Configurable):
         max_distance (int, optional): maximum distance between two residues in the sequence
     """
 
-    def __init__(self, max_distance=2):
+    def __init__(self, max_distance=2, only_backbone=False):
         super(SequentialEdge, self).__init__()
         self.max_distance = max_distance
+        self.only_backbone = only_backbone
 
     def forward(self, graph):
         """
@@ -143,7 +150,14 @@ class SequentialEdge(nn.Module, core.Configurable):
         Returns:
             (Tensor, int): edge list of shape :math:`(|E|, 3)`, number of relations
         """
-        residue2num_atom = graph.atom2residue.bincount(minlength=graph.num_residue)
+        if self.only_backbone:
+            is_backbone = (graph.atom_name == graph.atom_name2id["CA"]) \
+                        | (graph.atom_name == graph.atom_name2id["C"]) \
+                        | (graph.atom_name == graph.atom_name2id["N"])
+            atom2residue = graph.atom2residue[is_backbone]
+        else:
+            atom2residue = graph.atom2residue
+        residue2num_atom = atom2residue.bincount(minlength=graph.num_residue)
         edge_list = []
         for i in range(-self.max_distance, self.max_distance + 1):
             node_index = torch.arange(graph.num_node, device=graph.device)
@@ -158,6 +172,9 @@ class SequentialEdge(nn.Module, core.Configurable):
                 is_node_out = graph.atom2residue < graph.num_cum_residues[graph.atom2graph] + i
                 is_residue_in = residue_index >= (graph.num_cum_residues - graph.num_residues)[graph.residue2graph] - i
                 is_residue_out = residue_index < graph.num_cum_residues[graph.residue2graph] + i
+            if self.only_backbone:    
+                is_node_in = is_node_in & is_backbone
+                is_node_out = is_node_out & is_backbone
             node_in = node_index[is_node_in]
             node_out = node_index[is_node_out]
             # group atoms by residue ids

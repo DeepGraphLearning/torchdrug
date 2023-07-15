@@ -133,8 +133,12 @@ class MultiviewContrast(nn.Module, core.Configurable):
         """
         # Get two augmented views
         graph = copy.copy(graph)
-        with graph.residue():
-            graph.input = input
+        if graph.view == "residue":
+            with graph.residue():
+                graph.input = input
+        else:
+            with graph.atom():
+                graph.input = input
         crop_func1, noise_func1 = random.sample(self.crop_funcs, 1)[0], random.sample(self.noise_funcs, 1)[0]
         graph1 = crop_func1(graph)
         graph1 = noise_func1(graph1)

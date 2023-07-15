@@ -114,7 +114,7 @@ class GraphConstruction(nn.Module, core.Configurable):
         data_dict, meta_dict = graph.data_by_meta(include=(
             "node", "residue", "node reference", "residue reference", "graph"
         ))
-        
+
         if isinstance(graph, data.PackedProtein):
             data_dict["num_residues"] = graph.num_residues
         if isinstance(graph, data.PackedMolecule):
@@ -178,7 +178,7 @@ class SpatialLineGraph(nn.Module, core.Configurable):
         x = (vector1 * vector2).sum(dim=-1)
         y = torch.cross(vector1, vector2).norm(dim=-1)
         angle = torch.atan2(y, x)
-        relation = (angle / math.pi * self.num_angle_bin).long()
+        relation = (angle / math.pi * self.num_angle_bin).long().clamp(max=self.num_angle_bin - 1)
         edge_list = torch.cat([line_graph.edge_list, relation.unsqueeze(-1)], dim=-1)
 
         return type(line_graph)(edge_list, num_nodes=line_graph.num_nodes, offsets=line_graph._offsets,

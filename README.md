@@ -78,6 +78,19 @@ Import-VisualStudioVars -Architecture x64
 $env:LIB += ";C:\Program Files\Python37\libs"
 ```
 
+### Apple Silicon (M1/M2 Chips) ###
+
+We need PyTorch >= 1.13 to run TorchDrug on Apple silicon. For `torch-scatter` and
+`torch-cluster`, they can be compiled from their sources. Note TorchDrug doesn't
+support `mps` devices.
+
+```bash
+pip install torch==1.13.0
+pip install git+https://github.com/rusty1s/pytorch_scatter.git
+pip install git+https://github.com/rusty1s/pytorch_cluster.git
+pip install torchdrug
+```
+
 Quick Start
 -----------
 

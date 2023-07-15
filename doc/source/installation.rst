@@ -85,3 +85,17 @@ The above commands should be executed for every PowerShell session. To setup thi
 for all PowerShell sessions, we can write them to the PowerShell profile. The
 profile can be found by the ``$profile`` command in PowerShell. You may need to
 create the profile if you use it for the first time.
+
+Apple Silicon (M1/M2 Chips)
+---------------------------
+
+PyTorch supports Apple silicon from version 1.13. While `torch-scatter` and `torch-cluster` don't have pre-compiled binaries for Apple silicon, we can compile them from their sources. See https://github.com/rusty1s/pytorch_scatter/issues/241 for more details.
+
+.. code:: bash
+
+	pip install torch==1.13.0
+	pip install git+https://github.com/rusty1s/pytorch_scatter.git
+	pip install git+https://github.com/rusty1s/pytorch_cluster.git
+	pip install torchdrug
+
+Note TorchDrug runs on Apple silicon CPUs, but doesn't support `mps` devices.

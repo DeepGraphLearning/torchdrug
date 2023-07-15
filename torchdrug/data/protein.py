@@ -614,7 +614,7 @@ class Protein(Molecule):
             data_dict, meta_dict = self.data_mask(edge_index=edge_index)
 
         return type(self)(edge_list[edge_index], edge_weight=self.edge_weight[edge_index], num_node=num_node,
-                          view=self.view, meta_dict=meta_dict, **data_dict)
+                          view=self.view, num_relation=self.num_relation, meta_dict=meta_dict, **data_dict)
 
     def subresidue(self, index):
         """

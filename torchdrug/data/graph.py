@@ -1031,6 +1031,10 @@ class Graph(core._MetaContainer):
             else:
                 fig.show()
 
+    @classmethod
+    def __torch_function__(cls, func, types, args=(), kwargs=None):
+        return NotImplemented
+
     def __getstate__(self):
         state = {}
         cls = self.__class__

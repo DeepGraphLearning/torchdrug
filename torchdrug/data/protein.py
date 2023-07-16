@@ -295,7 +295,7 @@ class Protein(Molecule):
         """
         if atom_feature is None and bond_feature is None and residue_feature == "default":
             return cls._residue_from_sequence(sequence)
-        
+
         mol = Chem.MolFromSequence(sequence)
         if mol is None:
             raise ValueError("Invalid sequence `%s`" % sequence)

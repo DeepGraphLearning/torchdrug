@@ -13,8 +13,8 @@ from torchdrug.core import Registry as R
 @utils.copy_args(data.ProteinDataset.load_pdbs)
 class GeneOntology(data.ProteinDataset):
     """
-    A set of proteins with their 3D structures and GO terms. These terms classify proteins 
-    into hierarchically related functional classes organized into three ontologies: molecular 
+    A set of proteins with their 3D structures and GO terms. These terms classify proteins
+    into hierarchically related functional classes organized into three ontologies: molecular
     function (MF), biological process (BP) and cellular component (CC).
 
     Statistics (test_cutoff=0.95):
@@ -51,7 +51,7 @@ class GeneOntology(data.ProteinDataset):
         zip_file = utils.download(self.url, path, md5=self.md5)
         path = os.path.join(utils.extract(zip_file), "GeneOntology")
         pkl_file = os.path.join(path, self.processed_file)
-        
+
         csv_file = os.path.join(path, "nrPDB-GO_test.csv")
         pdb_ids = []
         with open(csv_file, "r") as fin:

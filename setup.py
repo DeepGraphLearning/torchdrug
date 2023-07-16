@@ -43,7 +43,7 @@ if __name__ == "__main__":
             "lmdb",
             "fair-esm",
         ],
-        python_requires=">=3.7,<3.10",
+        python_requires=">=3.7,<3.11",
         classifiers=[
             "Development Status :: 4 - Beta",
             'Intended Audience :: Developers',

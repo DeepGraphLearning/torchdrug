@@ -50,6 +50,7 @@ def onehot(x, vocab, allow_unknown=False):
     return feature
 
 
+# TODO: this one is too slow
 @R.register("features.atom.default")
 def atom_default(atom):
     """Default atom feature.
@@ -330,6 +331,7 @@ def ExtendedConnectivityFingerprint(mol, radius=2, length=1024):
 def molecule_default(mol):
     """Default molecule feature."""
     return ExtendedConnectivityFingerprint(mol)
+
 
 ECFP = ExtendedConnectivityFingerprint
 

@@ -71,7 +71,7 @@ class EvolutionaryScaleModeling(nn.Module, core.Configurable):
         "ESM-2-3B": 36,
         "ESM-2-15B": 48,
     }
-    
+
     max_input_length = 1024 - 2
 
     def __init__(self, path, model="ESM-1b", readout="mean"):
@@ -82,6 +82,7 @@ class EvolutionaryScaleModeling(nn.Module, core.Configurable):
         self.path = path
 
         _model, alphabet = self.load_weight(path, model)
+        self.alphabet = alphabet
         mapping = self.construct_mapping(alphabet)
         self.output_dim = self.output_dim[model]
         self.model = _model
@@ -111,7 +112,7 @@ class EvolutionaryScaleModeling(nn.Module, core.Configurable):
         return esm.pretrained.load_model_and_alphabet_core(model_name, model_data, regression_data)
 
     def construct_mapping(self, alphabet):
-        mapping = [0] * len(data.Protein.id2residue_symbol)
+        mapping = [-1] * max(len(data.Protein.id2residue_symbol), len(self.alphabet))
         for i, token in data.Protein.id2residue_symbol.items():
             mapping[i] = alphabet.get_idx(token)
         mapping = torch.tensor(mapping)
@@ -133,6 +134,7 @@ class EvolutionaryScaleModeling(nn.Module, core.Configurable):
         """
         input = graph.residue_type
         input = self.mapping[input]
+        input[input == -1] = graph.residue_type[input == -1]
         size = graph.num_residues
         if (size > self.max_input_length).any():
             warnings.warn("ESM can only encode proteins within %d residues. Truncate the input to fit into ESM."

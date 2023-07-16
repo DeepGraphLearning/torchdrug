@@ -329,10 +329,10 @@ class SinusoidalPositionEmbedding(nn.Module):
     Positional embedding based on sine and cosine functions, proposed in `Attention Is All You Need`_.
 
     .. _Attention Is All You Need:
-        https://arxiv.org/pdf/1706.03762.pdf
+       https://arxiv.org/pdf/1706.03762.pdf
 
     Parameters:
-        output_dim (int): output dimension
+       output_dim (int): output dimension
     """
 
     def __init__(self, output_dim):

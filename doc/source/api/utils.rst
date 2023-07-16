@@ -93,6 +93,6 @@ Decorator
 Helper functions
 ----------------
 
-.. currentmodule:: torchdrug.utils.doc
+.. currentmodule:: torchdrug.utils
 
 .. autofunction:: copy_args

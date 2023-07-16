@@ -12,4 +12,4 @@ handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(format)
 logger.addHandler(handler)
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"

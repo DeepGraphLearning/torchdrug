@@ -1,7 +1,7 @@
 FROM pytorch/pytorch:1.8.1-cuda11.1-cudnn8-devel
 
 # metainformation
-LABEL org.opencontainers.image.version = "0.2.0"
+LABEL org.opencontainers.image.version = "0.2.1"
 LABEL org.opencontainers.image.authors = "TorchDrug Team"
 LABEL org.opencontainers.image.source = "https://github.com/DeepGraphLearning/torchdrug"
 LABEL org.opencontainers.image.licenses = "Apache License 2.0"

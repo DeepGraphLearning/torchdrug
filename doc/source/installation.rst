@@ -2,7 +2,7 @@ Installation
 ============
 
 TorchDrug can be installed on either Linux, Windows or macOS. It is compatible with
-Python 3.7/3.8/3.9 and PyTorch >= 1.8.0.
+3.7 <= Python <= 3.10 and PyTorch >= 1.8.0.
 
 For Windows
 
@@ -20,7 +20,7 @@ First, let's install PyTorch.
 
 .. code:: bash
 
-    pip3 install torch
+    pip install torch
 
 To install ``torch-scatter``, we need to check the version of PyTorch and CUDA.
 
@@ -30,7 +30,7 @@ and CUDA is ``10.2``, the command should be
 
 .. code:: bash
 
-    pip3 install torch-scatter torch-cluster -f https://pytorch-geometric.com/whl/torch-1.8.0+cu102.html
+    pip install torch-scatter torch-cluster -f https://pytorch-geometric.com/whl/torch-1.8.0+cu102.html
 
 Replace the versions in the above url according to your case. If you don't have GPUs
 or CUDA installed, treat the CUDA version in the url as ``cpu``. See
@@ -40,7 +40,7 @@ Finally, install TorchDrug via
 
 .. code:: bash
 
-    pip3 install torchdrug
+    pip install torchdrug
 
 From Source
 -----------
@@ -89,7 +89,10 @@ create the profile if you use it for the first time.
 Apple Silicon (M1/M2 Chips)
 ---------------------------
 
-PyTorch supports Apple silicon from version 1.13. While `torch-scatter` and `torch-cluster` don't have pre-compiled binaries for Apple silicon, we can compile them from their sources. See https://github.com/rusty1s/pytorch_scatter/issues/241 for more details.
+PyTorch supports Apple silicon from version 1.13. While `torch-scatter` and
+`torch-cluster` don't have pre-compiled binaries for Apple silicon, we can compile
+them from their sources. See https://github.com/rusty1s/pytorch_scatter/issues/241
+for more details.
 
 .. code:: bash
 

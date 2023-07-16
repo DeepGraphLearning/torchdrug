@@ -13,7 +13,7 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         url="https://torchdrug.ai/",
         author="TorchDrug Team",
-        version="0.2.0",
+        version="0.2.1",
         license="Apache-2.0",
         keywords=["deep-learning", "pytorch", "drug-discovery"],
         packages=setuptools.find_packages(),

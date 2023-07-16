@@ -26,6 +26,16 @@ class GraphConstruction(nn.Module, core.Configurable):
             2. For ``gearnet``, the feature of the edge :math:`e_{ij}` between residue :math:`i` and residue :math:`j`
                 is the concatenation ``[residue_type(i), residue_type(j), edge_type(e_ij),
                 sequential_distance(i,j), spatial_distance(i,j)]``.
+
+    .. note::
+        You may customize your own edge features by inheriting this class and define a member function
+        for your features. Use ``edge_feature="my_feature"`` to call the following feature function.
+
+        .. code:: python
+
+            def edge_my_feature(self, graph, edge_list, num_relation):
+                ...
+                return feature # the first dimension must be ``graph.num_edge``
     """
 
     max_seq_dist = 10
@@ -43,7 +53,7 @@ class GraphConstruction(nn.Module, core.Configurable):
         self.edge_layers = edge_layers
         self.edge_feature = edge_feature
 
-    def edge_residue_type(self, graph, edge_list):
+    def edge_residue_type(self, graph, edge_list, num_relation):
         node_in, node_out, _ = edge_list.t()
         residue_in, residue_out = graph.atom2residue[node_in], graph.atom2residue[node_out]
         in_residue_type = graph.residue_type[residue_in]
@@ -103,10 +113,8 @@ class GraphConstruction(nn.Module, core.Configurable):
         num_edges = edge2graph.bincount(minlength=graph.batch_size)
         offsets = (graph.num_cum_nodes - graph.num_nodes).repeat_interleave(num_edges)
 
-        if self.edge_feature == "residue_type":
-            edge_feature = self.edge_residue_type(graph, edge_list)
-        elif self.edge_feature == "gearnet":
-            edge_feature = self.edge_gearnet(graph, edge_list, num_relation)
+        if hasattr(self, "edge_%s" % self.edge_feature):
+            edge_feature = getattr(self, "edge_%s" % self.edge_feature)(graph, edge_list, num_relation)
         elif self.edge_feature is None:
             edge_feature = None
         else:

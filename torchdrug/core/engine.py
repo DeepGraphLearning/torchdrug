@@ -225,20 +225,21 @@ class Engine(core.Configurable):
 
         return metric
 
-    def load(self, checkpoint, load_optimizer=True):
+    def load(self, checkpoint, load_optimizer=True, strict=True):
         """
         Load a checkpoint from file.
 
         Parameters:
             checkpoint (file-like): checkpoint file
             load_optimizer (bool, optional): load optimizer state or not
+            strict (bool, optional): whether to strictly check the checkpoint matches the model parameters
         """
         if comm.get_rank() == 0:
             logger.warning("Load checkpoint from %s" % checkpoint)
         checkpoint = os.path.expanduser(checkpoint)
         state = torch.load(checkpoint, map_location=self.device)
 
-        self.model.load_state_dict(state["model"])
+        self.model.load_state_dict(state["model"], strict=strict)
 
         if load_optimizer:
             self.optimizer.load_state_dict(state["optimizer"])

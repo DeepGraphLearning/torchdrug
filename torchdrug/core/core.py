@@ -86,7 +86,6 @@ class _MetaContainer(object):
     def __delattr__(self, key):
         if hasattr(self, "meta_dict") and key in self.meta_dict:
             del self.meta_dict[key]
-            del self.data_dict[key]
         super(_MetaContainer, self).__delattr__(self, key)
 
     def _setattr(self, key, value):

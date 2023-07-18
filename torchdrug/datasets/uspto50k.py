@@ -16,7 +16,9 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.USPTO50k")
-@utils.copy_args(data.ReactionDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(
+    data.ReactionDataset.load_csv, ignore=("smiles_field", "target_fields")
+)
 class USPTO50k(data.ReactionDataset):
     """
     Chemical reactions extracted from USPTO patents.
@@ -35,16 +37,18 @@ class USPTO50k(data.ReactionDataset):
     target_fields = ["class"]
     target_alias = {"class": "reaction"}
 
-    reaction_names = ["Heteroatom alkylation and arylation",
-                      "Acylation and related processes",
-                      "C-C bond formation",
-                      "Heterocycle formation",
-                      "Protections",
-                      "Deprotections",
-                      "Reductions",
-                      "Oxidations",
-                      "Functional group interconversion (FGI)",
-                      "Functional group addition (FGA)"]
+    reaction_names = [
+        "Heteroatom alkylation and arylation",
+        "Acylation and related processes",
+        "C-C bond formation",
+        "Heterocycle formation",
+        "Protections",
+        "Deprotections",
+        "Reductions",
+        "Oxidations",
+        "Functional group interconversion (FGI)",
+        "Functional group addition (FGA)",
+    ]
 
     url = "https://raw.githubusercontent.com/connorcoley/retrosim/master/retrosim/data/data_processed.csv"
     md5 = "404c361dd1568fbdb4d16ca588953749"
@@ -58,8 +62,13 @@ class USPTO50k(data.ReactionDataset):
 
         file_name = utils.download(self.url, path, md5=self.md5)
 
-        self.load_csv(file_name, smiles_field="rxn_smiles", target_fields=self.target_fields, verbose=verbose,
-                      **kwargs)
+        self.load_csv(
+            file_name,
+            smiles_field="rxn_smiles",
+            target_fields=self.target_fields,
+            verbose=verbose,
+            **kwargs
+        )
 
         if as_synthon:
             prefix = "Computing synthons"
@@ -122,16 +131,18 @@ class USPTO50k(data.ReactionDataset):
         node_label = torch.zeros(product.num_node, dtype=torch.long)
 
         if len(edge_added) > 0:
-            if len(edge_added) == 1: # add a single edge
+            if len(edge_added) == 1:  # add a single edge
                 any = -torch.ones(1, 1, dtype=torch.long)
                 pattern = torch.cat([edge_added, any], dim=-1)
                 index, num_match = product.match(pattern)
                 assert num_match.item() == 1
                 edge_label[index] = 1
                 h, t = edge_added[0]
-                reaction_center = torch.tensor([product.atom_map[h], product.atom_map[t]])
+                reaction_center = torch.tensor(
+                    [product.atom_map[h], product.atom_map[t]]
+                )
         else:
-            if len(edge_modified) == 1: # modify a single edge
+            if len(edge_modified) == 1:  # modify a single edge
                 h, t = edge_modified[0]
                 if product.degree_in[h] == 1:
                     node_label[h] = 1
@@ -144,12 +155,20 @@ class USPTO50k(data.ReactionDataset):
                     node_label[h] = 1
                     reaction_center = torch.tensor([product.atom_map[h], 0])
             else:
-                product_hs = torch.tensor([atom.GetTotalNumHs() for atom in product.to_molecule().GetAtoms()])
-                reactant_hs = torch.tensor([atom.GetTotalNumHs() for atom in reactant.to_molecule().GetAtoms()])
-                atom_modified = (product_hs != reactant_hs[prod2react]).nonzero().flatten()
-                if len(atom_modified) == 1: # modify single node
+                product_hs = torch.tensor(
+                    [atom.GetTotalNumHs() for atom in product.to_molecule().GetAtoms()]
+                )
+                reactant_hs = torch.tensor(
+                    [atom.GetTotalNumHs() for atom in reactant.to_molecule().GetAtoms()]
+                )
+                atom_modified = (
+                    (product_hs != reactant_hs[prod2react]).nonzero().flatten()
+                )
+                if len(atom_modified) == 1:  # modify single node
                     node_label[atom_modified] = 1
-                    reaction_center = torch.tensor([product.atom_map[atom_modified[0]], 0])
+                    reaction_center = torch.tensor(
+                        [product.atom_map[atom_modified[0]], 0]
+                    )
 
         if edge_label.sum() + node_label.sum() == 0:
             return [], []
@@ -182,18 +201,34 @@ class USPTO50k(data.ReactionDataset):
                 product = product.edge_mask(edge_mask)
                 _reactants = reactant.connected_components()[0]
                 _synthons = product.connected_components()[0]
-                assert len(_synthons) >= len(_reactants) # because a few samples contain multiple products
+                assert len(_synthons) >= len(
+                    _reactants
+                )  # because a few samples contain multiple products
 
                 h, t = edge_added[0]
-                reaction_center = torch.tensor([product.atom_map[h], product.atom_map[t]])
+                reaction_center = torch.tensor(
+                    [product.atom_map[h], product.atom_map[t]]
+                )
                 with _reactants.graph():
-                    _reactants.reaction_center = reaction_center.expand(len(_reactants), -1)
+                    _reactants.reaction_center = reaction_center.expand(
+                        len(_reactants), -1
+                    )
                 with _synthons.graph():
-                    _synthons.reaction_center = reaction_center.expand(len(_synthons), -1)
+                    _synthons.reaction_center = reaction_center.expand(
+                        len(_synthons), -1
+                    )
                 # reactant / sython can be uniquely indexed by their maximal atom mapping ID
-                reactant_id = scatter_max(_reactants.atom_map, _reactants.node2graph, dim_size=len(_reactants))[0]
-                synthon_id = scatter_max(_synthons.atom_map, _synthons.node2graph, dim_size=len(_synthons))[0]
-                react2synthon = (reactant_id.unsqueeze(-1) == synthon_id.unsqueeze(0)).long().argmax(-1)
+                reactant_id = scatter_max(
+                    _reactants.atom_map, _reactants.node2graph, dim_size=len(_reactants)
+                )[0]
+                synthon_id = scatter_max(
+                    _synthons.atom_map, _synthons.node2graph, dim_size=len(_synthons)
+                )[0]
+                react2synthon = (
+                    (reactant_id.unsqueeze(-1) == synthon_id.unsqueeze(0))
+                    .long()
+                    .argmax(-1)
+                )
                 react2synthon = react2synthon.tolist()
                 for r, s in enumerate(react2synthon):
                     reactants.append(_reactants[r])
@@ -219,12 +254,20 @@ class USPTO50k(data.ReactionDataset):
                 reactants.append(reactant)
                 synthons.append(synthon)
             else:
-                product_hs = torch.tensor([atom.GetTotalNumHs() for atom in product.to_molecule().GetAtoms()])
-                reactant_hs = torch.tensor([atom.GetTotalNumHs() for atom in reactant.to_molecule().GetAtoms()])
-                atom_modified = (product_hs != reactant_hs[prod2react]).nonzero().flatten()
+                product_hs = torch.tensor(
+                    [atom.GetTotalNumHs() for atom in product.to_molecule().GetAtoms()]
+                )
+                reactant_hs = torch.tensor(
+                    [atom.GetTotalNumHs() for atom in reactant.to_molecule().GetAtoms()]
+                )
+                atom_modified = (
+                    (product_hs != reactant_hs[prod2react]).nonzero().flatten()
+                )
                 if len(atom_modified) == 1:  # modify single node
                     synthon = product
-                    reaction_center = torch.tensor([product.atom_map[atom_modified[0]], 0])
+                    reaction_center = torch.tensor(
+                        [product.atom_map[atom_modified[0]], 0]
+                    )
                     with reactant.graph():
                         reactant.reaction_center = reaction_center
                     with synthon.graph():
@@ -248,7 +291,9 @@ class USPTO50k(data.ReactionDataset):
             num_sample = len(set(react2sample[reaction]))
             key_lengths = [int(round(num_sample * ratio)) for ratio in ratios]
             key_lengths[-1] = num_sample - sum(key_lengths[:-1])
-            react_indexes = data.key_split(react2index[reaction], react2sample[reaction], key_lengths=key_lengths)
+            react_indexes = data.key_split(
+                react2index[reaction], react2sample[reaction], key_lengths=key_lengths
+            )
             for index, react_index in zip(indexes, react_indexes):
                 index += [i for i in react_index]
 

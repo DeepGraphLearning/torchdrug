@@ -29,7 +29,7 @@ class FB15k(data.KnowledgeGraphDataset):
     md5s = [
         "5a87195e68d7797af00e137a7f6929f2",
         "275835062bb86a86477a3c402d20b814",
-        "71098693b0efcfb8ac6cd61cf3a3b505"
+        "71098693b0efcfb8ac6cd61cf3a3b505",
     ]
 
     def __init__(self, path, verbose=1):
@@ -79,7 +79,7 @@ class FB15k237(data.KnowledgeGraphDataset):
     md5s = [
         "c05b87b9ac00f41901e016a2092d7837",
         "6a94efd530e5f43fcf84f50bc6d37b69",
-        "f5bdf63db39f455dec0ed259bb6f8628"
+        "f5bdf63db39f455dec0ed259bb6f8628",
     ]
 
     def __init__(self, path, verbose=1):

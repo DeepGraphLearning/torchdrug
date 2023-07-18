@@ -5,7 +5,9 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.ChEMBLFiltered")
-@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(
+    data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields")
+)
 class ChEMBLFiltered(data.MoleculeDataset):
     """
     Statistics:
@@ -32,5 +34,10 @@ class ChEMBLFiltered(data.MoleculeDataset):
 
         self.target_fields = ["target_{}".format(i) for i in range(1310)]
 
-        self.load_csv(csv_file, smiles_field="smiles", target_fields=self.target_fields,
-                      verbose=verbose, **kwargs)
+        self.load_csv(
+            csv_file,
+            smiles_field="smiles",
+            target_fields=self.target_fields,
+            verbose=verbose,
+            **kwargs
+        )

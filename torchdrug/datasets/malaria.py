@@ -5,7 +5,9 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.Malaria")
-@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(
+    data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields")
+)
 class Malaria(data.MoleculeDataset):
     """
     Half-maximal effective concentration (EC50) against a parasite that causes malaria.
@@ -20,8 +22,10 @@ class Malaria(data.MoleculeDataset):
         **kwargs
     """
 
-    url = "https://raw.githubusercontent.com/HIPS/neural-fingerprint/master/data/2015-06-03-malaria/" \
-          "malaria-processed.csv"
+    url = (
+        "https://raw.githubusercontent.com/HIPS/neural-fingerprint/master/data/2015-06-03-malaria/"
+        "malaria-processed.csv"
+    )
     md5 = "ef40ddfd164be0e5ed1bd3dd0cce9b88"
     target_fields = ["activity"]
 
@@ -33,5 +37,10 @@ class Malaria(data.MoleculeDataset):
 
         file_name = utils.download(self.url, self.path, md5=self.md5)
 
-        self.load_csv(file_name, smiles_field="smiles", target_fields=self.target_fields,
-                      verbose=verbose, **kwargs)
+        self.load_csv(
+            file_name,
+            smiles_field="smiles",
+            target_fields=self.target_fields,
+            verbose=verbose,
+            **kwargs
+        )

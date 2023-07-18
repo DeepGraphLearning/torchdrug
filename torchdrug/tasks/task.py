@@ -4,7 +4,6 @@ from torch import nn
 
 
 class Task(nn.Module):
-
     _option_members = set()
 
     def _standarize_option(self, x, name):

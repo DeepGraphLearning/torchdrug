@@ -29,8 +29,16 @@ class Physicochemical(nn.Module, core.Configurable):
     url = "https://miladeepgraphlearningproteindata.s3.us-east-2.amazonaws.com/documents/AAidx.txt"
     md5 = "ec612f4df41b93ae03c31ae376c23ce0"
 
-    property_key = ["CIDH920105", "BHAR880101", "CHAM820101", "CHAM820102",
-                    "CHOC760101", "BIGC670101", "CHAM810101", "DAYM780201"]
+    property_key = [
+        "CIDH920105",
+        "BHAR880101",
+        "CHAM820101",
+        "CHAM820102",
+        "CHOC760101",
+        "BIGC670101",
+        "CHAM810101",
+        "DAYM780201",
+    ]
     num_residue_type = len(data.Protein.id2residue_symbol)
 
     def __init__(self, path, type="moran", nlag=30, hidden_dims=(512,)):
@@ -47,10 +55,9 @@ class Physicochemical(nn.Module, core.Configurable):
         self.nlag = nlag
         self.input_dim = len(self.property_key) * nlag
         self.output_dim = hidden_dims[-1]
-        
+
         self.mlp = layers.Sequential(
-            layers.MultiLayerPerceptron(self.input_dim, hidden_dims),
-            nn.ReLU()
+            layers.MultiLayerPerceptron(self.input_dim, hidden_dims), nn.ReLU()
         )
 
     def read_property(self, file):
@@ -68,11 +75,14 @@ class Physicochemical(nn.Module, core.Configurable):
             _property.append(property_dict[key])
         _property = torch.tensor(_property)
         mapping = [data.Protein.residue_symbol2id[residue] for residue in vocab]
-        property = torch.zeros((len(self.property_key), self.num_residue_type), dtype=torch.float)
+        property = torch.zeros(
+            (len(self.property_key), self.num_residue_type), dtype=torch.float
+        )
         property[:, mapping] = _property
 
-        property = (property - property.mean(dim=1, keepdim=True)) / \
-                        (property.std(dim=1, keepdim=True) + 1e-10)
+        property = (property - property.mean(dim=1, keepdim=True)) / (
+            property.std(dim=1, keepdim=True) + 1e-10
+        )
         return property.transpose(0, 1)
 
     def forward(self, graph, input, all_loss=None, metric=None):
@@ -89,9 +99,11 @@ class Physicochemical(nn.Module, core.Configurable):
             dict with ``graph_feature`` field: graph representations of shape :math:`(n, d)`
         """
         input = graph.residue_type
-        
-        x = self.property[input]    # num_residue * 8
-        x_mean = scatter_mean(x, graph.residue2graph, dim=0, dim_size=graph.batch_size)    # batch_size * 8
+
+        x = self.property[input]  # num_residue * 8
+        x_mean = scatter_mean(
+            x, graph.residue2graph, dim=0, dim_size=graph.batch_size
+        )  # batch_size * 8
 
         size = graph.num_residues
         starts = size.cumsum(0) - size  # batch_size * nlag
@@ -99,40 +111,73 @@ class Physicochemical(nn.Module, core.Configurable):
         steps = torch.arange(self.nlag, dtype=torch.long, device=graph.device) + 1
         steps = (graph.num_residues.unsqueeze(-1) - steps.unsqueeze(0)).clamp(min=0)
         ends = starts + steps
-        mask_0 = functional.multi_slice_mask(starts, ends, graph.num_residue) # num_residue * nlag
+        mask_0 = functional.multi_slice_mask(
+            starts, ends, graph.num_residue
+        )  # num_residue * nlag
 
         ends = size.cumsum(0)  # batch_size * nlag
         ends = ends.unsqueeze(-1).expand(-1, self.nlag)
         starts = ends - steps
-        mask_1 = functional.multi_slice_mask(starts, ends, graph.num_residue) # num_residue * nlag
+        mask_1 = functional.multi_slice_mask(
+            starts, ends, graph.num_residue
+        )  # num_residue * nlag
 
         index2sample = functional._size_to_index(size)
-        numerator = torch.zeros((graph.num_residue, self.nlag, x.shape[-1]), dtype=torch.float, device=graph.device)
+        numerator = torch.zeros(
+            (graph.num_residue, self.nlag, x.shape[-1]),
+            dtype=torch.float,
+            device=graph.device,
+        )
         if self.type == "moran":
-            _numerator = (x - x_mean[index2sample]).unsqueeze(1).expand(-1, self.nlag, -1)[mask_0] * \
-                         (x - x_mean[index2sample]).unsqueeze(1).expand(-1, self.nlag, -1)[mask_1]
+            _numerator = (x - x_mean[index2sample]).unsqueeze(1).expand(
+                -1, self.nlag, -1
+            )[mask_0] * (x - x_mean[index2sample]).unsqueeze(1).expand(
+                -1, self.nlag, -1
+            )[
+                mask_1
+            ]
             numerator[mask_0] = _numerator
             numerator = numerator / (steps[index2sample].unsqueeze(-1) + 1e-10)
-            numerator = scatter_add(numerator, graph.residue2graph, dim=0, dim_size=graph.batch_size) # batch_size * nlag * 8
-            demonimator = scatter_add((x - x_mean[index2sample]) ** 2, graph.residue2graph, dim=0, dim_size=graph.batch_size)
+            numerator = scatter_add(
+                numerator, graph.residue2graph, dim=0, dim_size=graph.batch_size
+            )  # batch_size * nlag * 8
+            demonimator = scatter_add(
+                (x - x_mean[index2sample]) ** 2,
+                graph.residue2graph,
+                dim=0,
+                dim_size=graph.batch_size,
+            )
             demonimator = demonimator / graph.num_residues.unsqueeze(-1)
             demonimator = demonimator.unsqueeze(1)  # batch_size * 1 * 8
         elif self.type == "geary":
-            _numerator = x.unsqueeze(1).expand(-1, self.nlag, -1)[mask_0] - \
-                         x.unsqueeze(1).expand(-1, self.nlag, -1)[mask_1]
-            _numerator = _numerator ** 2
+            _numerator = (
+                x.unsqueeze(1).expand(-1, self.nlag, -1)[mask_0]
+                - x.unsqueeze(1).expand(-1, self.nlag, -1)[mask_1]
+            )
+            _numerator = _numerator**2
             numerator[mask_0] = _numerator
             numerator = numerator / (steps[index2sample].unsqueeze(-1) * 2 + 1e-10)
-            numerator = scatter_add(numerator, graph.residue2graph, dim=0, dim_size=graph.batch_size) # batch_size * nlag * 8
-            demonimator = scatter_add((x - x_mean[index2sample]) ** 2, graph.residue2graph, dim=0, dim_size=graph.batch_size)
+            numerator = scatter_add(
+                numerator, graph.residue2graph, dim=0, dim_size=graph.batch_size
+            )  # batch_size * nlag * 8
+            demonimator = scatter_add(
+                (x - x_mean[index2sample]) ** 2,
+                graph.residue2graph,
+                dim=0,
+                dim_size=graph.batch_size,
+            )
             demonimator = demonimator / (graph.num_residues - 1 + 1e-10).unsqueeze(-1)
             demonimator = demonimator.unsqueeze(1)  # batch_size * 1 * 8
         elif self.type == "nmbroto":
-            _numerator = x.unsqueeze(1).expand(-1, self.nlag, -1)[mask_0] * \
-                         x.unsqueeze(1).expand(-1, self.nlag, -1)[mask_1]
+            _numerator = (
+                x.unsqueeze(1).expand(-1, self.nlag, -1)[mask_0]
+                * x.unsqueeze(1).expand(-1, self.nlag, -1)[mask_1]
+            )
             numerator[mask_0] = _numerator
-            numerator = scatter_add(numerator, graph.residue2graph, dim=0, dim_size=graph.batch_size) # batch_size * nlag * 8
-            demonimator = steps.unsqueeze(-1)   # batch_size * nlag * 1
+            numerator = scatter_add(
+                numerator, graph.residue2graph, dim=0, dim_size=graph.batch_size
+            )  # batch_size * nlag * 8
+            demonimator = steps.unsqueeze(-1)  # batch_size * nlag * 1
         else:
             raise ValueError("Unknown physicochemical feature type `%s`" % self.type)
         feature = numerator / (demonimator + 1e-10)

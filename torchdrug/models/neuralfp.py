@@ -28,8 +28,18 @@ class NeuralFingerprint(nn.Module, core.Configurable):
         readout (str, optional): readout function. Available functions are ``sum`` and ``mean``.
     """
 
-    def __init__(self, input_dim, output_dim, hidden_dims, edge_input_dim=None, short_cut=False, batch_norm=False,
-                 activation="relu", concat_hidden=False, readout="sum"):
+    def __init__(
+        self,
+        input_dim,
+        output_dim,
+        hidden_dims,
+        edge_input_dim=None,
+        short_cut=False,
+        batch_norm=False,
+        activation="relu",
+        concat_hidden=False,
+        readout="sum",
+    ):
         super(NeuralFingerprint, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -43,8 +53,15 @@ class NeuralFingerprint(nn.Module, core.Configurable):
         self.layers = nn.ModuleList()
         self.linears = nn.ModuleList()
         for i in range(len(self.dims) - 1):
-            self.layers.append(layers.NeuralFingerprintConv(self.dims[i], self.dims[i + 1], edge_input_dim,
-                                                            batch_norm, activation))
+            self.layers.append(
+                layers.NeuralFingerprintConv(
+                    self.dims[i],
+                    self.dims[i + 1],
+                    edge_input_dim,
+                    batch_norm,
+                    activation,
+                )
+            )
             self.linears.append(nn.Linear(self.dims[i + 1], output_dim))
 
         if readout == "sum":
@@ -90,7 +107,4 @@ class NeuralFingerprint(nn.Module, core.Configurable):
 
         graph_feature = self.readout(graph, graph_feature)
 
-        return {
-            "graph_feature": graph_feature,
-            "node_feature": node_feature
-        }
+        return {"graph_feature": graph_feature, "node_feature": node_feature}

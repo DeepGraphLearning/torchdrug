@@ -7,7 +7,6 @@ from rdkit.Chem.Draw import mplCanvas
 
 
 class Canvas(mplCanvas.Canvas):
-
     def __init__(self, ax, name="", imageType="png"):
         self._name = name
         if ax is None:
@@ -15,7 +14,9 @@ class Canvas(mplCanvas.Canvas):
             self._figure = plt.figure(figsize=size)
             self._axes = self._figure.add_axes([0, 0, 1, 1])
         else:
-            bbox = ax.get_window_extent().transformed(ax.figure.dpi_scale_trans.inverted())
+            bbox = ax.get_window_extent().transformed(
+                ax.figure.dpi_scale_trans.inverted()
+            )
             size = (bbox.width, bbox.height)
             self._figure = ax.figure
             self._axes = ax
@@ -25,8 +26,16 @@ class Canvas(mplCanvas.Canvas):
         self._dpi = max(self.size)
 
 
-def MolToMPL(mol, ax=None, kekulize=True, wedgeBonds=True, imageType=None, fitImage=False,
-             options=None, **kwargs):
+def MolToMPL(
+    mol,
+    ax=None,
+    kekulize=True,
+    wedgeBonds=True,
+    imageType=None,
+    fitImage=False,
+    options=None,
+    **kwargs
+):
     """Generates a drawing of a molecule on a matplotlib canvas."""
     if not mol:
         raise ValueError("Null molecule provided")

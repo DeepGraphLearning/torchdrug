@@ -43,15 +43,43 @@ class Molecule(Graph):
     """
 
     bond2id = {"SINGLE": 0, "DOUBLE": 1, "TRIPLE": 2, "AROMATIC": 3}
-    atom2valence = {1: 1, 5: 3, 6: 4, 7: 3, 8: 2, 9: 1, 14: 4, 15: 5, 16: 6, 17: 1, 35: 1, 53: 7}
+    atom2valence = {
+        1: 1,
+        5: 3,
+        6: 4,
+        7: 3,
+        8: 2,
+        9: 1,
+        14: 4,
+        15: 5,
+        16: 6,
+        17: 1,
+        35: 1,
+        53: 7,
+    }
     bond2valence = [1, 2, 3, 1.5]
     id2bond = {v: k for k, v in bond2id.items()}
     empty_mol = Chem.MolFromSmiles("")
     dummy_mol = Chem.MolFromSmiles("CC")
 
-    def __init__(self, edge_list=None, atom_type=None, bond_type=None, atom_feature=None, bond_feature=None,
-                 mol_feature=None, formal_charge=None, explicit_hs=None, chiral_tag=None, radical_electrons=None,
-                 atom_map=None, bond_stereo=None, stereo_atoms=None, node_position=None, **kwargs):
+    def __init__(
+        self,
+        edge_list=None,
+        atom_type=None,
+        bond_type=None,
+        atom_feature=None,
+        bond_feature=None,
+        mol_feature=None,
+        formal_charge=None,
+        explicit_hs=None,
+        chiral_tag=None,
+        radical_electrons=None,
+        atom_map=None,
+        bond_stereo=None,
+        stereo_atoms=None,
+        node_position=None,
+        **kwargs
+    ):
         if "num_relation" not in kwargs:
             kwargs["num_relation"] = len(self.bond2id)
         super(Molecule, self).__init__(edge_list=edge_list, **kwargs)
@@ -65,7 +93,9 @@ class Molecule(Graph):
         bond_stereo = self._standarize_attribute(bond_stereo, self.num_edge)
         stereo_atoms = self._standarize_attribute(stereo_atoms, (self.num_edge, 2))
         if node_position is not None:
-            node_position = torch.as_tensor(node_position, dtype=torch.float, device=self.device)
+            node_position = torch.as_tensor(
+                node_position, dtype=torch.float, device=self.device
+            )
 
         with self.atom():
             if atom_feature is not None:
@@ -121,8 +151,10 @@ class Molecule(Graph):
 
     def _check_no_stereo(self):
         if (self.bond_stereo > 0).any():
-            warnings.warn("Try to apply masks on molecules with stereo bonds. This may produce invalid molecules. "
-                          "To discard stereo information, call `mol.bond_stereo[:] = 0` before applying masks.")
+            warnings.warn(
+                "Try to apply masks on molecules with stereo bonds. This may produce invalid molecules. "
+                "To discard stereo information, call `mol.bond_stereo[:] = 0` before applying masks."
+            )
 
     def _maybe_num_node(self, edge_list):
         if len(edge_list):
@@ -131,9 +163,20 @@ class Molecule(Graph):
             return 0
 
     @classmethod
-    @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
-    def from_molecule(cls, mol, atom_feature="default", bond_feature="default", mol_feature=None,
-                      with_hydrogen=False, kekulize=False):
+    @utils.deprecated_alias(
+        node_feature="atom_feature",
+        edge_feature="bond_feature",
+        graph_feature="mol_feature",
+    )
+    def from_molecule(
+        cls,
+        mol,
+        atom_feature="default",
+        bond_feature="default",
+        mol_feature=None,
+        with_hydrogen=False,
+        kekulize=False,
+    ):
         """
         Create a molecule from an RDKit object.
 
@@ -248,17 +291,40 @@ class Molecule(Graph):
             _mol_feature = None
 
         num_relation = len(cls.bond2id) - 1 if kekulize else len(cls.bond2id)
-        return cls(edge_list, atom_type, bond_type,
-                   formal_charge=formal_charge, explicit_hs=explicit_hs,
-                   chiral_tag=chiral_tag, radical_electrons=radical_electrons, atom_map=atom_map,
-                   bond_stereo=bond_stereo, stereo_atoms=stereo_atoms, node_position=node_position,
-                   atom_feature=_atom_feature, bond_feature=_bond_feature, mol_feature=_mol_feature,
-                   num_node=mol.GetNumAtoms(), num_relation=num_relation)
+        return cls(
+            edge_list,
+            atom_type,
+            bond_type,
+            formal_charge=formal_charge,
+            explicit_hs=explicit_hs,
+            chiral_tag=chiral_tag,
+            radical_electrons=radical_electrons,
+            atom_map=atom_map,
+            bond_stereo=bond_stereo,
+            stereo_atoms=stereo_atoms,
+            node_position=node_position,
+            atom_feature=_atom_feature,
+            bond_feature=_bond_feature,
+            mol_feature=_mol_feature,
+            num_node=mol.GetNumAtoms(),
+            num_relation=num_relation,
+        )
 
     @classmethod
-    @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
-    def from_smiles(cls, smiles, atom_feature="default", bond_feature="default", mol_feature=None,
-                    with_hydrogen=False, kekulize=False):
+    @utils.deprecated_alias(
+        node_feature="atom_feature",
+        edge_feature="bond_feature",
+        graph_feature="mol_feature",
+    )
+    def from_smiles(
+        cls,
+        smiles,
+        atom_feature="default",
+        bond_feature="default",
+        mol_feature=None,
+        with_hydrogen=False,
+        kekulize=False,
+    ):
         """
         Create a molecule from a SMILES string.
 
@@ -278,7 +344,9 @@ class Molecule(Graph):
         if mol is None:
             raise ValueError("Invalid SMILES `%s`" % smiles)
 
-        return cls.from_molecule(mol, atom_feature, bond_feature, mol_feature, with_hydrogen, kekulize)
+        return cls.from_molecule(
+            mol, atom_feature, bond_feature, mol_feature, with_hydrogen, kekulize
+        )
 
     def to_smiles(self, isomeric=True, atom_map=True, canonical=False):
         """
@@ -396,10 +464,17 @@ class Molecule(Graph):
         explicit_hs = torch.zeros_like(explicit_hs)
         radical_electrons = torch.zeros_like(radical_electrons)
 
-        return type(self)(self.edge_list, edge_weight=self.edge_weight,
-                          num_node=self.num_node, num_relation=self.num_relation,
-                          formal_charge=formal_charge, explicit_hs=explicit_hs, radical_electrons=radical_electrons,
-                          meta_dict=self.meta_dict, **data_dict)
+        return type(self)(
+            self.edge_list,
+            edge_weight=self.edge_weight,
+            num_node=self.num_node,
+            num_relation=self.num_relation,
+            formal_charge=formal_charge,
+            explicit_hs=explicit_hs,
+            radical_electrons=radical_electrons,
+            meta_dict=self.meta_dict,
+            **data_dict
+        )
 
     def to_scaffold(self, chirality=False):
         """
@@ -412,7 +487,9 @@ class Molecule(Graph):
             str
         """
         smiles = self.to_smiles()
-        scaffold = MurckoScaffold.MurckoScaffoldSmiles(smiles, includeChirality=chirality)
+        scaffold = MurckoScaffold.MurckoScaffoldSmiles(
+            smiles, includeChirality=chirality
+        )
         return scaffold
 
     def node_mask(self, index, compact=False):
@@ -425,7 +502,9 @@ class Molecule(Graph):
 
     def undirected(self, add_inverse=False):
         if add_inverse:
-            raise ValueError("Bonds are undirected relations, but `add_inverse` is specified")
+            raise ValueError(
+                "Bonds are undirected relations, but `add_inverse` is specified"
+            )
         return super(Molecule, self).undirected(add_inverse)
 
     def atom(self):
@@ -510,7 +589,11 @@ class Molecule(Graph):
     @utils.cached_property
     def explicit_valence(self):
         bond2valence = torch.tensor(self.bond2valence, device=self.device)
-        explicit_valence = scatter_add(bond2valence[self.edge_list[:, 2]], self.edge_list[:, 0], dim_size=self.num_node)
+        explicit_valence = scatter_add(
+            bond2valence[self.edge_list[:, 2]],
+            self.edge_list[:, 0],
+            dim_size=self.num_node,
+        )
         return explicit_valence.round().long()
 
     @utils.cached_property
@@ -528,7 +611,9 @@ class Molecule(Graph):
         max_atom_valence[pos_nitrogen] = 4
         if torch.isnan(max_atom_valence).any():
             index = torch.isnan(max_atom_valence).nonzero()[0]
-            raise ValueError("Fail to check valence. Unknown atom type %d" % self.atom_type[index])
+            raise ValueError(
+                "Fail to check valence. Unknown atom type %d" % self.atom_type[index]
+            )
 
         is_valid = (self.explicit_valence <= max_atom_valence).all()
         return is_valid
@@ -538,7 +623,9 @@ class Molecule(Graph):
         try:
             with utils.no_rdkit_log():
                 mol = self.to_molecule()
-                Chem.SanitizeMol(mol, sanitizeOps=Chem.SanitizeFlags.SANITIZE_PROPERTIES)
+                Chem.SanitizeMol(
+                    mol, sanitizeOps=Chem.SanitizeFlags.SANITIZE_PROPERTIES
+                )
             is_valid = torch.ones(1, dtype=torch.bool, device=self.device)
         except ValueError:
             is_valid = torch.zeros(1, dtype=torch.bool, device=self.device)
@@ -550,7 +637,9 @@ class Molecule(Graph):
             fields.append("device='%s'" % self.device)
         return "%s(%s)" % (self.__class__.__name__, ", ".join(fields))
 
-    def visualize(self, title=None, save_file=None, figure_size=(3, 3), ax=None, atom_map=False):
+    def visualize(
+        self, title=None, save_file=None, figure_size=(3, 3), ax=None, atom_map=False
+    ):
         """
         Visualize this molecule with matplotlib.
 
@@ -617,12 +706,27 @@ class PackedMolecule(PackedGraph, Molecule):
     atom2graph = PackedGraph.node2graph
     bond2graph = PackedGraph.edge2graph
 
-    def __init__(self, edge_list=None, atom_type=None, bond_type=None, num_nodes=None, num_edges=None, offsets=None,
-                 **kwargs):
+    def __init__(
+        self,
+        edge_list=None,
+        atom_type=None,
+        bond_type=None,
+        num_nodes=None,
+        num_edges=None,
+        offsets=None,
+        **kwargs
+    ):
         if "num_relation" not in kwargs:
             kwargs["num_relation"] = len(self.bond2id)
-        super(PackedMolecule, self).__init__(edge_list=edge_list, num_nodes=num_nodes, num_edges=num_edges,
-                                             offsets=offsets, atom_type=atom_type, bond_type=bond_type, **kwargs)
+        super(PackedMolecule, self).__init__(
+            edge_list=edge_list,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            offsets=offsets,
+            atom_type=atom_type,
+            bond_type=bond_type,
+            **kwargs
+        )
 
     def ion_to_molecule(self):
         """
@@ -640,10 +744,19 @@ class PackedMolecule(PackedGraph, Molecule):
         explicit_hs = torch.zeros_like(explicit_hs)
         radical_electrons = torch.zeros_like(radical_electrons)
 
-        return type(self)(self.edge_list, edge_weight=self.edge_weight,
-                          num_nodes=self.num_nodes, num_edges=self.num_edges, num_relation=self.num_relation,
-                          offsets=self._offsets, formal_charge=formal_charge, explicit_hs=explicit_hs,
-                          radical_electrons=radical_electrons, meta_dict=self.meta_dict, **data_dict)
+        return type(self)(
+            self.edge_list,
+            edge_weight=self.edge_weight,
+            num_nodes=self.num_nodes,
+            num_edges=self.num_edges,
+            num_relation=self.num_relation,
+            offsets=self._offsets,
+            formal_charge=formal_charge,
+            explicit_hs=explicit_hs,
+            radical_electrons=radical_electrons,
+            meta_dict=self.meta_dict,
+            **data_dict
+        )
 
     @utils.cached_property
     def is_valid(self):
@@ -660,10 +773,14 @@ class PackedMolecule(PackedGraph, Molecule):
         max_atom_valence[pos_nitrogen] = 4
         if torch.isnan(max_atom_valence).any():
             index = torch.isnan(max_atom_valence).nonzero()[0]
-            raise ValueError("Fail to check valence. Unknown atom type %d" % self.atom_type[index])
+            raise ValueError(
+                "Fail to check valence. Unknown atom type %d" % self.atom_type[index]
+            )
 
         is_valid = self.explicit_valence <= max_atom_valence
-        is_valid = scatter_min(is_valid.long(), self.node2graph, dim_size=self.batch_size)[0].bool()
+        is_valid = scatter_min(
+            is_valid.long(), self.node2graph, dim_size=self.batch_size
+        )[0].bool()
         return is_valid
 
     @utils.cached_property
@@ -671,9 +788,20 @@ class PackedMolecule(PackedGraph, Molecule):
         return torch.cat([mol.is_valid_rdkit for mol in self])
 
     @classmethod
-    @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
-    def from_molecule(cls, mols, atom_feature="default", bond_feature="default", mol_feature=None,
-                      with_hydrogen=False, kekulize=False):
+    @utils.deprecated_alias(
+        node_feature="atom_feature",
+        edge_feature="bond_feature",
+        graph_feature="mol_feature",
+    )
+    def from_molecule(
+        cls,
+        mols,
+        atom_feature="default",
+        bond_feature="default",
+        mol_feature=None,
+        with_hydrogen=False,
+        kekulize=False,
+    ):
         """
         Create a packed molecule from a list of RDKit objects.
 
@@ -803,17 +931,41 @@ class PackedMolecule(PackedGraph, Molecule):
             _mol_feature = None
 
         num_relation = len(cls.bond2id) - 1 if kekulize else len(cls.bond2id)
-        return cls(edge_list, atom_type, bond_type,
-                   formal_charge=formal_charge, explicit_hs=explicit_hs,
-                   chiral_tag=chiral_tag, radical_electrons=radical_electrons, atom_map=atom_map,
-                   bond_stereo=bond_stereo, stereo_atoms=stereo_atoms, node_position=node_position,
-                   atom_feature=_atom_feature, bond_feature=_bond_feature, mol_feature=_mol_feature,
-                   num_nodes=num_nodes, num_edges=num_edges, num_relation=num_relation)
+        return cls(
+            edge_list,
+            atom_type,
+            bond_type,
+            formal_charge=formal_charge,
+            explicit_hs=explicit_hs,
+            chiral_tag=chiral_tag,
+            radical_electrons=radical_electrons,
+            atom_map=atom_map,
+            bond_stereo=bond_stereo,
+            stereo_atoms=stereo_atoms,
+            node_position=node_position,
+            atom_feature=_atom_feature,
+            bond_feature=_bond_feature,
+            mol_feature=_mol_feature,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_relation=num_relation,
+        )
 
     @classmethod
-    @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
-    def from_smiles(cls, smiles_list, atom_feature="default", bond_feature="default", mol_feature=None,
-                    with_hydrogen=False, kekulize=False):
+    @utils.deprecated_alias(
+        node_feature="atom_feature",
+        edge_feature="bond_feature",
+        graph_feature="mol_feature",
+    )
+    def from_smiles(
+        cls,
+        smiles_list,
+        atom_feature="default",
+        bond_feature="default",
+        mol_feature=None,
+        with_hydrogen=False,
+        kekulize=False,
+    ):
         """
         Create a packed molecule from a list of SMILES strings.
 
@@ -836,7 +988,9 @@ class PackedMolecule(PackedGraph, Molecule):
                 raise ValueError("Invalid SMILES `%s`" % smiles)
             mols.append(mol)
 
-        return cls.from_molecule(mols, atom_feature, bond_feature, mol_feature, with_hydrogen, kekulize)
+        return cls.from_molecule(
+            mols, atom_feature, bond_feature, mol_feature, with_hydrogen, kekulize
+        )
 
     def to_smiles(self, isomeric=True, atom_map=True, canonical=False):
         """
@@ -930,8 +1084,8 @@ class PackedMolecule(PackedGraph, Molecule):
                 if h < t:
                     if bond_stereo[j]:
                         bond = mol.GetBondWithIdx(k)
-                        # These do not necessarily need to be the highest 'ranking' atoms like CIP stereo requires. 
-                        # They can be any arbitrary atoms neighboring the begin and end atoms of this bond respectively. 
+                        # These do not necessarily need to be the highest 'ranking' atoms like CIP stereo requires.
+                        # They can be any arbitrary atoms neighboring the begin and end atoms of this bond respectively.
                         # STEREOCIS or STEREOTRANS is then set relative to only these atoms.
                         bond.SetStereoAtoms(*stereo_atoms[j])
                     k += 1
@@ -964,7 +1118,9 @@ class PackedMolecule(PackedGraph, Molecule):
 
     def undirected(self, add_inverse=False):
         if add_inverse:
-            raise ValueError("Bonds are undirected relations, but `add_inverse` is specified")
+            raise ValueError(
+                "Bonds are undirected relations, but `add_inverse` is specified"
+            )
         return super(PackedMolecule, self).undirected(add_inverse)
 
     @property
@@ -984,14 +1140,24 @@ class PackedMolecule(PackedGraph, Molecule):
         self.num_bonds = value
 
     def __repr__(self):
-        fields = ["batch_size=%d" % self.batch_size,
-                  "num_atoms=%s" % pretty.long_array(self.num_atoms.tolist()),
-                  "num_bonds=%s" % pretty.long_array(self.num_bonds.tolist())]
+        fields = [
+            "batch_size=%d" % self.batch_size,
+            "num_atoms=%s" % pretty.long_array(self.num_atoms.tolist()),
+            "num_bonds=%s" % pretty.long_array(self.num_bonds.tolist()),
+        ]
         if self.device.type != "cpu":
             fields.append("device='%s'" % self.device)
         return "%s(%s)" % (self.__class__.__name__, ", ".join(fields))
 
-    def visualize(self, titles=None, save_file=None, figure_size=(3, 3), num_row=None, num_col=None, atom_map=False):
+    def visualize(
+        self,
+        titles=None,
+        save_file=None,
+        figure_size=(3, 3),
+        num_row=None,
+        num_col=None,
+        atom_map=False,
+    ):
         """
         Visualize the packed molecules with matplotlib.
 
@@ -1006,10 +1172,12 @@ class PackedMolecule(PackedGraph, Molecule):
         """
         if titles is None:
             graph = self.get_item(0)
-            titles = ["%s %d" % (type(graph).__name__, i) for i in range(self.batch_size)]
+            titles = [
+                "%s %d" % (type(graph).__name__, i) for i in range(self.batch_size)
+            ]
         if num_col is None:
             if num_row is None:
-                num_col = math.ceil(self.batch_size ** 0.5)
+                num_col = math.ceil(self.batch_size**0.5)
             else:
                 num_col = math.ceil(self.batch_size / num_row)
         if num_row is None:

@@ -27,8 +27,18 @@ class ProteinBERT(nn.Module, core.Configurable):
         max_position (int, optional): maximum number of positions
     """
 
-    def __init__(self, input_dim, hidden_dim=768, num_layers=12, num_heads=12, intermediate_dim=3072,
-                 activation="gelu", hidden_dropout=0.1, attention_dropout=0.1, max_position=8192):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dim=768,
+        num_layers=12,
+        num_heads=12,
+        intermediate_dim=3072,
+        activation="gelu",
+        hidden_dropout=0.1,
+        attention_dropout=0.1,
+        max_position=8192,
+    ):
         super(ProteinBERT, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -48,9 +58,17 @@ class ProteinBERT(nn.Module, core.Configurable):
 
         self.layers = nn.ModuleList()
         for i in range(self.num_layers):
-            self.layers.append(layers.ProteinBERTBlock(hidden_dim, intermediate_dim, num_heads,
-                                                       attention_dropout, hidden_dropout, activation))
-        
+            self.layers.append(
+                layers.ProteinBERTBlock(
+                    hidden_dim,
+                    intermediate_dim,
+                    num_heads,
+                    attention_dropout,
+                    hidden_dropout,
+                    activation,
+                )
+            )
+
         self.linear = nn.Linear(hidden_dim, hidden_dim)
 
     def forward(self, graph, input, all_loss=None, metric=None):
@@ -70,13 +88,24 @@ class ProteinBERT(nn.Module, core.Configurable):
         input = graph.residue_type
         size_ext = graph.num_residues
         # Prepend BOS
-        bos = torch.ones(graph.batch_size, dtype=torch.long, device=self.device) * self.num_residue_type
-        input, size_ext = functional._extend(bos, torch.ones_like(size_ext), input, size_ext)
+        bos = (
+            torch.ones(graph.batch_size, dtype=torch.long, device=self.device)
+            * self.num_residue_type
+        )
+        input, size_ext = functional._extend(
+            bos, torch.ones_like(size_ext), input, size_ext
+        )
         # Append EOS
-        eos = torch.ones(graph.batch_size, dtype=torch.long, device=self.device) * (self.num_residue_type + 1)
-        input, size_ext = functional._extend(input, size_ext, eos, torch.ones_like(size_ext))
+        eos = torch.ones(graph.batch_size, dtype=torch.long, device=self.device) * (
+            self.num_residue_type + 1
+        )
+        input, size_ext = functional._extend(
+            input, size_ext, eos, torch.ones_like(size_ext)
+        )
         # Padding
-        input, mask = functional.variadic_to_padded(input, size_ext, value=self.num_residue_type + 2)
+        input, mask = functional.variadic_to_padded(
+            input, size_ext, value=self.num_residue_type + 2
+        )
         mask = mask.long().unsqueeze(-1)
 
         input = self.embedding(input)
@@ -94,7 +123,4 @@ class ProteinBERT(nn.Module, core.Configurable):
         graph_feature = self.linear(graph_feature)
         graph_feature = F.tanh(graph_feature)
 
-        return {
-            "graph_feature": graph_feature,
-            "residue_feature": residue_feature
-        }
+        return {"graph_feature": graph_feature, "residue_feature": residue_feature}

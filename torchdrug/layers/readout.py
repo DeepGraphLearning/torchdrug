@@ -4,7 +4,6 @@ from torch_scatter import scatter_mean, scatter_add, scatter_max, scatter_softma
 
 
 class Readout(nn.Module):
-
     def __init__(self, type="node"):
         super(Readout, self).__init__()
         self.type = type
@@ -17,7 +16,9 @@ class Readout(nn.Module):
         elif self.type == "residue":
             input2graph = graph.residue2graph
         else:
-            raise ValueError("Unknown input type `%s` for readout functions" % self.type)
+            raise ValueError(
+                "Unknown input type `%s` for readout functions" % self.type
+            )
         return input2graph
 
 
@@ -90,7 +91,9 @@ class AttentionReadout(Readout):
         index2graph = self.get_index2graph(graph)
         weight = self.linear(input)
         attention = scatter_softmax(weight, index2graph, dim=0)
-        output = scatter_add(attention * input, index2graph, dim=0, dim_size=graph.batch_size)
+        output = scatter_add(
+            attention * input, index2graph, dim=0, dim_size=graph.batch_size
+        )
         return output
 
 
@@ -111,9 +114,16 @@ class Softmax(Readout):
             Tensor: node probabilities
         """
         input2graph = self.get_index2graph(graph)
-        x = input - scatter_max(input, input2graph, dim=0, dim_size=graph.batch_size)[0][input2graph]
+        x = (
+            input
+            - scatter_max(input, input2graph, dim=0, dim_size=graph.batch_size)[0][
+                input2graph
+            ]
+        )
         x = x.exp()
-        normalizer = scatter_add(x, input2graph, dim=0, dim_size=graph.batch_size)[input2graph]
+        normalizer = scatter_add(x, input2graph, dim=0, dim_size=graph.batch_size)[
+            input2graph
+        ]
         return x / (normalizer + self.eps)
 
 
@@ -183,7 +193,14 @@ class Set2Set(Readout):
             Tensor: graph representations
         """
         input2graph = self.get_index2graph(graph)
-        hx = (torch.zeros(self.lstm.num_layers, graph.batch_size, self.lstm.hidden_size, device=input.device),) * 2
+        hx = (
+            torch.zeros(
+                self.lstm.num_layers,
+                graph.batch_size,
+                self.lstm.hidden_size,
+                device=input.device,
+            ),
+        ) * 2
         query_star = torch.zeros(graph.batch_size, self.output_dim, device=input.device)
 
         for i in range(self.num_step):
@@ -191,7 +208,12 @@ class Set2Set(Readout):
             query = query.squeeze(0)
             product = torch.einsum("bd, bd -> b", query[input2graph], input)
             attention = self.softmax(graph, product)
-            output = scatter_add(attention.unsqueeze(-1) * input, input2graph, dim=0, dim_size=graph.batch_size)
+            output = scatter_add(
+                attention.unsqueeze(-1) * input,
+                input2graph,
+                dim=0,
+                dim_size=graph.batch_size,
+            )
             query_star = torch.cat([query, output], dim=-1)
 
         return query_star

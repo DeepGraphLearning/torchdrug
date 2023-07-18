@@ -23,7 +23,7 @@ def download(url, path, save_file=None, md5=None):
     if save_file is None:
         save_file = os.path.basename(url)
         if "?" in save_file:
-            save_file = save_file[:save_file.find("?")]
+            save_file = save_file[: save_file.find("?")]
     save_file = os.path.join(path, save_file)
 
     if not os.path.exists(save_file) or compute_md5(save_file) != md5:
@@ -46,9 +46,9 @@ def smart_open(file_name, mode="rb"):
     import gzip
 
     extension = os.path.splitext(file_name)[1]
-    if extension == '.bz2':
+    if extension == ".bz2":
         return bz2.BZ2File(file_name, mode)
-    elif extension == '.gz':
+    elif extension == ".gz":
         return gzip.GzipFile(file_name, mode)
     else:
         return open(file_name, mode)
@@ -83,7 +83,9 @@ def extract(zip_file, member=None):
                 fin.seek(-4, 2)
                 file_size = struct.unpack("<I", fin.read())[0]
             with gzip.open(zip_file, "rb") as fin:
-                if not os.path.exists(save_file) or file_size != os.path.getsize(save_file):
+                if not os.path.exists(save_file) or file_size != os.path.getsize(
+                    save_file
+                ):
                     logger.info("Extracting %s to %s" % (zip_file, save_file))
                     with open(save_file, "wb") as fout:
                         shutil.copyfileobj(fin, fout)
@@ -92,7 +94,9 @@ def extract(zip_file, member=None):
         if member is not None:
             members = [member]
             save_files = [os.path.join(save_path, os.path.basename(member))]
-            logger.info("Extracting %s from %s to %s" % (member, zip_file, save_files[0]))
+            logger.info(
+                "Extracting %s from %s to %s" % (member, zip_file, save_files[0])
+            )
         else:
             members = tar.getnames()
             save_files = [os.path.join(save_path, _member) for _member in members]
@@ -102,7 +106,9 @@ def extract(zip_file, member=None):
                 os.makedirs(save_file, exist_ok=True)
                 continue
             os.makedirs(os.path.dirname(save_file), exist_ok=True)
-            if not os.path.exists(save_file) or tar.getmember(_member).size != os.path.getsize(save_file):
+            if not os.path.exists(save_file) or tar.getmember(
+                _member
+            ).size != os.path.getsize(save_file):
                 with tar.extractfile(_member) as fin, open(save_file, "wb") as fout:
                     shutil.copyfileobj(fin, fout)
     elif extension == ".zip":
@@ -110,7 +116,9 @@ def extract(zip_file, member=None):
         if member is not None:
             members = [member]
             save_files = [os.path.join(save_path, os.path.basename(member))]
-            logger.info("Extracting %s from %s to %s" % (member, zip_file, save_files[0]))
+            logger.info(
+                "Extracting %s from %s to %s" % (member, zip_file, save_files[0])
+            )
         else:
             members = zipped.namelist()
             save_files = [os.path.join(save_path, _member) for _member in members]
@@ -120,7 +128,9 @@ def extract(zip_file, member=None):
                 os.makedirs(save_file, exist_ok=True)
                 continue
             os.makedirs(os.path.dirname(save_file), exist_ok=True)
-            if not os.path.exists(save_file) or zipped.getinfo(_member).file_size != os.path.getsize(save_file):
+            if not os.path.exists(save_file) or zipped.getinfo(
+                _member
+            ).file_size != os.path.getsize(save_file):
                 with zipped.open(_member, "r") as fin, open(save_file, "wb") as fout:
                     shutil.copyfileobj(fin, fout)
     else:
@@ -151,7 +161,7 @@ def compute_md5(file_name, chunk_size=65536):
     return md5.hexdigest()
 
 
-def get_line_count(file_name, chunk_size=8192*1024):
+def get_line_count(file_name, chunk_size=8192 * 1024):
     """
     Get the number of lines in a file.
 

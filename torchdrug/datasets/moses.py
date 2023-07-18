@@ -8,7 +8,9 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.MOSES")
-@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(
+    data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields")
+)
 class MOSES(data.MoleculeDataset):
     """
     Subset of ZINC database for molecule generation.
@@ -35,8 +37,14 @@ class MOSES(data.MoleculeDataset):
 
         file_name = utils.download(self.url, path, md5=self.md5)
 
-        self.load_csv(file_name, smiles_field="SMILES", target_fields=self.target_fields,
-                      lazy=True, verbose=verbose, **kwargs)
+        self.load_csv(
+            file_name,
+            smiles_field="SMILES",
+            target_fields=self.target_fields,
+            lazy=True,
+            verbose=verbose,
+            **kwargs
+        )
 
     def split(self):
         indexes = defaultdict(list)

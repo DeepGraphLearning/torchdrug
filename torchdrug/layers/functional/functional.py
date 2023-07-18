@@ -167,7 +167,9 @@ def _extend(data, size, input, input_size):
     """
     new_size = size + input_size
     new_cum_size = new_size.cumsum(0)
-    new_data = torch.zeros(new_cum_size[-1], *data.shape[1:], dtype=data.dtype, device=data.device)
+    new_data = torch.zeros(
+        new_cum_size[-1], *data.shape[1:], dtype=data.dtype, device=data.device
+    )
     starts = new_cum_size - new_size
     ends = starts + size
     index = multi_slice_mask(starts, ends, new_cum_size[-1])
@@ -356,7 +358,9 @@ def variadic_topk(input, size, k, largest=True):
     if isinstance(k, torch.Tensor) and k.shape == size.shape:
         value = value.view(-1, *input.shape[1:])
         index = index.view(-1, *input.shape[1:])
-        index = index - (size.cumsum(0) - size).repeat_interleave(k).view([-1] + [1] * (index.ndim - 1))
+        index = index - (size.cumsum(0) - size).repeat_interleave(k).view(
+            [-1] + [1] * (index.ndim - 1)
+        )
     else:
         value = value.view(-1, k, *input.shape[1:])
         index = index.view(-1, k, *input.shape[1:])

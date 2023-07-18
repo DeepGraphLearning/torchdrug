@@ -58,10 +58,26 @@ class Graph(core._MetaContainer):
         graph_feature (array_like, optional): graph feature of any shape
     """
 
-    _meta_types = {"node", "edge", "graph", "node reference", "edge reference", "graph reference"}
+    _meta_types = {
+        "node",
+        "edge",
+        "graph",
+        "node reference",
+        "edge reference",
+        "graph reference",
+    }
 
-    def __init__(self, edge_list=None, edge_weight=None, num_node=None, num_relation=None,
-                 node_feature=None, edge_feature=None, graph_feature=None, **kwargs):
+    def __init__(
+        self,
+        edge_list=None,
+        edge_weight=None,
+        num_node=None,
+        num_relation=None,
+        node_feature=None,
+        edge_feature=None,
+        graph_feature=None,
+        **kwargs
+    ):
         super(Graph, self).__init__(**kwargs)
         # edge_list: N * [h, t] or N * [h, t, r]
         edge_list, num_edge = self._standarize_edge_list(edge_list, num_relation)
@@ -129,30 +145,40 @@ class Graph(core._MetaContainer):
                     raise TypeError("Tensors used as reference must be long tensors")
             if type == "node":
                 if len(value) != self.num_node:
-                    raise ValueError("Expect node attribute `%s` to have shape (%d, *), but found %s" %
-                                     (key, self.num_node, value.shape))
+                    raise ValueError(
+                        "Expect node attribute `%s` to have shape (%d, *), but found %s"
+                        % (key, self.num_node, value.shape)
+                    )
             elif type == "edge":
                 if len(value) != self.num_edge:
-                    raise ValueError("Expect edge attribute `%s` to have shape (%d, *), but found %s" %
-                                     (key, self.num_edge, value.shape))
+                    raise ValueError(
+                        "Expect edge attribute `%s` to have shape (%d, *), but found %s"
+                        % (key, self.num_edge, value.shape)
+                    )
             elif type == "node reference":
                 is_valid = (value >= -1) & (value < self.num_node)
                 if not is_valid.all():
                     error_value = value[~is_valid]
-                    raise ValueError("Expect node reference in [-1, %d), but found %d" %
-                                     (self.num_node, error_value[0]))
+                    raise ValueError(
+                        "Expect node reference in [-1, %d), but found %d"
+                        % (self.num_node, error_value[0])
+                    )
             elif type == "edge reference":
                 is_valid = (value >= -1) & (value < self.num_edge)
                 if not is_valid.all():
                     error_value = value[~is_valid]
-                    raise ValueError("Expect edge reference in [-1, %d), but found %d" %
-                                     (self.num_edge, error_value[0]))
+                    raise ValueError(
+                        "Expect edge reference in [-1, %d), but found %d"
+                        % (self.num_edge, error_value[0])
+                    )
             elif type == "graph reference":
                 is_valid = (value >= -1) & (value < self.batch_size)
                 if not is_valid.all():
                     error_value = value[~is_valid]
-                    raise ValueError("Expect graph reference in [-1, %d), but found %d" %
-                                     (self.batch_size, error_value[0]))
+                    raise ValueError(
+                        "Expect graph reference in [-1, %d), but found %d"
+                        % (self.batch_size, error_value[0])
+                    )
 
     def __setattr__(self, key, value):
         if hasattr(self, "meta_dict"):
@@ -182,10 +208,14 @@ class Graph(core._MetaContainer):
 
     def _standarize_edge_weight(self, edge_weight, edge_list):
         if edge_weight is not None:
-            edge_weight = torch.as_tensor(edge_weight, dtype=torch.float, device=edge_list.device)
+            edge_weight = torch.as_tensor(
+                edge_weight, dtype=torch.float, device=edge_list.device
+            )
             if len(edge_list) != len(edge_weight):
-                raise ValueError("`edge_list` and `edge_weight` should be the same size, but found %d and %d"
-                                 % (len(edge_list), len(edge_weight)))
+                raise ValueError(
+                    "`edge_list` and `edge_weight` should be the same size, but found %d and %d"
+                    % (len(edge_list), len(edge_weight))
+                )
         else:
             edge_weight = torch.ones(len(edge_list), device=edge_list.device)
         return edge_weight
@@ -195,7 +225,10 @@ class Graph(core._MetaContainer):
             num_node = self._maybe_num_node(edge_list)
         num_node = torch.as_tensor(num_node, device=edge_list.device)
         if (edge_list[:, :2] >= num_node).any():
-            raise ValueError("`num_node` is %d, but found node %d in `edge_list`" % (num_node, edge_list[:, :2].max()))
+            raise ValueError(
+                "`num_node` is %d, but found node %d in `edge_list`"
+                % (num_node, edge_list[:, :2].max())
+            )
         return num_node
 
     def _standarize_num_relation(self, num_relation, edge_list):
@@ -204,22 +237,31 @@ class Graph(core._MetaContainer):
         if num_relation is not None:
             num_relation = torch.as_tensor(num_relation, device=edge_list.device)
             if edge_list.shape[1] <= 2:
-                raise ValueError("`num_relation` is provided, but the number of dims of `edge_list` is less than 3.")
+                raise ValueError(
+                    "`num_relation` is provided, but the number of dims of `edge_list` is less than 3."
+                )
             elif (edge_list[:, 2] >= num_relation).any():
-                raise ValueError("`num_relation` is %d, but found relation %d in `edge_list`" % (num_relation, edge_list[:, 2].max()))
+                raise ValueError(
+                    "`num_relation` is %d, but found relation %d in `edge_list`"
+                    % (num_relation, edge_list[:, 2].max())
+                )
         return num_relation
 
     def _maybe_num_node(self, edge_list):
-        warnings.warn("_maybe_num_node() is used to determine the number of nodes. "
-                      "This may underestimate the count if there are isolated nodes.")
+        warnings.warn(
+            "_maybe_num_node() is used to determine the number of nodes. "
+            "This may underestimate the count if there are isolated nodes."
+        )
         if len(edge_list):
             return edge_list[:, :2].max().item() + 1
         else:
             return 0
 
     def _maybe_num_relation(self, edge_list):
-        warnings.warn("_maybe_num_relation() is used to determine the number of relations. "
-                      "This may underestimate the count if there are unseen relations.")
+        warnings.warn(
+            "_maybe_num_relation() is used to determine the number of relations. "
+            "This may underestimate the count if there are unseen relations."
+        )
         return edge_list[:, 2].max().item() + 1
 
     def _standarize_index(self, index, count):
@@ -238,14 +280,19 @@ class Graph(core._MetaContainer):
                 index = index.unsqueeze(0)
             if index.dtype == torch.bool:
                 if index.shape != (count,):
-                    raise IndexError("Invalid mask. Expect mask to have shape %s, but found %s" %
-                                     ((int(count),), tuple(index.shape)))
+                    raise IndexError(
+                        "Invalid mask. Expect mask to have shape %s, but found %s"
+                        % ((int(count),), tuple(index.shape))
+                    )
                 index = index.nonzero().squeeze(-1)
             else:
                 index = index.long()
                 max_index = -1 if len(index) == 0 else index.max().item()
                 if max_index >= count:
-                    raise IndexError("Invalid index. Expect index smaller than %d, but found %d" % (count, max_index))
+                    raise IndexError(
+                        "Invalid index. Expect index smaller than %d, but found %d"
+                        % (count, max_index)
+                    )
         return index
 
     def _get_mapping(self, index, count):
@@ -276,7 +323,10 @@ class Graph(core._MetaContainer):
         """
         adjacency = torch.as_tensor(adjacency)
         if adjacency.shape[0] != adjacency.shape[1]:
-            raise ValueError("`adjacency` should be a square matrix, but found %d and %d" % adjacency.shape[:2])
+            raise ValueError(
+                "`adjacency` should be a square matrix, but found %d and %d"
+                % adjacency.shape[:2]
+            )
 
         edge_list = adjacency.nonzero()
         edge_weight = adjacency[tuple(edge_list.t())]
@@ -286,7 +336,9 @@ class Graph(core._MetaContainer):
             edge_feature = torch.as_tensor(edge_feature)
             edge_feature = edge_feature[tuple(edge_list.t())]
 
-        return cls(edge_list, edge_weight, num_node, num_relation, node_feature, edge_feature)
+        return cls(
+            edge_list, edge_weight, num_node, num_relation, node_feature, edge_feature
+        )
 
     def connected_components(self):
         """
@@ -297,7 +349,9 @@ class Graph(core._MetaContainer):
         """
         node_in, node_out = self.edge_list.t()[:2]
         range = torch.arange(self.num_node, device=self.device)
-        node_in, node_out = torch.cat([node_in, node_out, range]), torch.cat([node_out, node_in, range])
+        node_in, node_out = torch.cat([node_in, node_out, range]), torch.cat(
+            [node_out, node_in, range]
+        )
 
         # find connected component
         # O(|E|d), d is the diameter of the graph
@@ -305,7 +359,9 @@ class Graph(core._MetaContainer):
         last = torch.zeros_like(min_neighbor)
         while not torch.equal(min_neighbor, last):
             last = min_neighbor
-            min_neighbor = scatter_min(min_neighbor[node_out], node_in, dim_size=self.num_node)[0]
+            min_neighbor = scatter_min(
+                min_neighbor[node_out], node_in, dim_size=self.num_node
+            )[0]
         anchor = torch.unique(min_neighbor)
         num_cc = self.node2graph[anchor].bincount(minlength=self.batch_size)
         return self.split(min_neighbor), num_cc
@@ -347,11 +403,20 @@ class Graph(core._MetaContainer):
         num_cum_nodes = num_nodes.cumsum(0)
         offsets = (num_cum_nodes - num_nodes)[edge2graph[edge_index]]
 
-        data_dict, meta_dict = self.data_mask(index, edge_index, graph_index=graph_index, exclude="graph reference")
+        data_dict, meta_dict = self.data_mask(
+            index, edge_index, graph_index=graph_index, exclude="graph reference"
+        )
 
-        return self.packed_type(edge_list[edge_index], edge_weight=self.edge_weight[edge_index], num_nodes=num_nodes,
-                                num_edges=num_edges, num_relation=self.num_relation, offsets=offsets,
-                                meta_dict=meta_dict, **data_dict)
+        return self.packed_type(
+            edge_list[edge_index],
+            edge_weight=self.edge_weight[edge_index],
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_relation=self.num_relation,
+            offsets=offsets,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     @classmethod
     def pack(cls, graphs):
@@ -393,8 +458,10 @@ class Graph(core._MetaContainer):
             if num_relation == -1:
                 num_relation = graph.num_relation
             elif num_relation != graph.num_relation:
-                raise ValueError("Inconsistent `num_relation` in graphs. Expect %d but got %d."
-                                 % (num_relation, graph.num_relation))
+                raise ValueError(
+                    "Inconsistent `num_relation` in graphs. Expect %d but got %d."
+                    % (num_relation, graph.num_relation)
+                )
             num_cum_node += graph.num_node
             num_cum_edge += graph.num_edge
             num_graph += 1
@@ -403,8 +470,15 @@ class Graph(core._MetaContainer):
         edge_weight = torch.cat(edge_weight)
         data_dict = {k: torch.cat(v) for k, v in data_dict.items()}
 
-        return cls.packed_type(edge_list, edge_weight=edge_weight, num_nodes=num_nodes, num_edges=num_edges,
-                               num_relation=num_relation, meta_dict=meta_dict, **data_dict)
+        return cls.packed_type(
+            edge_list,
+            edge_weight=edge_weight,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_relation=num_relation,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def repeat(self, count):
         """
@@ -442,8 +516,15 @@ class Graph(core._MetaContainer):
                     v = v + offsets.repeat_interleave(length)
             data_dict[k] = v
 
-        return self.packed_type(edge_list, edge_weight=edge_weight, num_nodes=num_nodes, num_edges=num_edges,
-                                num_relation=num_relation, meta_dict=self.meta_dict, **data_dict)
+        return self.packed_type(
+            edge_list,
+            edge_weight=edge_weight,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_relation=num_relation,
+            meta_dict=self.meta_dict,
+            **data_dict
+        )
 
     def get_edge(self, edge):
         """
@@ -456,8 +537,10 @@ class Graph(core._MetaContainer):
             Tensor: weight of the edge
         """
         if len(edge) != self.edge_list.shape[1]:
-            raise ValueError("Incorrect edge index. Expect %d axes but got %d axes"
-                             % (self.edge_list.shape[1], len(edge)))
+            raise ValueError(
+                "Incorrect edge index. Expect %d axes but got %d axes"
+                % (self.edge_list.shape[1], len(edge))
+            )
 
         edge_index, num_match = self.match(edge)
         return self.edge_weight[edge_index].sum()
@@ -503,10 +586,12 @@ class Graph(core._MetaContainer):
         # get matched range for each query type
         for i, mask in enumerate(mask_set):
             query_type = tuple(mask)
-            type_index = query_index[query_starts[i]: query_ends[i]]
+            type_index = query_index[query_starts[i] : query_ends[i]]
             type_edge = pattern[type_index][:, mask]
             if query_type not in self.edge_inverted_index:
-                self.edge_inverted_index[query_type] = self._build_edge_inverted_index(mask)
+                self.edge_inverted_index[query_type] = self._build_edge_inverted_index(
+                    mask
+                )
             inverted_range, order = self.edge_inverted_index[query_type]
             ranges = inverted_range.get(type_edge, default=0)
             type_ranges.append(ranges)
@@ -536,8 +621,10 @@ class Graph(core._MetaContainer):
         base = base[mask]
         max = reduce(int.__mul__, base.tolist())
         if max > torch.iinfo(torch.int64).max:
-            raise ValueError("Fail to build an inverted index table based on sorting. "
-                             "The graph is too large.")
+            raise ValueError(
+                "Fail to build an inverted index table based on sorting. "
+                "The graph is too large."
+            )
         scale = base.cumprod(0)
         scale = torch.div(scale[-1], scale, rounding_mode="floor")
         key = (keys * scale).sum(dim=-1)
@@ -561,7 +648,9 @@ class Graph(core._MetaContainer):
         while len(index) < 2:
             index.append(slice(None))
         if len(index) > 2:
-            raise ValueError("Graph has only 2 axis, but %d axis is indexed" % len(index))
+            raise ValueError(
+                "Graph has only 2 axis, but %d axis is indexed" % len(index)
+            )
 
         if all([isinstance(axis_index, int) for axis_index in index]):
             return self.get_edge(index)
@@ -600,7 +689,14 @@ class Graph(core._MetaContainer):
         """
         return self.node_mask(index, compact=True)
 
-    def data_mask(self, node_index=None, edge_index=None, graph_index=None, include=None, exclude=None):
+    def data_mask(
+        self,
+        node_index=None,
+        edge_index=None,
+        graph_index=None,
+        include=None,
+        exclude=None,
+    ):
         data_dict, meta_dict = self.data_by_meta(include, exclude)
         node_mapping = None
         edge_mapping = None
@@ -667,8 +763,14 @@ class Graph(core._MetaContainer):
         else:
             data_dict, meta_dict = self.data_mask(edge_index=edge_index)
 
-        return type(self)(edge_list[edge_index], edge_weight=self.edge_weight[edge_index], num_node=num_node,
-                          num_relation=self.num_relation, meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            edge_list[edge_index],
+            edge_weight=self.edge_weight[edge_index],
+            num_node=num_node,
+            num_relation=self.num_relation,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def compact(self):
         """
@@ -695,8 +797,14 @@ class Graph(core._MetaContainer):
         index = self._standarize_index(index, self.num_edge)
         data_dict, meta_dict = self.data_mask(edge_index=index)
 
-        return type(self)(self.edge_list[index], edge_weight=self.edge_weight[index], num_node=self.num_node,
-                          num_relation=self.num_relation, meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            self.edge_list[index],
+            edge_weight=self.edge_weight[index],
+            num_node=self.num_node,
+            num_relation=self.num_relation,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def line_graph(self):
         """
@@ -725,7 +833,10 @@ class Graph(core._MetaContainer):
         local_inner_size = degree_in.repeat_interleave(size)
         edge_in_offset = (degree_out.cumsum(0) - degree_out).repeat_interleave(size)
         edge_out_offset = (degree_in.cumsum(0) - degree_in).repeat_interleave(size)
-        edge_in_index = torch.div(local_index, local_inner_size, rounding_mode="floor") + edge_in_offset
+        edge_in_index = (
+            torch.div(local_index, local_inner_size, rounding_mode="floor")
+            + edge_in_offset
+        )
         edge_out_index = local_index % local_inner_size + edge_out_offset
 
         edge_in = edge_in[edge_in_index]
@@ -735,7 +846,9 @@ class Graph(core._MetaContainer):
         num_node = self.num_edge
         num_edge = size.sum()
 
-        return Graph(edge_list, num_node=num_node, num_edge=num_edge, node_feature=node_feature)
+        return Graph(
+            edge_list, num_node=num_node, num_edge=num_edge, node_feature=node_feature
+        )
 
     def full(self):
         """
@@ -746,7 +859,9 @@ class Graph(core._MetaContainer):
         """
         index = torch.arange(self.num_node, device=self.device)
         if self.num_relation:
-            edge_list = torch.meshgrid(index, index, torch.arange(self.num_relation, device=self.device))
+            edge_list = torch.meshgrid(
+                index, index, torch.arange(self.num_relation, device=self.device)
+            )
         else:
             edge_list = torch.meshgrid(index, index)
         edge_list = torch.stack(edge_list).flatten(1)
@@ -754,8 +869,14 @@ class Graph(core._MetaContainer):
 
         data_dict, meta_dict = self.data_by_meta(exclude="edge")
 
-        return type(self)(edge_list, edge_weight=edge_weight, num_node=self.num_node, num_relation=self.num_relation,
-                          meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            edge_list,
+            edge_weight=edge_weight,
+            num_node=self.num_node,
+            num_relation=self.num_relation,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def directed(self, order=None):
         """
@@ -791,11 +912,22 @@ class Graph(core._MetaContainer):
             num_relation = num_relation * 2
         edge_list = torch.stack([self.edge_list, edge_list], dim=1).flatten(0, 1)
 
-        index = torch.arange(self.num_edge, device=self.device).unsqueeze(-1).expand(-1, 2).flatten()
+        index = (
+            torch.arange(self.num_edge, device=self.device)
+            .unsqueeze(-1)
+            .expand(-1, 2)
+            .flatten()
+        )
         data_dict, meta_dict = self.data_mask(edge_index=index)
 
-        return type(self)(edge_list, edge_weight=self.edge_weight[index], num_node=self.num_node,
-                          num_relation=num_relation, meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            edge_list,
+            edge_weight=self.edge_weight[index],
+            num_node=self.num_node,
+            num_relation=num_relation,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     @utils.cached_property
     def adjacency(self):
@@ -808,18 +940,34 @@ class Graph(core._MetaContainer):
         """
         return utils.sparse_coo_tensor(self.edge_list.t(), self.edge_weight, self.shape)
 
-    _tensor_names = ["edge_list", "edge_weight", "num_node", "num_relation", "edge_feature"]
+    _tensor_names = [
+        "edge_list",
+        "edge_weight",
+        "num_node",
+        "num_relation",
+        "edge_feature",
+    ]
 
     def to_tensors(self):
-        edge_feature = getattr(self, "edge_feature", torch.tensor(0, device=self.device))
-        return self.edge_list, self.edge_weight, self.num_node, self.num_relation, edge_feature
+        edge_feature = getattr(
+            self, "edge_feature", torch.tensor(0, device=self.device)
+        )
+        return (
+            self.edge_list,
+            self.edge_weight,
+            self.num_node,
+            self.num_relation,
+            edge_feature,
+        )
 
     @classmethod
     def from_tensors(cls, tensors):
         edge_list, edge_weight, num_node, num_relation, edge_feature = tensors
         if edge_feature.ndim == 0:
             edge_feature = None
-        return cls(edge_list, edge_weight, num_node, num_relation, edge_feature=edge_feature)
+        return cls(
+            edge_list, edge_weight, num_node, num_relation, edge_feature=edge_feature
+        )
 
     @property
     def node2graph(self):
@@ -838,7 +986,9 @@ class Graph(core._MetaContainer):
 
         Note this is the **in-degree** in graph theory.
         """
-        return scatter_add(self.edge_weight, self.edge_list[:, 1], dim_size=self.num_node)
+        return scatter_add(
+            self.edge_weight, self.edge_list[:, 1], dim_size=self.num_node
+        )
 
     @utils.cached_property
     def degree_in(self):
@@ -847,7 +997,9 @@ class Graph(core._MetaContainer):
 
         Note this is the **out-degree** in graph theory.
         """
-        return scatter_add(self.edge_weight, self.edge_list[:, 0], dim_size=self.num_node)
+        return scatter_add(
+            self.edge_weight, self.edge_list[:, 0], dim_size=self.num_node
+        )
 
     @property
     def edge_list(self):
@@ -909,8 +1061,10 @@ class Graph(core._MetaContainer):
         keys = set(self.data_dict.keys())
         src_keys = set(src.data_dict.keys())
         if keys != src_keys:
-            raise RuntimeError("Attributes mismatch. Trying to assign attributes %s, "
-                               "but current graph has attributes %s" % (src_keys, keys))
+            raise RuntimeError(
+                "Attributes mismatch. Trying to assign attributes %s, "
+                "but current graph has attributes %s" % (src_keys, keys)
+            )
         for k, v in self.data_dict.items():
             v.copy_(src.data_dict[k])
 
@@ -920,17 +1074,27 @@ class Graph(core._MetaContainer):
         """
         Detach this graph.
         """
-        return type(self)(self.edge_list.detach(), edge_weight=self.edge_weight.detach(),
-                          num_node=self.num_node, num_relation=self.num_relation,
-                          meta_dict=self.meta_dict, **utils.detach(self.data_dict))
+        return type(self)(
+            self.edge_list.detach(),
+            edge_weight=self.edge_weight.detach(),
+            num_node=self.num_node,
+            num_relation=self.num_relation,
+            meta_dict=self.meta_dict,
+            **utils.detach(self.data_dict)
+        )
 
     def clone(self):
         """
         Clone this graph.
         """
-        return type(self)(self.edge_list.clone(), edge_weight=self.edge_weight.clone(),
-                          num_node=self.num_node, num_relation=self.num_relation,
-                          meta_dict=self.meta_dict, **utils.clone(self.data_dict))
+        return type(self)(
+            self.edge_list.clone(),
+            edge_weight=self.edge_weight.clone(),
+            num_node=self.num_node,
+            num_relation=self.num_relation,
+            meta_dict=self.meta_dict,
+            **utils.clone(self.data_dict)
+        )
 
     def cuda(self, *args, **kwargs):
         """
@@ -943,9 +1107,14 @@ class Graph(core._MetaContainer):
         if edge_list is self.edge_list:
             return self
         else:
-            return type(self)(edge_list, edge_weight=self.edge_weight,
-                              num_node=self.num_node, num_relation=self.num_relation,
-                              meta_dict=self.meta_dict, **utils.cuda(self.data_dict, *args, **kwargs))
+            return type(self)(
+                edge_list,
+                edge_weight=self.edge_weight,
+                num_node=self.num_node,
+                num_relation=self.num_relation,
+                meta_dict=self.meta_dict,
+                **utils.cuda(self.data_dict, *args, **kwargs)
+            )
 
     def cpu(self):
         """
@@ -958,8 +1127,14 @@ class Graph(core._MetaContainer):
         if edge_list is self.edge_list:
             return self
         else:
-            return type(self)(edge_list, edge_weight=self.edge_weight, num_node=self.num_node,
-                              num_relation=self.num_relation, meta_dict=self.meta_dict, **utils.cpu(self.data_dict))
+            return type(self)(
+                edge_list,
+                edge_weight=self.edge_weight,
+                num_node=self.num_node,
+                num_relation=self.num_relation,
+                meta_dict=self.meta_dict,
+                **utils.cpu(self.data_dict)
+            )
 
     def to(self, device, *args, **kwargs):
         """
@@ -979,7 +1154,9 @@ class Graph(core._MetaContainer):
             fields.append("device='%s'" % self.device)
         return "%s(%s)" % (self.__class__.__name__, ", ".join(fields))
 
-    def visualize(self, title=None, save_file=None, figure_size=(3, 3), ax=None, layout="spring"):
+    def visualize(
+        self, title=None, save_file=None, figure_size=(3, 3), ax=None, layout="spring"
+    ):
         """
         Visualize this graph with matplotlib.
 
@@ -1076,10 +1253,24 @@ class PackedGraph(Graph):
 
     unpacked_type = Graph
 
-    def __init__(self, edge_list=None, edge_weight=None, num_nodes=None, num_edges=None, num_relation=None,
-                 offsets=None, **kwargs):
-        edge_list, num_nodes, num_edges, num_cum_nodes, num_cum_edges, offsets = \
-            self._get_cumulative(edge_list, num_nodes, num_edges, offsets)
+    def __init__(
+        self,
+        edge_list=None,
+        edge_weight=None,
+        num_nodes=None,
+        num_edges=None,
+        num_relation=None,
+        offsets=None,
+        **kwargs
+    ):
+        (
+            edge_list,
+            num_nodes,
+            num_edges,
+            num_cum_nodes,
+            num_cum_edges,
+            offsets,
+        ) = self._get_cumulative(edge_list, num_nodes, num_edges, offsets)
 
         if offsets is None:
             offsets = self._get_offsets(num_nodes, num_edges, num_cum_nodes)
@@ -1088,8 +1279,10 @@ class PackedGraph(Graph):
 
         num_node = num_nodes.sum()
         if (edge_list[:, :2] >= num_node).any():
-            raise ValueError("Sum of `num_nodes` is %d, but found %d in `edge_list`" %
-                             (num_node, edge_list[:, :2].max()))
+            raise ValueError(
+                "Sum of `num_nodes` is %d, but found %d in `edge_list`"
+                % (num_node, edge_list[:, :2].max())
+            )
 
         self._offsets = offsets
         self.num_nodes = num_nodes
@@ -1097,10 +1290,17 @@ class PackedGraph(Graph):
         self.num_cum_nodes = num_cum_nodes
         self.num_cum_edges = num_cum_edges
 
-        super(PackedGraph, self).__init__(edge_list, edge_weight=edge_weight, num_node=num_node,
-                                          num_relation=num_relation, **kwargs)
+        super(PackedGraph, self).__init__(
+            edge_list,
+            edge_weight=edge_weight,
+            num_node=num_node,
+            num_relation=num_relation,
+            **kwargs
+        )
 
-    def _get_offsets(self, num_nodes=None, num_edges=None, num_cum_nodes=None, num_cum_edges=None):
+    def _get_offsets(
+        self, num_nodes=None, num_edges=None, num_cum_nodes=None, num_cum_edges=None
+    ):
         if num_nodes is None:
             prepend = torch.tensor([0], device=self.device)
             num_nodes = torch.diff(num_cum_nodes, prepend=prepend)
@@ -1122,7 +1322,9 @@ class PackedGraph(Graph):
         # coalesce arbitrary graph IDs to [0, n)
         _, graph2graph = torch.unique(graph2graph, return_inverse=True)
 
-        graph_key = graph2graph * self.batch_size + torch.arange(self.batch_size, device=self.device)
+        graph_key = graph2graph * self.batch_size + torch.arange(
+            self.batch_size, device=self.device
+        )
         graph_index = graph_key.argsort()
         graph = self.subbatch(graph_index)
         graph2graph = graph2graph[graph_index]
@@ -1134,9 +1336,16 @@ class PackedGraph(Graph):
 
         data_dict, meta_dict = graph.data_mask(exclude="graph")
 
-        return type(self)(graph.edge_list, edge_weight=graph.edge_weight, num_nodes=num_nodes,
-                          num_edges=num_edges, num_relation=graph.num_relation, offsets=offsets,
-                          meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            graph.edge_list,
+            edge_weight=graph.edge_weight,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_relation=graph.num_relation,
+            offsets=offsets,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def unpack(self):
         """
@@ -1168,34 +1377,46 @@ class PackedGraph(Graph):
                     raise TypeError("Tensors used as reference must be long tensors")
             if type == "node":
                 if len(value) != self.num_node:
-                    raise ValueError("Expect node attribute `%s` to have shape (%d, *), but found %s" %
-                                     (key, self.num_node, value.shape))
+                    raise ValueError(
+                        "Expect node attribute `%s` to have shape (%d, *), but found %s"
+                        % (key, self.num_node, value.shape)
+                    )
             elif type == "edge":
                 if len(value) != self.num_edge:
-                    raise ValueError("Expect edge attribute `%s` to have shape (%d, *), but found %s" %
-                                     (key, self.num_edge, value.shape))
+                    raise ValueError(
+                        "Expect edge attribute `%s` to have shape (%d, *), but found %s"
+                        % (key, self.num_edge, value.shape)
+                    )
             elif type == "graph":
                 if len(value) != self.batch_size:
-                    raise ValueError("Expect graph attribute `%s` to have shape (%d, *), but found %s" %
-                                     (key, self.batch_size, value.shape))
+                    raise ValueError(
+                        "Expect graph attribute `%s` to have shape (%d, *), but found %s"
+                        % (key, self.batch_size, value.shape)
+                    )
             elif type == "node reference":
                 is_valid = (value >= -1) & (value < self.num_node)
                 if not is_valid.all():
                     error_value = value[~is_valid]
-                    raise ValueError("Expect node reference in [-1, %d), but found %d" %
-                                     (self.num_node, error_value[0]))
+                    raise ValueError(
+                        "Expect node reference in [-1, %d), but found %d"
+                        % (self.num_node, error_value[0])
+                    )
             elif type == "edge reference":
                 is_valid = (value >= -1) & (value < self.num_edge)
                 if not is_valid.all():
                     error_value = value[~is_valid]
-                    raise ValueError("Expect edge reference in [-1, %d), but found %d" %
-                                     (self.num_edge, error_value[0]))
+                    raise ValueError(
+                        "Expect edge reference in [-1, %d), but found %d"
+                        % (self.num_edge, error_value[0])
+                    )
             elif type == "graph reference":
                 is_valid = (value >= -1) & (value < self.batch_size)
                 if not is_valid.all():
                     error_value = value[~is_valid]
-                    raise ValueError("Expect graph reference in [-1, %d), but found %d" %
-                                     (self.batch_size, error_value[0]))
+                    raise ValueError(
+                        "Expect graph reference in [-1, %d), but found %d"
+                        % (self.batch_size, error_value[0])
+                    )
 
     def unpack_data(self, data, type="auto"):
         """
@@ -1210,21 +1431,35 @@ class PackedGraph(Graph):
         """
         if type == "auto":
             if self.num_node == self.num_edge:
-                raise ValueError("Ambiguous type. Please specify either `node` or `edge`")
+                raise ValueError(
+                    "Ambiguous type. Please specify either `node` or `edge`"
+                )
             if len(data) == self.num_node:
                 type = "node"
             elif len(data) == self.num_edge:
                 type = "edge"
             else:
-                raise ValueError("Graph has %d nodes and %d edges, but data has %d entries" %
-                                 (self.num_node, self.num_edge, len(data)))
+                raise ValueError(
+                    "Graph has %d nodes and %d edges, but data has %d entries"
+                    % (self.num_node, self.num_edge, len(data))
+                )
         data_list = []
         if type == "node":
             for i in range(self.batch_size):
-                data_list.append(data[self.num_cum_nodes[i] - self.num_nodes[i]: self.num_cum_nodes[i]])
+                data_list.append(
+                    data[
+                        self.num_cum_nodes[i]
+                        - self.num_nodes[i] : self.num_cum_nodes[i]
+                    ]
+                )
         elif type == "edge":
             for i in range(self.batch_size):
-                data_list.append(data[self.num_cum_edges[i] - self.num_edges[i]: self.num_cum_edges[i]])
+                data_list.append(
+                    data[
+                        self.num_cum_edges[i]
+                        - self.num_edges[i] : self.num_cum_edges[i]
+                    ]
+                )
 
         return data_list
 
@@ -1255,19 +1490,32 @@ class PackedGraph(Graph):
             v = v.repeat(shape)
             for _type in self.meta_dict[k]:
                 if _type == "node reference":
-                    pack_offsets = torch.arange(count, device=self.device) * self.num_node
+                    pack_offsets = (
+                        torch.arange(count, device=self.device) * self.num_node
+                    )
                     v = v + pack_offsets.repeat_interleave(length)
                 elif _type == "edge reference":
-                    pack_offsets = torch.arange(count, device=self.device) * self.num_edge
+                    pack_offsets = (
+                        torch.arange(count, device=self.device) * self.num_edge
+                    )
                     v = v + pack_offsets.repeat_interleave(length)
                 elif _type == "graph reference":
-                    pack_offsets = torch.arange(count, device=self.device) * self.batch_size
+                    pack_offsets = (
+                        torch.arange(count, device=self.device) * self.batch_size
+                    )
                     v = v + pack_offsets.repeat_interleave(length)
             data_dict[k] = v
 
-        return type(self)(edge_list, edge_weight=self.edge_weight.repeat(count),
-                          num_nodes=num_nodes, num_edges=num_edges, num_relation=self.num_relation,
-                          offsets=offsets, meta_dict=self.meta_dict, **data_dict)
+        return type(self)(
+            edge_list,
+            edge_weight=self.edge_weight.repeat(count),
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_relation=self.num_relation,
+            offsets=offsets,
+            meta_dict=self.meta_dict,
+            **data_dict
+        )
 
     def repeat_interleave(self, repeats):
         """
@@ -1284,7 +1532,9 @@ class PackedGraph(Graph):
         """
         repeats = torch.as_tensor(repeats, dtype=torch.long, device=self.device)
         if repeats.numel() == 1:
-            repeats = repeats * torch.ones(self.batch_size, dtype=torch.long, device=self.device)
+            repeats = repeats * torch.ones(
+                self.batch_size, dtype=torch.long, device=self.device
+            )
         num_nodes = self.num_nodes.repeat_interleave(repeats)
         num_edges = self.num_edges.repeat_interleave(repeats)
         num_cum_nodes = num_nodes.cumsum(0)
@@ -1339,24 +1589,37 @@ class PackedGraph(Graph):
                     num_xs = num_graphs
                 elif _type == "node reference":
                     if node_offsets is None:
-                        node_offsets = self._get_repeat_pack_offsets(self.num_nodes, repeats)
+                        node_offsets = self._get_repeat_pack_offsets(
+                            self.num_nodes, repeats
+                        )
                     pack_offsets = node_offsets
                 elif _type == "edge reference":
                     if edge_offsets is None:
-                        edge_offsets = self._get_repeat_pack_offsets(self.num_edges, repeats)
+                        edge_offsets = self._get_repeat_pack_offsets(
+                            self.num_edges, repeats
+                        )
                     pack_offsets = edge_offsets
                 elif _type == "graph reference":
                     if graph_offsets is None:
-                        graph_offsets = self._get_repeat_pack_offsets(num_graphs, repeats)
+                        graph_offsets = self._get_repeat_pack_offsets(
+                            num_graphs, repeats
+                        )
                     pack_offsets = graph_offsets
             # add offsets to make references point to indexes in their own graph
             if num_xs is not None and pack_offsets is not None:
                 v = v + pack_offsets.repeat_interleave(num_xs)
             data_dict[k] = v
 
-        return type(self)(edge_list, edge_weight=self.edge_weight[edge_index],
-                          num_nodes=num_nodes, num_edges=num_edges, num_relation=self.num_relation,
-                          offsets=offsets, meta_dict=self.meta_dict, **data_dict)
+        return type(self)(
+            edge_list,
+            edge_weight=self.edge_weight[edge_index],
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_relation=self.num_relation,
+            offsets=offsets,
+            meta_dict=self.meta_dict,
+            **data_dict
+        )
 
     def get_item(self, index):
         """
@@ -1368,17 +1631,31 @@ class PackedGraph(Graph):
         Returns:
             Graph
         """
-        node_index = torch.arange(self.num_cum_nodes[index] - self.num_nodes[index], self.num_cum_nodes[index],
-                                  device=self.device)
-        edge_index = torch.arange(self.num_cum_edges[index] - self.num_edges[index], self.num_cum_edges[index],
-                                  device=self.device)
+        node_index = torch.arange(
+            self.num_cum_nodes[index] - self.num_nodes[index],
+            self.num_cum_nodes[index],
+            device=self.device,
+        )
+        edge_index = torch.arange(
+            self.num_cum_edges[index] - self.num_edges[index],
+            self.num_cum_edges[index],
+            device=self.device,
+        )
         graph_index = index
         edge_list = self.edge_list[edge_index].clone()
         edge_list[:, :2] -= self._offsets[edge_index].unsqueeze(-1)
-        data_dict, meta_dict = self.data_mask(node_index, edge_index, graph_index=graph_index)
+        data_dict, meta_dict = self.data_mask(
+            node_index, edge_index, graph_index=graph_index
+        )
 
-        return self.unpacked_type(edge_list, edge_weight=self.edge_weight[edge_index], num_node=self.num_nodes[index],
-                                  num_relation=self.num_relation, meta_dict=meta_dict, **data_dict)
+        return self.unpacked_type(
+            edge_list,
+            edge_weight=self.edge_weight[edge_index],
+            num_node=self.num_nodes[index],
+            num_relation=self.num_relation,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def _get_cumulative(self, edge_list, num_nodes, num_edges, offsets):
         if edge_list is None:
@@ -1390,7 +1667,10 @@ class PackedGraph(Graph):
         num_edges = torch.as_tensor(num_edges, device=edge_list.device)
         num_edge = num_edges.sum()
         if num_edge != len(edge_list):
-            raise ValueError("Sum of `num_edges` is %d, but found %d edges in `edge_list`" % (num_edge, len(edge_list)))
+            raise ValueError(
+                "Sum of `num_edges` is %d, but found %d edges in `edge_list`"
+                % (num_edge, len(edge_list))
+            )
         num_cum_edges = num_edges.cumsum(0)
 
         if offsets is None:
@@ -1402,7 +1682,11 @@ class PackedGraph(Graph):
         if num_nodes is None:
             num_nodes = []
             for num_edge, num_cum_edge in zip(num_edges, num_cum_edges):
-                num_nodes.append(self._maybe_num_node(_edge_list[num_cum_edge - num_edge: num_cum_edge]))
+                num_nodes.append(
+                    self._maybe_num_node(
+                        _edge_list[num_cum_edge - num_edge : num_cum_edge]
+                    )
+                )
         num_nodes = torch.as_tensor(num_nodes, device=edge_list.device)
         num_cum_nodes = num_nodes.cumsum(0)
 
@@ -1412,13 +1696,22 @@ class PackedGraph(Graph):
         x = torch.zeros(num_cum_xs[-1], dtype=torch.long, device=self.device)
         x[index] = 1
         num_cum_indexes = x.cumsum(0)
-        num_cum_indexes = torch.cat([torch.zeros(1, dtype=torch.long, device=self.device), num_cum_indexes])
+        num_cum_indexes = torch.cat(
+            [torch.zeros(1, dtype=torch.long, device=self.device), num_cum_indexes]
+        )
         new_num_cum_xs = num_cum_indexes[num_cum_xs]
         prepend = torch.zeros(1, dtype=torch.long, device=self.device)
         new_num_xs = torch.diff(new_num_cum_xs, prepend=prepend)
         return new_num_xs
 
-    def data_mask(self, node_index=None, edge_index=None, graph_index=None, include=None, exclude=None):
+    def data_mask(
+        self,
+        node_index=None,
+        edge_index=None,
+        graph_index=None,
+        include=None,
+        exclude=None,
+    ):
         data_dict, meta_dict = self.data_by_meta(include, exclude)
         node_mapping = None
         edge_mapping = None
@@ -1468,7 +1761,9 @@ class PackedGraph(Graph):
             graph = self.repeat_interleave(count)
             index_order = index.argsort()
             order = torch.zeros_like(index)
-            order[index_order] = torch.arange(len(index), dtype=torch.long, device=self.device)
+            order[index_order] = torch.arange(
+                len(index), dtype=torch.long, device=self.device
+            )
             return graph.subbatch(order)
 
         return self.subbatch(index)
@@ -1545,9 +1840,16 @@ class PackedGraph(Graph):
         else:
             data_dict, meta_dict = self.data_mask(edge_index=edge_index)
 
-        return type(self)(edge_list[edge_index], edge_weight=self.edge_weight[edge_index], num_nodes=num_nodes,
-                          num_edges=num_edges, num_relation=self.num_relation, offsets=offsets[edge_index],
-                          meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            edge_list[edge_index],
+            edge_weight=self.edge_weight[edge_index],
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_relation=self.num_relation,
+            offsets=offsets[edge_index],
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def edge_mask(self, index):
         """
@@ -1563,9 +1865,16 @@ class PackedGraph(Graph):
         data_dict, meta_dict = self.data_mask(edge_index=index)
         num_edges = self._get_num_xs(index, self.num_cum_edges)
 
-        return type(self)(self.edge_list[index], edge_weight=self.edge_weight[index], num_nodes=self.num_nodes,
-                          num_edges=num_edges, num_relation=self.num_relation, offsets=self._offsets[index],
-                          meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            self.edge_list[index],
+            edge_weight=self.edge_weight[index],
+            num_nodes=self.num_nodes,
+            num_edges=num_edges,
+            num_relation=self.num_relation,
+            offsets=self._offsets[index],
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def graph_mask(self, index, compact=False):
         """
@@ -1581,14 +1890,18 @@ class PackedGraph(Graph):
             PackedGraph
         """
         index = self._standarize_index(index, self.batch_size)
-        graph_mapping = -torch.ones(self.batch_size, dtype=torch.long, device=self.device)
+        graph_mapping = -torch.ones(
+            self.batch_size, dtype=torch.long, device=self.device
+        )
         graph_mapping[index] = torch.arange(len(index), device=self.device)
 
         node_index = graph_mapping[self.node2graph] >= 0
         node_index = self._standarize_index(node_index, self.num_node)
         mapping = -torch.ones(self.num_node, dtype=torch.long, device=self.device)
         if compact:
-            key = graph_mapping[self.node2graph[node_index]] * self.num_node + node_index
+            key = (
+                graph_mapping[self.node2graph[node_index]] * self.num_node + node_index
+            )
             order = key.argsort()
             node_index = node_index[order]
             mapping[node_index] = torch.arange(len(node_index), device=self.device)
@@ -1603,7 +1916,9 @@ class PackedGraph(Graph):
         edge_index = (edge_list[:, :2] >= 0).all(dim=-1)
         edge_index = self._standarize_index(edge_index, self.num_edge)
         if compact:
-            key = graph_mapping[self.edge2graph[edge_index]] * self.num_edge + edge_index
+            key = (
+                graph_mapping[self.edge2graph[edge_index]] * self.num_edge + edge_index
+            )
             order = key.argsort()
             edge_index = edge_index[order]
             num_edges = self.num_edges[index]
@@ -1613,13 +1928,22 @@ class PackedGraph(Graph):
         offsets = self._get_offsets(num_nodes, num_edges)
 
         if compact:
-            data_dict, meta_dict = self.data_mask(node_index, edge_index, graph_index=index)
+            data_dict, meta_dict = self.data_mask(
+                node_index, edge_index, graph_index=index
+            )
         else:
             data_dict, meta_dict = self.data_mask(edge_index=edge_index)
 
-        return type(self)(edge_list[edge_index], edge_weight=self.edge_weight[edge_index], num_nodes=num_nodes,
-                          num_edges=num_edges, num_relation=self.num_relation, offsets=offsets,
-                          meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            edge_list[edge_index],
+            edge_weight=self.edge_weight[edge_index],
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_relation=self.num_relation,
+            offsets=offsets,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def subbatch(self, index):
         """
@@ -1664,7 +1988,10 @@ class PackedGraph(Graph):
         local_inner_size = degree_in.repeat_interleave(size)
         edge_in_offset = (degree_out.cumsum(0) - degree_out).repeat_interleave(size)
         edge_out_offset = (degree_in.cumsum(0) - degree_in).repeat_interleave(size)
-        edge_in_index = torch.div(local_index, local_inner_size, rounding_mode="floor") + edge_in_offset
+        edge_in_index = (
+            torch.div(local_index, local_inner_size, rounding_mode="floor")
+            + edge_in_offset
+        )
         edge_out_index = local_index % local_inner_size + edge_out_offset
 
         edge_in = edge_in[edge_in_index]
@@ -1675,8 +2002,13 @@ class PackedGraph(Graph):
         num_edges = scatter_add(size, self.node2graph, dim=0, dim_size=self.batch_size)
         offsets = self._get_offsets(num_nodes, num_edges)
 
-        return PackedGraph(edge_list, num_nodes=num_nodes, num_edges=num_edges, offsets=offsets,
-                           node_feature=node_feature)
+        return PackedGraph(
+            edge_list,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            offsets=offsets,
+            node_feature=node_feature,
+        )
 
     def undirected(self, add_inverse=False):
         """
@@ -1697,28 +2029,56 @@ class PackedGraph(Graph):
         edge_list = torch.stack([self.edge_list, edge_list], dim=1).flatten(0, 1)
         offsets = self._offsets.unsqueeze(-1).expand(-1, 2).flatten()
 
-        index = torch.arange(self.num_edge, device=self.device).unsqueeze(-1).expand(-1, 2).flatten()
-        data_dict, meta_dict = self.data_mask(edge_index=index, exclude="edge reference")
+        index = (
+            torch.arange(self.num_edge, device=self.device)
+            .unsqueeze(-1)
+            .expand(-1, 2)
+            .flatten()
+        )
+        data_dict, meta_dict = self.data_mask(
+            edge_index=index, exclude="edge reference"
+        )
 
-        return type(self)(edge_list, edge_weight=self.edge_weight[index], num_nodes=self.num_nodes,
-                          num_edges=self.num_edges * 2, num_relation=num_relation, offsets=offsets,
-                          meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            edge_list,
+            edge_weight=self.edge_weight[index],
+            num_nodes=self.num_nodes,
+            num_edges=self.num_edges * 2,
+            num_relation=num_relation,
+            offsets=offsets,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def detach(self):
         """
         Detach this packed graph.
         """
-        return type(self)(self.edge_list.detach(), edge_weight=self.edge_weight.detach(),
-                          num_nodes=self.num_nodes, num_edges=self.num_edges, num_relation=self.num_relation,
-                          offsets=self._offsets, meta_dict=self.meta_dict, **utils.detach(self.data_dict))
+        return type(self)(
+            self.edge_list.detach(),
+            edge_weight=self.edge_weight.detach(),
+            num_nodes=self.num_nodes,
+            num_edges=self.num_edges,
+            num_relation=self.num_relation,
+            offsets=self._offsets,
+            meta_dict=self.meta_dict,
+            **utils.detach(self.data_dict)
+        )
 
     def clone(self):
         """
         Clone this packed graph.
         """
-        return type(self)(self.edge_list.clone(), edge_weight=self.edge_weight.clone(),
-                          num_nodes=self.num_nodes, num_edges=self.num_edges, num_relation=self.num_relation,
-                          offsets=self._offsets, meta_dict=self.meta_dict, **utils.clone(self.data_dict))
+        return type(self)(
+            self.edge_list.clone(),
+            edge_weight=self.edge_weight.clone(),
+            num_nodes=self.num_nodes,
+            num_edges=self.num_edges,
+            num_relation=self.num_relation,
+            offsets=self._offsets,
+            meta_dict=self.meta_dict,
+            **utils.clone(self.data_dict)
+        )
 
     def cuda(self, *args, **kwargs):
         """
@@ -1731,10 +2091,16 @@ class PackedGraph(Graph):
         if edge_list is self.edge_list:
             return self
         else:
-            return type(self)(edge_list, edge_weight=self.edge_weight,
-                              num_nodes=self.num_nodes, num_edges=self.num_edges, num_relation=self.num_relation,
-                              offsets=self._offsets, meta_dict=self.meta_dict,
-                              **utils.cuda(self.data_dict, *args, **kwargs))
+            return type(self)(
+                edge_list,
+                edge_weight=self.edge_weight,
+                num_nodes=self.num_nodes,
+                num_edges=self.num_edges,
+                num_relation=self.num_relation,
+                offsets=self._offsets,
+                meta_dict=self.meta_dict,
+                **utils.cuda(self.data_dict, *args, **kwargs)
+            )
 
     def cpu(self):
         """
@@ -1747,21 +2113,38 @@ class PackedGraph(Graph):
         if edge_list is self.edge_list:
             return self
         else:
-            return type(self)(edge_list, edge_weight=self.edge_weight,
-                              num_nodes=self.num_nodes, num_edges=self.num_edges, num_relation=self.num_relation,
-                              offsets=self._offsets, meta_dict=self.meta_dict, **utils.cpu(self.data_dict))
+            return type(self)(
+                edge_list,
+                edge_weight=self.edge_weight,
+                num_nodes=self.num_nodes,
+                num_edges=self.num_edges,
+                num_relation=self.num_relation,
+                offsets=self._offsets,
+                meta_dict=self.meta_dict,
+                **utils.cpu(self.data_dict)
+            )
 
     def __repr__(self):
-        fields = ["batch_size=%d" % self.batch_size,
-                  "num_nodes=%s" % pretty.long_array(self.num_nodes.tolist()),
-                  "num_edges=%s" % pretty.long_array(self.num_edges.tolist())]
+        fields = [
+            "batch_size=%d" % self.batch_size,
+            "num_nodes=%s" % pretty.long_array(self.num_nodes.tolist()),
+            "num_edges=%s" % pretty.long_array(self.num_edges.tolist()),
+        ]
         if self.num_relation is not None:
             fields.append("num_relation=%d" % self.num_relation)
         if self.device.type != "cpu":
             fields.append("device='%s'" % self.device)
         return "%s(%s)" % (self.__class__.__name__, ", ".join(fields))
 
-    def visualize(self, titles=None, save_file=None, figure_size=(3, 3), layout="spring", num_row=None, num_col=None):
+    def visualize(
+        self,
+        titles=None,
+        save_file=None,
+        figure_size=(3, 3),
+        layout="spring",
+        num_row=None,
+        num_col=None,
+    ):
         """
         Visualize the packed graphs with matplotlib.
 
@@ -1782,10 +2165,12 @@ class PackedGraph(Graph):
         """
         if titles is None:
             graph = self.get_item(0)
-            titles = ["%s %d" % (type(graph).__name__, i) for i in range(self.batch_size)]
+            titles = [
+                "%s %d" % (type(graph).__name__, i) for i in range(self.batch_size)
+            ]
         if num_col is None:
             if num_row is None:
-                num_col = math.ceil(self.batch_size ** 0.5)
+                num_col = math.ceil(self.batch_size**0.5)
             else:
                 num_col = math.ceil(self.batch_size / num_row)
         if num_row is None:
@@ -1820,8 +2205,11 @@ def cat(graphs):
     pack_num_edges = torch.stack([graph.num_edge for graph in graphs])
     pack_num_cum_edges = pack_num_edges.cumsum(0)
     graph_index = pack_num_cum_edges < len(edge_list)
-    pack_offsets = scatter_add(pack_num_nodes[graph_index], pack_num_cum_edges[graph_index],
-                               dim_size=len(edge_list))
+    pack_offsets = scatter_add(
+        pack_num_nodes[graph_index],
+        pack_num_cum_edges[graph_index],
+        dim_size=len(edge_list),
+    )
     pack_offsets = pack_offsets.cumsum(0)
 
     edge_list[:, :2] += pack_offsets.unsqueeze(-1)
@@ -1844,6 +2232,13 @@ def cat(graphs):
     for k in keys:
         data_dict[k] = torch.cat([graph.data_dict[k] for graph in graphs])
 
-    return type(graphs[0])(edge_list, edge_weight=edge_weight,
-                           num_nodes=num_nodes, num_edges=num_edges, num_relation=num_relation, offsets=offsets,
-                           meta_dict=meta_dict, **data_dict)
+    return type(graphs[0])(
+        edge_list,
+        edge_weight=edge_weight,
+        num_nodes=num_nodes,
+        num_edges=num_edges,
+        num_relation=num_relation,
+        offsets=offsets,
+        meta_dict=meta_dict,
+        **data_dict
+    )

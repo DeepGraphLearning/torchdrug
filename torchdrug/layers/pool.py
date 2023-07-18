@@ -26,8 +26,16 @@ class DiffPool(nn.Module):
     tau = 1
     eps = 1e-10
 
-    def __init__(self, input_dim, output_node, feature_layer=None, pool_layer=None, loss_weight=1, zero_diagonal=False,
-                 sparse=False):
+    def __init__(
+        self,
+        input_dim,
+        output_node,
+        feature_layer=None,
+        pool_layer=None,
+        loss_weight=1,
+        zero_diagonal=False,
+        sparse=False,
+    ):
         super(DiffPool, self).__init__()
         self.input_dim = input_dim
         self.output_dim = feature_layer.output_dim
@@ -73,7 +81,9 @@ class DiffPool(nn.Module):
             new_graph, output = self.dense_pool(graph, feature, assignment)
 
         if all_loss is not None:
-            prob = scatter_mean(assignment, graph.node2graph, dim=0, dim_size=graph.batch_size)
+            prob = scatter_mean(
+                assignment, graph.node2graph, dim=0, dim_size=graph.batch_size
+            )
             entropy = -(prob * (prob + self.eps).log()).sum(dim=-1)
             entropy = entropy.mean()
             metric["assignment entropy"] = entropy
@@ -96,17 +106,34 @@ class DiffPool(nn.Module):
         adjacency = scatter_add(x, graph.node2graph, dim=0, dim_size=graph.batch_size)
         # S^T X
         x = torch.einsum("na, nd -> nad", assignment, input)
-        output = scatter_add(x, graph.node2graph, dim=0, dim_size=graph.batch_size).flatten(0, 1)
+        output = scatter_add(
+            x, graph.node2graph, dim=0, dim_size=graph.batch_size
+        ).flatten(0, 1)
 
-        index = torch.arange(self.output_node, device=graph.device).expand(len(graph), self.output_node, -1)
+        index = torch.arange(self.output_node, device=graph.device).expand(
+            len(graph), self.output_node, -1
+        )
         edge_list = torch.stack([index.transpose(-1, -2), index], dim=-1).flatten(0, -2)
         edge_weight = adjacency.flatten()
         if isinstance(graph, data.PackedGraph):
-            num_nodes = torch.ones(len(graph), dtype=torch.long, device=input.device) * self.output_node
-            num_edges = torch.ones(len(graph), dtype=torch.long, device=input.device) * self.output_node ** 2
-            graph = data.PackedGraph(edge_list, edge_weight=edge_weight, num_nodes=num_nodes, num_edges=num_edges)
+            num_nodes = (
+                torch.ones(len(graph), dtype=torch.long, device=input.device)
+                * self.output_node
+            )
+            num_edges = (
+                torch.ones(len(graph), dtype=torch.long, device=input.device)
+                * self.output_node**2
+            )
+            graph = data.PackedGraph(
+                edge_list,
+                edge_weight=edge_weight,
+                num_nodes=num_nodes,
+                num_edges=num_edges,
+            )
         else:
-            graph = data.Graph(edge_list, edge_weight=edge_weight, num_node=self.output_node)
+            graph = data.Graph(
+                edge_list, edge_weight=edge_weight, num_node=self.output_node
+            )
         return graph, output
 
     def sparse_pool(self, graph, input, assignment):
@@ -114,15 +141,27 @@ class DiffPool(nn.Module):
         edge_list = graph.edge_list[:, :2]
         edge_list = assignment[edge_list]
         pooled_node = graph.node2graph * self.output_node + assignment
-        output = scatter_add(input, pooled_node, dim=0, dim_size=graph.batch_size * self.output_node)
+        output = scatter_add(
+            input, pooled_node, dim=0, dim_size=graph.batch_size * self.output_node
+        )
 
         edge_weight = graph.edge_weight
         if isinstance(graph, data.PackedGraph):
-            num_nodes = torch.ones(len(graph), dtype=torch.long, device=input.device) * self.output_node
+            num_nodes = (
+                torch.ones(len(graph), dtype=torch.long, device=input.device)
+                * self.output_node
+            )
             num_edges = graph.num_edges
-            graph = data.PackedGraph(edge_list, edge_weight=edge_weight, num_nodes=num_nodes, num_edges=num_edges)
+            graph = data.PackedGraph(
+                edge_list,
+                edge_weight=edge_weight,
+                num_nodes=num_nodes,
+                num_edges=num_edges,
+            )
         else:
-            graph = data.Graph(edge_list, edge_weight=edge_weight, num_node=self.output_node)
+            graph = data.Graph(
+                edge_list, edge_weight=edge_weight, num_node=self.output_node
+            )
         return graph, output
 
 
@@ -145,10 +184,25 @@ class MinCutPool(DiffPool):
 
     eps = 1e-10
 
-    def __init__(self, input_dim, output_node, feature_layer=None, pool_layer=None, loss_weight=1, zero_diagonal=True,
-                 sparse=False):
-        super(MinCutPool, self).__init__(input_dim, output_node, feature_layer, pool_layer, loss_weight, zero_diagonal,
-                                         sparse)
+    def __init__(
+        self,
+        input_dim,
+        output_node,
+        feature_layer=None,
+        pool_layer=None,
+        loss_weight=1,
+        zero_diagonal=True,
+        sparse=False,
+    ):
+        super(MinCutPool, self).__init__(
+            input_dim,
+            output_node,
+            feature_layer,
+            pool_layer,
+            loss_weight,
+            zero_diagonal,
+            sparse,
+        )
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """
@@ -182,9 +236,15 @@ class MinCutPool(DiffPool):
         if all_loss is not None:
             edge_list = new_graph.edge_list
             is_diagonal = edge_list[:, 0] == edge_list[:, 1]
-            num_intra = scatter_add(new_graph.edge_weight[is_diagonal], new_graph.edge2graph[is_diagonal],
-                                    dim=0, dim_size=new_graph.batch_size)
-            x = torch.einsum("na, n, nc -> nac", assignment, graph.degree_in, assignment)
+            num_intra = scatter_add(
+                new_graph.edge_weight[is_diagonal],
+                new_graph.edge2graph[is_diagonal],
+                dim=0,
+                dim_size=new_graph.batch_size,
+            )
+            x = torch.einsum(
+                "na, n, nc -> nac", assignment, graph.degree_in, assignment
+            )
             x = scatter_add(x, graph.node2graph, dim=0, dim_size=graph.batch_size)
             num_all = torch.einsum("baa -> b", x)
             cut_loss = (1 - num_intra / (num_all + self.eps)).mean()
@@ -193,7 +253,9 @@ class MinCutPool(DiffPool):
             x = torch.einsum("na, nc -> nac", assignment, assignment)
             x = scatter_add(x, graph.node2graph, dim=0, dim_size=graph.batch_size)
             x = x / x.flatten(-2).norm(dim=-1, keepdim=True).unsqueeze(-1)
-            x = x - torch.eye(self.output_node, device=x.device) / (self.output_node ** 0.5)
+            x = x - torch.eye(self.output_node, device=x.device) / (
+                self.output_node**0.5
+            )
             regularization = x.flatten(-2).norm(dim=-1).mean()
             metric["orthogonal regularization"] = regularization
             if self.loss_weight > 0:

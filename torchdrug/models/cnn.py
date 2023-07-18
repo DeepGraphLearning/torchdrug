@@ -31,9 +31,20 @@ class ProteinResNet(nn.Module, core.Configurable):
         readout (str, optional): readout function. Available functions are ``sum``, ``mean`` and ``attention``.
     """
 
-    def __init__(self, input_dim, hidden_dims, kernel_size=3, stride=1, padding=1,
-                 activation="gelu", short_cut=False, concat_hidden=False, layer_norm=False,
-                 dropout=0, readout="attention"):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dims,
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        activation="gelu",
+        short_cut=False,
+        concat_hidden=False,
+        layer_norm=False,
+        dropout=0,
+        readout="attention",
+    ):
         super(ProteinResNet, self).__init__()
         if not isinstance(hidden_dims, Sequence):
             hidden_dims = [hidden_dims]
@@ -57,8 +68,16 @@ class ProteinResNet(nn.Module, core.Configurable):
 
         self.layers = nn.ModuleList()
         for i in range(len(self.dims) - 1):
-            self.layers.append(layers.ProteinResNetBlock(self.dims[i], self.dims[i + 1], kernel_size,
-                                                         stride, padding, activation))
+            self.layers.append(
+                layers.ProteinResNetBlock(
+                    self.dims[i],
+                    self.dims[i + 1],
+                    kernel_size,
+                    stride,
+                    padding,
+                    activation,
+                )
+            )
 
         if readout == "sum":
             self.readout = layers.SumReadout("residue")
@@ -84,7 +103,9 @@ class ProteinResNet(nn.Module, core.Configurable):
                 residue representations of shape :math:`(|V_{res}|, d)`, graph representations of shape :math:`(n, d)`
         """
         input = graph.residue_feature.float()
-        input, mask = functional.variadic_to_padded(input, graph.num_residues, value=self.padding_id)
+        input, mask = functional.variadic_to_padded(
+            input, graph.num_residues, value=self.padding_id
+        )
         mask = mask.unsqueeze(-1)
 
         input = self.embedding(input) + self.position_embedding(input).unsqueeze(0)
@@ -93,10 +114,10 @@ class ProteinResNet(nn.Module, core.Configurable):
         if self.dropout:
             input = self.dropout(input)
         input = input * mask
-        
+
         hiddens = []
         layer_input = input
-        
+
         for layer in self.layers:
             hidden = layer(layer_input, mask)
             if self.short_cut and hidden.shape == layer_input.shape:
@@ -111,11 +132,8 @@ class ProteinResNet(nn.Module, core.Configurable):
 
         residue_feature = functional.padded_to_variadic(hidden, graph.num_residues)
         graph_feature = self.readout(graph, residue_feature)
-        
-        return {
-            "graph_feature": graph_feature,
-            "residue_feature": residue_feature
-        }
+
+        return {"graph_feature": graph_feature, "residue_feature": residue_feature}
 
 
 @R.register("models.ProteinConvolutionalNetwork")
@@ -138,8 +156,18 @@ class ProteinConvolutionalNetwork(nn.Module, core.Configurable):
         readout (str, optional): readout function. Available functions are ``sum``, ``mean``, ``max`` and ``attention``.
     """
 
-    def __init__(self, input_dim, hidden_dims, kernel_size=3, stride=1, padding=1,
-                activation='relu', short_cut=False, concat_hidden=False, readout="max"):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dims,
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        activation="relu",
+        short_cut=False,
+        concat_hidden=False,
+        readout="max",
+    ):
         super(ProteinConvolutionalNetwork, self).__init__()
         if not isinstance(hidden_dims, Sequence):
             hidden_dims = [hidden_dims]
@@ -158,7 +186,7 @@ class ProteinConvolutionalNetwork(nn.Module, core.Configurable):
         self.layers = nn.ModuleList()
         for i in range(len(self.dims) - 1):
             self.layers.append(
-                nn.Conv1d(self.dims[i], self.dims[i+1], kernel_size, stride, padding)
+                nn.Conv1d(self.dims[i], self.dims[i + 1], kernel_size, stride, padding)
             )
 
         if readout == "sum":
@@ -187,11 +215,13 @@ class ProteinConvolutionalNetwork(nn.Module, core.Configurable):
                 residue representations of shape :math:`(|V_{res}|, d)`, graph representations of shape :math:`(n, d)`
         """
         input = graph.residue_feature.float()
-        input = functional.variadic_to_padded(input, graph.num_residues, value=self.padding_id)[0]
-        
+        input = functional.variadic_to_padded(
+            input, graph.num_residues, value=self.padding_id
+        )[0]
+
         hiddens = []
         layer_input = input
-        
+
         for layer in self.layers:
             hidden = layer(layer_input.transpose(1, 2)).transpose(1, 2)
             hidden = self.activation(hidden)
@@ -207,8 +237,5 @@ class ProteinConvolutionalNetwork(nn.Module, core.Configurable):
 
         residue_feature = functional.padded_to_variadic(hidden, graph.num_residues)
         graph_feature = self.readout(graph, residue_feature)
-        
-        return {
-            "graph_feature": graph_feature,
-            "residue_feature": residue_feature
-        }
+
+        return {"graph_feature": graph_feature, "residue_feature": residue_feature}

@@ -28,8 +28,19 @@ class GraphAttentionNetwork(nn.Module, core.Configurable):
         readout (str, optional): readout function. Available functions are ``sum`` and ``mean``.
     """
 
-    def __init__(self, input_dim, hidden_dims, edge_input_dim=None, num_head=1, negative_slope=0.2, short_cut=False,
-                 batch_norm=False, activation="relu", concat_hidden=False, readout="sum"):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dims,
+        edge_input_dim=None,
+        num_head=1,
+        negative_slope=0.2,
+        short_cut=False,
+        batch_norm=False,
+        activation="relu",
+        concat_hidden=False,
+        readout="sum",
+    ):
         super(GraphAttentionNetwork, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -42,8 +53,17 @@ class GraphAttentionNetwork(nn.Module, core.Configurable):
 
         self.layers = nn.ModuleList()
         for i in range(len(self.dims) - 1):
-            self.layers.append(layers.GraphAttentionConv(self.dims[i], self.dims[i + 1], edge_input_dim, num_head,
-                                                         negative_slope, batch_norm, activation))
+            self.layers.append(
+                layers.GraphAttentionConv(
+                    self.dims[i],
+                    self.dims[i + 1],
+                    edge_input_dim,
+                    num_head,
+                    negative_slope,
+                    batch_norm,
+                    activation,
+                )
+            )
 
         if readout == "sum":
             self.readout = layers.SumReadout()
@@ -82,7 +102,4 @@ class GraphAttentionNetwork(nn.Module, core.Configurable):
             node_feature = hiddens[-1]
         graph_feature = self.readout(graph, node_feature)
 
-        return {
-            "graph_feature": graph_feature,
-            "node_feature": node_feature
-        }
+        return {"graph_feature": graph_feature, "node_feature": node_feature}

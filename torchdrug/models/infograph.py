@@ -30,7 +30,14 @@ class InfoGraph(nn.Module, core.Configurable):
             and a transfer loss is applied between the two encoders.
     """
 
-    def __init__(self, model, num_mlp_layer=2, activation="relu", loss_weight=1, separate_model=False):
+    def __init__(
+        self,
+        model,
+        num_mlp_layer=2,
+        activation="relu",
+        loss_weight=1,
+        separate_model=False,
+    ):
         super(InfoGraph, self).__init__()
         self.model = model
         self.separate_model = separate_model
@@ -39,10 +46,14 @@ class InfoGraph(nn.Module, core.Configurable):
 
         if separate_model:
             self.unsupervised_model = copy.deepcopy(model)
-            self.transfer_mi = layers.MutualInformation(model.output_dim, num_mlp_layer, activation)
+            self.transfer_mi = layers.MutualInformation(
+                model.output_dim, num_mlp_layer, activation
+            )
         else:
             self.unsupervised_model = model
-        self.unsupervised_mi = layers.MutualInformation(model.output_dim, num_mlp_layer, activation)
+        self.unsupervised_mi = layers.MutualInformation(
+            model.output_dim, num_mlp_layer, activation
+        )
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """
@@ -64,7 +75,9 @@ class InfoGraph(nn.Module, core.Configurable):
         if all_loss is not None:
             if self.separate_model:
                 unsupervised_output = self.unsupervised_model(graph, input)
-                mutual_info = self.transfer_mi(output["graph_feature"], unsupervised_output["graph_feature"])
+                mutual_info = self.transfer_mi(
+                    output["graph_feature"], unsupervised_output["graph_feature"]
+                )
 
                 metric["distillation mutual information"] = mutual_info
                 if self.loss_weight > 0:
@@ -76,8 +89,11 @@ class InfoGraph(nn.Module, core.Configurable):
             node_index = torch.arange(graph.num_node, device=graph.device)
             pair_index = torch.stack([graph_index, node_index], dim=-1)
 
-            mutual_info = self.unsupervised_mi(unsupervised_output["graph_feature"],
-                                               unsupervised_output["node_feature"], pair_index)
+            mutual_info = self.unsupervised_mi(
+                unsupervised_output["graph_feature"],
+                unsupervised_output["node_feature"],
+                pair_index,
+            )
 
             metric["graph-node mutual information"] = mutual_info
             if self.loss_weight > 0:
@@ -105,14 +121,24 @@ class MultiviewContrast(nn.Module, core.Configurable):
 
     eps = 1e-10
 
-    def __init__(self, model, crop_funcs, noise_funcs, num_mlp_layer=2, activation="relu", tau=0.07):
+    def __init__(
+        self,
+        model,
+        crop_funcs,
+        noise_funcs,
+        num_mlp_layer=2,
+        activation="relu",
+        tau=0.07,
+    ):
         super(MultiviewContrast, self).__init__()
         self.model = model
         self.crop_funcs = crop_funcs
         self.noise_funcs = noise_funcs
         self.tau = tau
 
-        self.mlp = layers.MLP(model.output_dim, [model.output_dim] * num_mlp_layer, activation=activation)
+        self.mlp = layers.MLP(
+            model.output_dim, [model.output_dim] * num_mlp_layer, activation=activation
+        )
 
     def forward(self, graph, input, all_loss=None, metric=None):
         """
@@ -135,12 +161,18 @@ class MultiviewContrast(nn.Module, core.Configurable):
         graph = copy.copy(graph)
         with graph.residue():
             graph.input = input
-        crop_func1, noise_func1 = random.sample(self.crop_funcs, 1)[0], random.sample(self.noise_funcs, 1)[0]
+        crop_func1, noise_func1 = (
+            random.sample(self.crop_funcs, 1)[0],
+            random.sample(self.noise_funcs, 1)[0],
+        )
         graph1 = crop_func1(graph)
         graph1 = noise_func1(graph1)
         output1 = self.model(graph1, graph1.input)
 
-        crop_func2, noise_func2 = random.sample(self.crop_funcs, 1)[0], random.sample(self.noise_funcs, 1)[0]
+        crop_func2, noise_func2 = (
+            random.sample(self.crop_funcs, 1)[0],
+            random.sample(self.noise_funcs, 1)[0],
+        )
         graph2 = crop_func2(graph)
         graph2 = noise_func2(graph2)
         output2 = self.model(graph2, graph2.input)
@@ -152,12 +184,18 @@ class MultiviewContrast(nn.Module, core.Configurable):
 
             score = F.cosine_similarity(x.unsqueeze(1), y.unsqueeze(0), dim=-1)
             score = score / self.tau
-            is_positive = torch.diag(torch.ones(len(x), dtype=torch.bool, device=self.device))
+            is_positive = torch.diag(
+                torch.ones(len(x), dtype=torch.bool, device=self.device)
+            )
             mutual_info = (score[is_positive] - score.logsumexp(dim=-1)).mean()
 
             metric["multiview mutual information"] = mutual_info
             all_loss -= mutual_info
 
-        output = {"node_feature1": output1["node_feature"], "graph_feature1": output1["graph_feature"],
-                  "node_feature2": output2["node_feature"], "graph_feature2": output2["graph_feature"]}
+        output = {
+            "node_feature1": output1["node_feature"],
+            "graph_feature1": output1["graph_feature"],
+            "node_feature2": output2["node_feature"],
+            "graph_feature2": output2["graph_feature"],
+        }
         return output

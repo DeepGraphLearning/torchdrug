@@ -15,7 +15,6 @@ from torchdrug.core import Registry as R
 
 
 class PatchedModule(nn.Module):
-
     def __init__(self):
         super(PatchedModule, self).__init__()
         # TODO: these hooks are bugged.
@@ -36,7 +35,16 @@ class PatchedModule(nn.Module):
         return destination
 
     @classmethod
-    def load_graph_state_dict(cls, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs):
+    def load_graph_state_dict(
+        cls,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
         if "graph" not in local_metadata:
             return
 
@@ -50,7 +58,9 @@ class PatchedModule(nn.Module):
                 state_dict[prefix + name] = data.Graph.from_tensors(tensors)
                 print("successfully assigned %s" % (prefix + name))
             except:
-                error_msgs.append("Can't construct Graph `%s` from tensors in the state dict" % key)
+                error_msgs.append(
+                    "Can't construct Graph `%s` from tensors in the state dict" % key
+                )
         return state_dict
 
     @property
@@ -65,22 +75,29 @@ class PatchedModule(nn.Module):
         if persistent is False and isinstance(self, torch.jit.ScriptModule):
             raise RuntimeError("ScriptModule does not support non-persistent buffers")
 
-        if '_buffers' not in self.__dict__:
-            raise AttributeError(
-                "cannot assign buffer before Module.__init__() call")
+        if "_buffers" not in self.__dict__:
+            raise AttributeError("cannot assign buffer before Module.__init__() call")
         elif not isinstance(name, torch._six.string_classes):
-            raise TypeError("buffer name should be a string. "
-                            "Got {}".format(torch.typename(name)))
-        elif '.' in name:
-            raise KeyError("buffer name can't contain \".\"")
-        elif name == '':
-            raise KeyError("buffer name can't be empty string \"\"")
+            raise TypeError(
+                "buffer name should be a string. " "Got {}".format(torch.typename(name))
+            )
+        elif "." in name:
+            raise KeyError('buffer name can\'t contain "."')
+        elif name == "":
+            raise KeyError('buffer name can\'t be empty string ""')
         elif hasattr(self, name) and name not in self._buffers:
             raise KeyError("attribute '{}' already exists".format(name))
-        elif tensor is not None and not isinstance(tensor, torch.Tensor) and not isinstance(tensor, data.Graph):
-            raise TypeError("cannot assign '{}' object to buffer '{}' "
-                            "(torch.Tensor, torchdrug.data.Graph or None required)"
-                            .format(torch.typename(tensor), name))
+        elif (
+            tensor is not None
+            and not isinstance(tensor, torch.Tensor)
+            and not isinstance(tensor, data.Graph)
+        ):
+            raise TypeError(
+                "cannot assign '{}' object to buffer '{}' "
+                "(torch.Tensor, torchdrug.data.Graph or None required)".format(
+                    torch.typename(tensor), name
+                )
+            )
         else:
             self._buffers[name] = tensor
             if persistent:
@@ -90,7 +107,6 @@ class PatchedModule(nn.Module):
 
 
 class PatchedDistributedDataParallel(nn.parallel.DistributedDataParallel):
-
     def _distributed_broadcast_coalesced(self, tensors, buffer_size, *args, **kwargs):
         new_tensors = []
         for tensor in tensors:
@@ -99,22 +115,25 @@ class PatchedDistributedDataParallel(nn.parallel.DistributedDataParallel):
             if isinstance(tensor, torch.Tensor):
                 new_tensors.append(tensor)
         if new_tensors:
-            dist._broadcast_coalesced(self.process_group, new_tensors, buffer_size, *args, **kwargs)
+            dist._broadcast_coalesced(
+                self.process_group, new_tensors, buffer_size, *args, **kwargs
+            )
 
 
 def _get_build_directory(name, verbose):
-    root_extensions_directory = os.environ.get('TORCH_EXTENSIONS_DIR')
+    root_extensions_directory = os.environ.get("TORCH_EXTENSIONS_DIR")
     if root_extensions_directory is None:
         root_extensions_directory = cpp_extension.get_default_build_root()
 
     if verbose:
-        print('Using {} as PyTorch extensions root...'.format(
-            root_extensions_directory))
+        print(
+            "Using {} as PyTorch extensions root...".format(root_extensions_directory)
+        )
 
     build_directory = os.path.join(root_extensions_directory, name)
     if not os.path.exists(build_directory):
         if verbose:
-            print('Creating extension directory {}...'.format(build_directory))
+            print("Creating extension directory {}...".format(build_directory))
         # This is like mkdir -p, i.e. will also create parent directories.
         baton = cpp_extension.FileBaton("lock_%s" % name)
         if baton.try_acquire():

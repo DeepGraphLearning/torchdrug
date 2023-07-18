@@ -5,7 +5,9 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.BACE")
-@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(
+    data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields")
+)
 class BACE(data.MoleculeDataset):
     r"""
     Binary binding results for a set of inhibitors of human :math:`\beta`-secretase 1(BACE-1).
@@ -32,5 +34,10 @@ class BACE(data.MoleculeDataset):
 
         file_name = utils.download(self.url, path, md5=self.md5)
 
-        self.load_csv(file_name, smiles_field="mol", target_fields=self.target_fields,
-                      verbose=verbose, **kwargs)
+        self.load_csv(
+            file_name,
+            smiles_field="mol",
+            target_fields=self.target_fields,
+            verbose=verbose,
+            **kwargs
+        )

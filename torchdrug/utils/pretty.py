@@ -1,6 +1,7 @@
 separator = ">" * 30
 line = "-" * 30
 
+
 def time(seconds):
     """
     Format time as a string.

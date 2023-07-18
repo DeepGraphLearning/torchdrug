@@ -44,8 +44,16 @@ def reaction(reactants, products, save_file=None, figure_size=(3, 3), atom_map=F
         img.save(save_file)
 
 
-def highlight(molecule, atoms=None, bonds=None, atom_colors=None, bond_colors=None, save_file=None, figure_size=(3, 3),
-              atom_map=False):
+def highlight(
+    molecule,
+    atoms=None,
+    bonds=None,
+    atom_colors=None,
+    bond_colors=None,
+    save_file=None,
+    figure_size=(3, 3),
+    atom_map=False,
+):
     """
     Visualize a molecule with highlighted atoms or bonds.
 
@@ -73,8 +81,14 @@ def highlight(molecule, atoms=None, bonds=None, atom_colors=None, bond_colors=No
             atom.SetAtomMapNum(0)
     size = [100 * s for s in figure_size]
     canvas = Draw.rdMolDraw2D.MolDraw2DCairo(*size)
-    Draw.rdMolDraw2D.PrepareAndDrawMolecule(canvas, mol, highlightAtoms=atoms, highlightBonds=bonds,
-                                            highlightAtomColors=atom_colors, highlightBondColors=bond_colors)
+    Draw.rdMolDraw2D.PrepareAndDrawMolecule(
+        canvas,
+        mol,
+        highlightAtoms=atoms,
+        highlightBonds=bonds,
+        highlightAtomColors=atom_colors,
+        highlightBondColors=bond_colors,
+    )
 
     if save_file is None:
         stream = io.BytesIO(canvas.GetDrawingText())
@@ -84,8 +98,19 @@ def highlight(molecule, atoms=None, bonds=None, atom_colors=None, bond_colors=No
         canvas.WriteDrawingText(save_file)
 
 
-def echarts(graph, title=None, node_colors=None, edge_colors=None, node_labels=None, relation_labels=None,
-            node_types=None, type_labels=None, dynamic_size=False, dynamic_width=False, save_file=None):
+def echarts(
+    graph,
+    title=None,
+    node_colors=None,
+    edge_colors=None,
+    node_labels=None,
+    relation_labels=None,
+    node_types=None,
+    type_labels=None,
+    dynamic_size=False,
+    dynamic_width=False,
+    save_file=None,
+):
     """
     Visualize a graph in ECharts.
 
@@ -167,7 +192,9 @@ def echarts(graph, title=None, node_colors=None, edge_colors=None, node_labels=N
         "data_file": os.path.basename(json_file),
         "show_label": "true" if node_labels else "false",
     }
-    with open(os.path.join(path, "echarts.html"), "r") as fin, open(save_file, "w") as fout:
+    with open(os.path.join(path, "echarts.html"), "r") as fin, open(
+        save_file, "w"
+    ) as fout:
         template = jinja2.Template(fin.read())
         instance = template.render(variables)
         fout.write(instance)

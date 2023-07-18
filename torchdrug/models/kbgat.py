@@ -8,7 +8,9 @@ from torchdrug.core import Registry as R
 
 @R.register("models.KBGAT")
 @utils.copy_args(models.GraphAttentionNetwork)
-class KnowledgeBaseGraphAttentionNetwork(models.GraphAttentionNetwork, core.Configurable):
+class KnowledgeBaseGraphAttentionNetwork(
+    models.GraphAttentionNetwork, core.Configurable
+):
     """
     Knowledge Base Graph Attention Network proposed in
     `Learning Attention-based Embeddings for Relation Prediction in Knowledge Graphs`_.
@@ -25,8 +27,18 @@ class KnowledgeBaseGraphAttentionNetwork(models.GraphAttentionNetwork, core.Conf
         **kwargs
     """
 
-    def __init__(self, num_entity, num_relation, embedding_dim, hidden_dims, max_score=12, **kwargs):
-        super(KnowledgeBaseGraphAttentionNetwork, self).__init__(embedding_dim, hidden_dims, embedding_dim, **kwargs)
+    def __init__(
+        self,
+        num_entity,
+        num_relation,
+        embedding_dim,
+        hidden_dims,
+        max_score=12,
+        **kwargs
+    ):
+        super(KnowledgeBaseGraphAttentionNetwork, self).__init__(
+            embedding_dim, hidden_dims, embedding_dim, **kwargs
+        )
         self.num_entity = num_entity
         self.num_relation = num_relation
         self.max_score = max_score
@@ -37,8 +49,12 @@ class KnowledgeBaseGraphAttentionNetwork(models.GraphAttentionNetwork, core.Conf
         self.entity = nn.Parameter(torch.zeros(num_entity, embedding_dim))
         self.relation = nn.Parameter(torch.zeros(num_relation, embedding_dim))
 
-        nn.init.uniform_(self.entity, -max_score / embedding_dim, max_score / embedding_dim)
-        nn.init.uniform_(self.relation, -max_score / embedding_dim, max_score / embedding_dim)
+        nn.init.uniform_(
+            self.entity, -max_score / embedding_dim, max_score / embedding_dim
+        )
+        nn.init.uniform_(
+            self.relation, -max_score / embedding_dim, max_score / embedding_dim
+        )
 
     def forward(self, graph, h_index, t_index, r_index, all_loss=None, metric=None):
         """
@@ -55,8 +71,11 @@ class KnowledgeBaseGraphAttentionNetwork(models.GraphAttentionNetwork, core.Conf
         with graph.edge():
             graph.edge_feature = self.relation[graph.edge_list[:, 2]].detach()
 
-        output = super(KnowledgeBaseGraphAttentionNetwork, self).forward(graph, self.entity, all_loss, metric)
+        output = super(KnowledgeBaseGraphAttentionNetwork, self).forward(
+            graph, self.entity, all_loss, metric
+        )
         entity = self.linear(output["node_feature"])
-        score = functional.transe_score(entity, self.relation, h_index, t_index, r_index)
+        score = functional.transe_score(
+            entity, self.relation, h_index, t_index, r_index
+        )
         return self.max_score - score
-

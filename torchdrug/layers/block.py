@@ -20,7 +20,15 @@ class ProteinResNetBlock(nn.Module):
         activation (str or function, optional): activation function
     """
 
-    def __init__(self, input_dim, output_dim, kernel_size=3, stride=1, padding=1, activation="gelu"):
+    def __init__(
+        self,
+        input_dim,
+        output_dim,
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        activation="gelu",
+    ):
         super(ProteinResNetBlock, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -30,9 +38,13 @@ class ProteinResNetBlock(nn.Module):
         else:
             self.activation = activation
 
-        self.conv1 = nn.Conv1d(input_dim, output_dim, kernel_size, stride, padding, bias=False)
+        self.conv1 = nn.Conv1d(
+            input_dim, output_dim, kernel_size, stride, padding, bias=False
+        )
         self.layer_norm1 = nn.LayerNorm(output_dim)
-        self.conv2 = nn.Conv1d(output_dim, output_dim, kernel_size, stride, padding, bias=False)
+        self.conv2 = nn.Conv1d(
+            output_dim, output_dim, kernel_size, stride, padding, bias=False
+        )
         self.layer_norm2 = nn.LayerNorm(output_dim)
 
     def forward(self, input, mask):
@@ -45,7 +57,7 @@ class ProteinResNetBlock(nn.Module):
         """
         identity = input
 
-        input = input * mask    # (B, L, d)
+        input = input * mask  # (B, L, d)
         out = self.conv1(input.transpose(1, 2)).transpose(1, 2)
         out = self.layer_norm1(out)
         out = self.activation(out)
@@ -79,7 +91,8 @@ class SelfAttentionBlock(nn.Module):
         if hidden_dim % num_heads != 0:
             raise ValueError(
                 "The hidden size (%d) is not a multiple of the number of attention "
-                "heads (%d)" % (hidden_dim, num_heads))
+                "heads (%d)" % (hidden_dim, num_heads)
+            )
         self.hidden_dim = hidden_dim
         self.num_heads = num_heads
         self.head_size = hidden_dim // num_heads
@@ -125,26 +138,35 @@ class ProteinBERTBlock(nn.Module):
         activation (str or function, optional): activation function
     """
 
-    def __init__(self, input_dim, hidden_dim, num_heads, attention_dropout=0,
-                 hidden_dropout=0, activation="relu"):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dim,
+        num_heads,
+        attention_dropout=0,
+        hidden_dropout=0,
+        activation="relu",
+    ):
         super(ProteinBERTBlock, self).__init__()
         self.input_dim = input_dim
         self.num_heads = num_heads
         self.attention_dropout = attention_dropout
         self.hidden_dropout = hidden_dropout
         self.hidden_dim = hidden_dim
-        
+
         self.attention = SelfAttentionBlock(input_dim, num_heads, attention_dropout)
         self.linear1 = nn.Linear(input_dim, input_dim)
         self.dropout1 = nn.Dropout(hidden_dropout)
         self.layer_norm1 = nn.LayerNorm(input_dim)
 
-        self.intermediate = layers.MultiLayerPerceptron(input_dim, hidden_dim, activation=activation)
+        self.intermediate = layers.MultiLayerPerceptron(
+            input_dim, hidden_dim, activation=activation
+        )
 
         self.linear2 = nn.Linear(hidden_dim, input_dim)
         self.dropout2 = nn.Dropout(hidden_dropout)
         self.layer_norm2 = nn.LayerNorm(input_dim)
-            
+
     def forward(self, input, mask):
         """
         Perform a BERT-block transformation over the input.

@@ -26,7 +26,9 @@ class ConditionalFlow(nn.Module):
 
         if hidden_dims is None:
             hidden_dims = []
-        self.mlp = layers.MLP(condition_dim, list(hidden_dims) + [input_dim * 2], activation)
+        self.mlp = layers.MLP(
+            condition_dim, list(hidden_dims) + [input_dim * 2], activation
+        )
         self.rescale = nn.Parameter(torch.zeros(1))
 
     def forward(self, input, condition):
@@ -41,7 +43,7 @@ class ConditionalFlow(nn.Module):
             (Tensor, Tensor): latent representations, log-likelihood of the transformation
         """
         scale, bias = self.mlp(condition).chunk(2, dim=-1)
-        scale = (F.tanh(scale) * self.rescale)
+        scale = F.tanh(scale) * self.rescale
         output = (input + bias) * scale.exp()
         log_det = scale
         return output, log_det
@@ -58,7 +60,7 @@ class ConditionalFlow(nn.Module):
             (Tensor, Tensor): input representations, log-likelihood of the transformation
         """
         scale, bias = self.mlp(condition).chunk(2, dim=-1)
-        scale = (F.tanh(scale) * self.rescale)
+        scale = F.tanh(scale) * self.rescale
         output = latent / scale.exp() - bias
         log_det = scale
         return output, log_det

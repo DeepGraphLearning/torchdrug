@@ -41,18 +41,25 @@ class EdgePrediction(tasks.Task, core.Configurable):
 
         graph = self._get_directed(graph)
         node_in, node_out = graph.edge_list.t()[:2]
-        neg_index = (torch.rand(2, graph.num_edge, device=self.device) * graph.num_nodes[graph.edge2graph]).long()
-        neg_index = neg_index + (graph.num_cum_nodes - graph.num_nodes)[graph.edge2graph]
+        neg_index = (
+            torch.rand(2, graph.num_edge, device=self.device)
+            * graph.num_nodes[graph.edge2graph]
+        ).long()
+        neg_index = (
+            neg_index + (graph.num_cum_nodes - graph.num_nodes)[graph.edge2graph]
+        )
         node_in = torch.cat([node_in, neg_index[0]])
         node_out = torch.cat([node_out, neg_index[1]])
 
-        pred = torch.einsum("bd, bd -> b", node_feature[node_in], node_feature[node_out])
+        pred = torch.einsum(
+            "bd, bd -> b", node_feature[node_in], node_feature[node_out]
+        )
         return pred
 
     def target(self, batch):
         graph = batch["graph"]
         target = torch.ones(graph.num_edge, device=self.device)
-        target[len(target) // 2:] = 0
+        target[len(target) // 2 :] = 0
         return target
 
     def evaluate(self, pred, target):
@@ -95,7 +102,9 @@ class AttributeMasking(tasks.Task, core.Configurable):
         num_mlp_layer (int, optional): number of MLP layers
     """
 
-    def __init__(self, model, mask_rate=0.15, num_mlp_layer=2, graph_construction_model=None):
+    def __init__(
+        self, model, mask_rate=0.15, num_mlp_layer=2, graph_construction_model=None
+    ):
         super(AttributeMasking, self).__init__()
         self.model = model
         self.mask_rate = mask_rate
@@ -113,19 +122,26 @@ class AttributeMasking(tasks.Task, core.Configurable):
             num_label = constant.NUM_ATOM
         else:
             num_label = constant.NUM_AMINO_ACID
-        self.mlp = layers.MLP(model_output_dim, [model_output_dim] * (self.num_mlp_layer - 1) + [num_label])
+        self.mlp = layers.MLP(
+            model_output_dim,
+            [model_output_dim] * (self.num_mlp_layer - 1) + [num_label],
+        )
 
     def predict_and_target(self, batch, all_loss=None, metric=None):
         graph = batch["graph"]
         if self.graph_construction_model:
             graph = self.graph_construction_model.apply_node_layer(graph)
 
-        num_nodes = graph.num_nodes if self.view in ["atom", "node"] else graph.num_residues
+        num_nodes = (
+            graph.num_nodes if self.view in ["atom", "node"] else graph.num_residues
+        )
         num_cum_nodes = num_nodes.cumsum(0)
         num_samples = (num_nodes * self.mask_rate).long().clamp(1)
         num_sample = num_samples.sum()
         sample2graph = functional._size_to_index(num_samples)
-        node_index = (torch.rand(num_sample, device=self.device) * num_nodes[sample2graph]).long()
+        node_index = (
+            torch.rand(num_sample, device=self.device) * num_nodes[sample2graph]
+        ).long()
         node_index = node_index + (num_cum_nodes - num_nodes)[sample2graph]
 
         if self.view == "atom":
@@ -201,7 +217,9 @@ class ContextPrediction(tasks.Task, core.Configurable):
         num_negative (int, optional): number of negative samples per positive sample
     """
 
-    def __init__(self, model, context_model=None, k=5, r1=4, r2=7, readout="mean", num_negative=1):
+    def __init__(
+        self, model, context_model=None, k=5, r1=4, r2=7, readout="mean", num_negative=1
+    ):
         super(ContextPrediction, self).__init__()
         self.model = model
         self.k = k
@@ -222,15 +240,21 @@ class ContextPrediction(tasks.Task, core.Configurable):
             raise ValueError("Unknown readout `%s`" % readout)
 
     def substruct_and_context(self, graph):
-        center_index = (torch.rand(len(graph), device=self.device) * graph.num_nodes).long()
+        center_index = (
+            torch.rand(len(graph), device=self.device) * graph.num_nodes
+        ).long()
         center_index = center_index + graph.num_cum_nodes - graph.num_nodes
-        dist = torch.full((graph.num_node,), self.r2 + 1, dtype=torch.long, device=self.device)
+        dist = torch.full(
+            (graph.num_node,), self.r2 + 1, dtype=torch.long, device=self.device
+        )
         dist[center_index] = 0
 
         # single source shortest path
         node_in, node_out = graph.edge_list.t()[:2]
         for i in range(self.r2):
-            new_dist = scatter_min(dist[node_in], node_out, dim_size=graph.num_node)[0] + 1
+            new_dist = (
+                scatter_min(dist[node_in], node_out, dim_size=graph.num_node)[0] + 1
+            )
             dist = torch.min(dist, new_dist)
 
         substruct_mask = dist <= self.k
@@ -258,16 +282,26 @@ class ContextPrediction(tasks.Task, core.Configurable):
         substruct, context = self.substruct_and_context(graph)
         anchor = context.subgraph(context.is_anchor_node)
 
-        substruct_output = self.model(substruct, substruct.node_feature.float(), all_loss, metric)
+        substruct_output = self.model(
+            substruct, substruct.node_feature.float(), all_loss, metric
+        )
         substruct_feature = substruct_output["node_feature"][substruct.is_center_node]
 
-        context_output = self.context_model(context, context.node_feature.float(), all_loss, metric)
+        context_output = self.context_model(
+            context, context.node_feature.float(), all_loss, metric
+        )
         anchor_feature = context_output["node_feature"][context.is_anchor_node]
         context_feature = self.readout(anchor, anchor_feature)
 
         shift = torch.arange(self.num_negative, device=self.device) + 1
-        neg_index = (torch.arange(len(context), device=self.device).unsqueeze(-1) + shift) % len(context) # (batch_size, num_negative)
-        context_feature = torch.cat([context_feature.unsqueeze(1), context_feature[neg_index]], dim=1)
+        neg_index = (
+            torch.arange(len(context), device=self.device).unsqueeze(-1) + shift
+        ) % len(
+            context
+        )  # (batch_size, num_negative)
+        context_feature = torch.cat(
+            [context_feature.unsqueeze(1), context_feature[neg_index]], dim=1
+        )
         substruct_feature = substruct_feature.unsqueeze(1).expand_as(context_feature)
 
         pred = torch.einsum("bnd, bnd -> bn", substruct_feature, context_feature)
@@ -320,14 +354,18 @@ class DistancePrediction(tasks.Task, core.Configurable):
         graph_construction_model (nn.Module, optional): graph construction model
     """
 
-    def __init__(self, model, num_sample=256, num_mlp_layer=2, graph_construction_model=None):
+    def __init__(
+        self, model, num_sample=256, num_mlp_layer=2, graph_construction_model=None
+    ):
         super(DistancePrediction, self).__init__()
         self.model = model
         self.num_sample = num_sample
         self.num_mlp_layer = num_mlp_layer
         self.graph_construction_model = graph_construction_model
 
-        self.mlp = layers.MLP(2 * model.output_dim, [model.output_dim] * (num_mlp_layer - 1) + [1])
+        self.mlp = layers.MLP(
+            2 * model.output_dim, [model.output_dim] * (num_mlp_layer - 1) + [1]
+        )
 
     def predict_and_target(self, batch, all_loss=None, metric=None):
         graph = batch["graph"]
@@ -336,15 +374,21 @@ class DistancePrediction(tasks.Task, core.Configurable):
 
         node_in, node_out = graph.edge_list[:, :2].t()
         indices = torch.arange(graph.num_edge, device=self.device)
-        indices = functional.variadic_sample(indices, graph.num_edges, self.num_sample).flatten(-2, -1)
+        indices = functional.variadic_sample(
+            indices, graph.num_edges, self.num_sample
+        ).flatten(-2, -1)
         node_i = node_in[indices]
         node_j = node_out[indices]
         graph = graph.edge_mask(~functional.as_mask(indices, graph.num_edge))
 
         # Calculate distance
-        target = (graph.node_position[node_i] - graph.node_position[node_j]).norm(p=2, dim=-1)
+        target = (graph.node_position[node_i] - graph.node_position[node_j]).norm(
+            p=2, dim=-1
+        )
 
-        output = self.model(graph, graph.node_feature.float() , all_loss, metric)["node_feature"]
+        output = self.model(graph, graph.node_feature.float(), all_loss, metric)[
+            "node_feature"
+        ]
         node_feature = torch.cat([output[node_i], output[node_j]], dim=-1)
         pred = self.mlp(node_feature).squeeze(-1)
 
@@ -394,7 +438,14 @@ class AnglePrediction(tasks.Task, core.Configurable):
         graph_construction_model (nn.Module, optional): graph construction model
     """
 
-    def __init__(self, model, num_sample=256, num_class=8, num_mlp_layer=2, graph_construction_model=None):
+    def __init__(
+        self,
+        model,
+        num_sample=256,
+        num_class=8,
+        num_mlp_layer=2,
+        graph_construction_model=None,
+    ):
         super(AnglePrediction, self).__init__()
         self.model = model
         self.num_sample = num_sample
@@ -404,7 +455,9 @@ class AnglePrediction(tasks.Task, core.Configurable):
         boundary = torch.arange(0, math.pi, math.pi / num_class)
         self.register_buffer("boundary", boundary)
 
-        self.mlp = layers.MLP(3 * model.output_dim, [model.output_dim] * (num_mlp_layer - 1) + [num_class])
+        self.mlp = layers.MLP(
+            3 * model.output_dim, [model.output_dim] * (num_mlp_layer - 1) + [num_class]
+        )
 
     def predict_and_target(self, batch, all_loss=None, metric=None):
         graph = batch["graph"]
@@ -415,8 +468,8 @@ class AnglePrediction(tasks.Task, core.Configurable):
 
         line_graph = graph.line_graph()
         edge_in, edge_out = line_graph.edge_list[:, :2].t()
-        is_self_loop1 = (edge_in == edge_out)
-        is_self_loop2 = (node_in[edge_in] == node_out[edge_out])
+        is_self_loop1 = edge_in == edge_out
+        is_self_loop2 = node_in[edge_in] == node_out[edge_out]
         is_remove = is_self_loop1 | is_self_loop2
         line_graph = line_graph.edge_mask(~is_remove)
         edge_in, edge_out = line_graph.edge_list[:, :2].t()
@@ -425,7 +478,9 @@ class AnglePrediction(tasks.Task, core.Configurable):
         node_j = node_in[edge_out]
         node_k = node_in[edge_in]
         indices = torch.arange(line_graph.num_edge, device=self.device)
-        indices = functional.variadic_sample(indices, line_graph.num_edges, self.num_sample).flatten(-2, -1)
+        indices = functional.variadic_sample(
+            indices, line_graph.num_edges, self.num_sample
+        ).flatten(-2, -1)
         node_i = node_i[indices]
         node_j = node_j[indices]
         node_k = node_k[indices]
@@ -443,8 +498,12 @@ class AnglePrediction(tasks.Task, core.Configurable):
         angle = torch.atan2(y, x)
         target = torch.bucketize(angle, self.boundary, right=True) - 1
 
-        output = self.model(graph, graph.node_feature.float() , all_loss, metric)["node_feature"]
-        node_feature = torch.cat([output[node_i], output[node_j], output[node_k]], dim=-1)
+        output = self.model(graph, graph.node_feature.float(), all_loss, metric)[
+            "node_feature"
+        ]
+        node_feature = torch.cat(
+            [output[node_i], output[node_j], output[node_k]], dim=-1
+        )
         pred = self.mlp(node_feature)
 
         return pred, target
@@ -493,7 +552,14 @@ class DihedralPrediction(tasks.Task, core.Configurable):
         graph_construction_model (nn.Module, optional): graph construction model
     """
 
-    def __init__(self, model, num_sample=256, num_class=8, num_mlp_layer=2, graph_construction_model=None):
+    def __init__(
+        self,
+        model,
+        num_sample=256,
+        num_class=8,
+        num_mlp_layer=2,
+        graph_construction_model=None,
+    ):
         super(DihedralPrediction, self).__init__()
         self.model = model
         self.num_sample = num_sample
@@ -503,7 +569,9 @@ class DihedralPrediction(tasks.Task, core.Configurable):
         boundary = torch.arange(0, math.pi, math.pi / num_class)
         self.register_buffer("boundary", boundary)
 
-        self.mlp = layers.MLP(4 * model.output_dim, [model.output_dim] * (num_mlp_layer - 1) + [num_class])
+        self.mlp = layers.MLP(
+            4 * model.output_dim, [model.output_dim] * (num_mlp_layer - 1) + [num_class]
+        )
 
     def predict_and_target(self, batch, all_loss=None, metric=None):
         graph = batch["graph"]
@@ -513,16 +581,16 @@ class DihedralPrediction(tasks.Task, core.Configurable):
         node_in, node_out = graph.edge_list[:, :2].t()
         line_graph = graph.line_graph()
         edge_in, edge_out = line_graph.edge_list[:, :2].t()
-        is_self_loop1 = (edge_in == edge_out)
-        is_self_loop2 = (node_in[edge_in] == node_out[edge_out])
+        is_self_loop1 = edge_in == edge_out
+        is_self_loop2 = node_in[edge_in] == node_out[edge_out]
         is_remove = is_self_loop1 | is_self_loop2
         line_graph = line_graph.edge_mask(~is_remove)
         edge_in, edge_out = line_graph.edge_list[:, :2].t()
 
         line2_graph = line_graph.line_graph()
         edge2_in, edge2_out = line2_graph.edge_list.t()[:2]
-        is_self_loop1 = (edge2_in == edge2_out)
-        is_self_loop2 = (edge_in[edge2_in] == edge_out[edge2_out])
+        is_self_loop1 = edge2_in == edge2_out
+        is_self_loop2 = edge_in[edge2_in] == edge_out[edge2_out]
         is_remove = is_self_loop1 | is_self_loop2
         line2_graph = line2_graph.edge_mask(~is_remove)
         edge2_in, edge2_out = line2_graph.edge_list[:, :2].t()
@@ -532,7 +600,9 @@ class DihedralPrediction(tasks.Task, core.Configurable):
         node_t = node_in[edge_out[edge2_in]]
         node_k = node_in[edge_in[edge2_in]]
         indices = torch.arange(line2_graph.num_edge, device=self.device)
-        indices = functional.variadic_sample(indices, line2_graph.num_edges, self.num_sample).flatten(-2, -1)
+        indices = functional.variadic_sample(
+            indices, line2_graph.num_edges, self.num_sample
+        ).flatten(-2, -1)
         node_i = node_i[indices]
         node_j = node_j[indices]
         node_t = node_t[indices]
@@ -543,18 +613,22 @@ class DihedralPrediction(tasks.Task, core.Configurable):
         mask[edge_in[edge2_in[indices]]] = 0
         graph = graph.edge_mask(mask)
 
-        v_ctr = graph.node_position[node_t] - graph.node_position[node_j]   # (A, 3)
+        v_ctr = graph.node_position[node_t] - graph.node_position[node_j]  # (A, 3)
         v1 = graph.node_position[node_i] - graph.node_position[node_j]
         v2 = graph.node_position[node_k] - graph.node_position[node_t]
-        n1 = torch.cross(v_ctr, v1, dim=-1) # Normal vectors of the two planes
+        n1 = torch.cross(v_ctr, v1, dim=-1)  # Normal vectors of the two planes
         n2 = torch.cross(v_ctr, v2, dim=-1)
         a = (n1 * n2).sum(dim=-1)
         b = torch.cross(n1, n2).norm(dim=-1)
         dihedral = torch.atan2(b, a)
         target = torch.bucketize(dihedral, self.boundary, right=True) - 1
 
-        output = self.model(graph, graph.node_feature.float() , all_loss, metric)["node_feature"]
-        node_feature = torch.cat([output[node_i], output[node_j], output[node_k], output[node_t]], dim=-1)
+        output = self.model(graph, graph.node_feature.float(), all_loss, metric)[
+            "node_feature"
+        ]
+        node_feature = torch.cat(
+            [output[node_i], output[node_j], output[node_k], output[node_t]], dim=-1
+        )
         pred = self.mlp(node_feature)
 
         return pred, target

@@ -100,11 +100,13 @@ class WandbLogger(LoggingLogger):
         try:
             import wandb
         except ModuleNotFoundError:
-            raise ModuleNotFoundError("Wandb is not found. Please install it with `pip install wandb`")
+            raise ModuleNotFoundError(
+                "Wandb is not found. Please install it with `pip install wandb`"
+            )
 
         if wandb.run is not None:
             warnings.warn(
-                 "There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse"
+                "There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse"
                 " this run. If this is not desired, call `wandb.finish()` or `WandbLogger.finish()` before instantiating `WandbLogger`."
             )
             self.run = wandb.run

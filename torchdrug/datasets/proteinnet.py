@@ -37,10 +37,14 @@ class ProteinNet(data.ProteinDataset):
 
         zip_file = utils.download(self.url, path, md5=self.md5)
         data_path = utils.extract(zip_file)
-        lmdb_files = [os.path.join(data_path, "proteinnet/proteinnet_%s.lmdb" % split)
-                      for split in self.splits]
+        lmdb_files = [
+            os.path.join(data_path, "proteinnet/proteinnet_%s.lmdb" % split)
+            for split in self.splits
+        ]
 
-        self.load_lmdbs(lmdb_files, target_fields=self.target_fields, verbose=verbose, **kwargs)
+        self.load_lmdbs(
+            lmdb_files, target_fields=self.target_fields, verbose=verbose, **kwargs
+        )
 
     def get_item(self, index):
         if self.lazy:
@@ -48,7 +52,9 @@ class ProteinNet(data.ProteinDataset):
         else:
             graph = self.data[index]
         with graph.residue():
-            residue_position = torch.as_tensor(self.targets["tertiary"][index], dtype=torch.float)
+            residue_position = torch.as_tensor(
+                self.targets["tertiary"][index], dtype=torch.float
+            )
             graph.residue_position = residue_position
             mask = torch.as_tensor(self.targets["valid_mask"][index], dtype=torch.bool)
             graph.mask = mask

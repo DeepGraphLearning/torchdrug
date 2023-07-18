@@ -39,7 +39,9 @@ class EnzymeCommission(data.ProteinDataset):
             os.makedirs(path)
         self.path = path
         if test_cutoff not in self.test_cutoffs:
-            raise ValueError("Unknown test cutoff `%.2f` for EnzymeCommission dataset" % test_cutoff)
+            raise ValueError(
+                "Unknown test cutoff `%.2f` for EnzymeCommission dataset" % test_cutoff
+            )
         self.test_cutoff = test_cutoff
 
         zip_file = utils.download(self.url, path, md5=self.md5)
@@ -69,18 +71,28 @@ class EnzymeCommission(data.ProteinDataset):
             self.filter_pdb(pdb_ids)
 
         tsv_file = os.path.join(path, "nrPDB-EC_annot.tsv")
-        pdb_ids = [os.path.basename(pdb_file).split("_")[0] for pdb_file in self.pdb_files]
+        pdb_ids = [
+            os.path.basename(pdb_file).split("_")[0] for pdb_file in self.pdb_files
+        ]
         self.load_annotation(tsv_file, pdb_ids)
 
-        splits = [os.path.basename(os.path.dirname(pdb_file)) for pdb_file in self.pdb_files]
-        self.num_samples = [splits.count("train"), splits.count("valid"), splits.count("test")]
+        splits = [
+            os.path.basename(os.path.dirname(pdb_file)) for pdb_file in self.pdb_files
+        ]
+        self.num_samples = [
+            splits.count("train"),
+            splits.count("valid"),
+            splits.count("test"),
+        ]
 
     def filter_pdb(self, pdb_ids):
         pdb_ids = set(pdb_ids)
         sequences = []
         pdb_files = []
         data = []
-        for sequence, pdb_file, protein in zip(self.sequences, self.pdb_files, self.data):
+        for sequence, pdb_file, protein in zip(
+            self.sequences, self.pdb_files, self.data
+        ):
             if os.path.basename(pdb_file).split("_")[0] in pdb_ids:
                 continue
             sequences.append(sequence)
@@ -131,5 +143,7 @@ class EnzymeCommission(data.ProteinDataset):
             item = self.transform(item)
         indices = self.pos_targets[index].unsqueeze(0)
         values = torch.ones(len(self.pos_targets[index]))
-        item["targets"] = utils.sparse_coo_tensor(indices, values, (len(self.tasks),)).to_dense()
+        item["targets"] = utils.sparse_coo_tensor(
+            indices, values, (len(self.tasks),)
+        ).to_dense()
         return item

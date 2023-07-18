@@ -36,10 +36,14 @@ class BetaLactamase(data.ProteinDataset):
 
         zip_file = utils.download(self.url, path, md5=self.md5)
         data_path = utils.extract(zip_file)
-        lmdb_files = [os.path.join(data_path, "beta_lactamase/beta_lactamase_%s.lmdb" % split)
-                      for split in self.splits]
+        lmdb_files = [
+            os.path.join(data_path, "beta_lactamase/beta_lactamase_%s.lmdb" % split)
+            for split in self.splits
+        ]
 
-        self.load_lmdbs(lmdb_files, target_fields=self.target_fields, verbose=verbose, **kwargs)
+        self.load_lmdbs(
+            lmdb_files, target_fields=self.target_fields, verbose=verbose, **kwargs
+        )
 
     def split(self):
         offset = 0

@@ -8,7 +8,9 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.ZINC2m")
-@utils.copy_args(data.MoleculeDataset.load_smiles, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(
+    data.MoleculeDataset.load_smiles, ignore=("smiles_field", "target_fields")
+)
 class ZINC2m(data.MoleculeDataset):
     """
     ZINC compound database for virtual screening.
@@ -36,13 +38,19 @@ class ZINC2m(data.MoleculeDataset):
         zip_file_name = utils.download(self.url, path, md5=self.md5)
 
         save_file = utils.extract(zip_file=zip_file_name, member=self.member)
-        neo_save_file = os.path.join(os.path.dirname(zip_file_name), 'zinc2m_'+os.path.basename(self.member))
+        neo_save_file = os.path.join(
+            os.path.dirname(zip_file_name), "zinc2m_" + os.path.basename(self.member)
+        )
         shutil.move(save_file, neo_save_file)
 
         with open(neo_save_file, "r") as fin:
             reader = csv.reader(fin)
             if verbose:
-                reader = iter(tqdm(reader, "Loading %s" % path, utils.get_line_count(neo_save_file)))
+                reader = iter(
+                    tqdm(
+                        reader, "Loading %s" % path, utils.get_line_count(neo_save_file)
+                    )
+                )
             smiles_list = []
 
             for idx, values in enumerate(reader):

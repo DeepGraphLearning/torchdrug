@@ -20,6 +20,7 @@ class NormalizeTarget(core.Configurable):
         mean (dict of float): mean of targets
         std (dict of float): standard deviation of targets
     """
+
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std
@@ -46,8 +47,12 @@ class RemapAtomType(core.Configurable):
     def __init__(self, atom_types):
         atom_types = torch.as_tensor(atom_types)
         self.id2atom = atom_types
-        self.atom2id = - torch.ones(atom_types.max() + 1, dtype=torch.long, device=atom_types.device)
-        self.atom2id[atom_types] = torch.arange(len(atom_types), device=atom_types.device)
+        self.atom2id = -torch.ones(
+            atom_types.max() + 1, dtype=torch.long, device=atom_types.device
+        )
+        self.atom2id[atom_types] = torch.arange(
+            len(atom_types), device=atom_types.device
+        )
 
     def __call__(self, item):
         graph = copy.copy(item["graph"])
@@ -148,7 +153,9 @@ class VirtualNode(core.Configurable):
         kwargs: other attributes of the virtual node or virtual edges
     """
 
-    def __init__(self, relation=None, weight=1, node_feature=None, edge_feature=None, **kwargs):
+    def __init__(
+        self, relation=None, weight=1, node_feature=None, edge_feature=None, **kwargs
+    ):
         self.relation = relation
         self.weight = weight
 
@@ -166,7 +173,9 @@ class VirtualNode(core.Configurable):
         num_relation = graph.num_relation
 
         existing_node = torch.arange(num_node, device=edge_list.device)
-        virtual_node = torch.ones(num_node, dtype=torch.long, device=edge_list.device) * num_node
+        virtual_node = (
+            torch.ones(num_node, dtype=torch.long, device=edge_list.device) * num_node
+        )
         node_in = torch.cat([virtual_node, existing_node])
         node_out = torch.cat([existing_node, virtual_node])
         if edge_list.shape[1] == 2:
@@ -177,10 +186,14 @@ class VirtualNode(core.Configurable):
                 num_relation = num_relation + 1
             else:
                 relation = self.relation
-            relation = relation * torch.ones(num_node * 2, dtype=torch.long, device=edge_list.device)
+            relation = relation * torch.ones(
+                num_node * 2, dtype=torch.long, device=edge_list.device
+            )
             new_edge = torch.stack([node_in, node_out, relation], dim=-1)
         edge_list = torch.cat([edge_list, new_edge])
-        new_edge_weight = self.weight * torch.ones(num_node * 2, device=edge_weight.device)
+        new_edge_weight = self.weight * torch.ones(
+            num_node * 2, device=edge_weight.device
+        )
         edge_weight = torch.cat([edge_weight, new_edge_weight])
 
         # add default node/edge attributes
@@ -190,19 +203,34 @@ class VirtualNode(core.Configurable):
                 if key in self.default:
                     new_data = self.default[key].unsqueeze(0)
                 else:
-                    new_data = torch.zeros(1, *data[key].shape[1:], dtype=data[key].dtype, device=data[key].device)
+                    new_data = torch.zeros(
+                        1,
+                        *data[key].shape[1:],
+                        dtype=data[key].dtype,
+                        device=data[key].device
+                    )
                 data[key] = torch.cat([data[key], new_data])
             elif value == "edge":
                 if key in self.default:
                     repeat = [-1] * (data[key].ndim - 1)
                     new_data = self.default[key].expand(num_node * 2, *repeat)
                 else:
-                    new_data = torch.zeros(num_node * 2, *data[key].shape[1:],
-                                           dtype=data[key].dtype, device=data[key].device)
+                    new_data = torch.zeros(
+                        num_node * 2,
+                        *data[key].shape[1:],
+                        dtype=data[key].dtype,
+                        device=data[key].device
+                    )
                 data[key] = torch.cat([data[key], new_data])
 
-        graph = type(graph)(edge_list, edge_weight=edge_weight, num_node=num_node + 1,
-                            num_relation=num_relation, meta=graph.meta, **data)
+        graph = type(graph)(
+            edge_list,
+            edge_weight=edge_weight,
+            num_node=num_node + 1,
+            num_relation=num_relation,
+            meta=graph.meta,
+            **data
+        )
 
         item = item.copy()
         item["graph"] = graph
@@ -222,9 +250,22 @@ class VirtualAtom(VirtualNode, core.Configurable):
         kwargs: other attributes of the virtual atoms or virtual bonds
     """
 
-    def __init__(self, atom_type=None, bond_type=None, node_feature=None, edge_feature=None, **kwargs):
-        super(VirtualAtom, self).__init__(relation=bond_type, weight=1, node_feature=node_feature,
-                                          edge_feature=edge_feature, atom_type=atom_type, **kwargs)
+    def __init__(
+        self,
+        atom_type=None,
+        bond_type=None,
+        node_feature=None,
+        edge_feature=None,
+        **kwargs
+    ):
+        super(VirtualAtom, self).__init__(
+            relation=bond_type,
+            weight=1,
+            node_feature=node_feature,
+            edge_feature=edge_feature,
+            atom_type=atom_type,
+            **kwargs
+        )
 
 
 @R.register("transforms.TruncateProtein")
@@ -252,11 +293,15 @@ class TruncateProtein(core.Configurable):
             graph = item[key]
             if graph.num_residue > self.truncate_length:
                 if self.random:
-                    start = torch.randint(graph.num_residue - self.truncate_length, (1,)).item()
+                    start = torch.randint(
+                        graph.num_residue - self.truncate_length, (1,)
+                    ).item()
                 else:
                     start = 0
                 end = start + self.truncate_length
-                mask = torch.zeros(graph.num_residue, dtype=torch.bool, device=graph.device)
+                mask = torch.zeros(
+                    graph.num_residue, dtype=torch.bool, device=graph.device
+                )
                 mask[start:end] = True
                 graph = graph.subresidue(mask)
 

@@ -5,7 +5,9 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.ClinTox")
-@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(
+    data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields")
+)
 class ClinTox(data.MoleculeDataset):
     """
     Qualitative data of drugs approved by the FDA and those that have failed clinical
@@ -21,7 +23,9 @@ class ClinTox(data.MoleculeDataset):
         **kwargs
     """
 
-    url = "http://deepchem.io.s3-website-us-west-1.amazonaws.com/datasets/clintox.csv.gz"
+    url = (
+        "http://deepchem.io.s3-website-us-west-1.amazonaws.com/datasets/clintox.csv.gz"
+    )
     md5 = "db4f2df08be8ae92814e9d6a2d015284"
     target_fields = ["FDA_APPROVED", "CT_TOX"]
 
@@ -34,5 +38,10 @@ class ClinTox(data.MoleculeDataset):
         zip_file = utils.download(self.url, path, md5=self.md5)
         csv_file = utils.extract(zip_file)
 
-        self.load_csv(csv_file, smiles_field="smiles", target_fields=self.target_fields,
-                      verbose=verbose, **kwargs)
+        self.load_csv(
+            csv_file,
+            smiles_field="smiles",
+            target_fields=self.target_fields,
+            verbose=verbose,
+            **kwargs
+        )

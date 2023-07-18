@@ -35,8 +35,18 @@ class PropertyPrediction(tasks.Task, core.Configurable):
     eps = 1e-10
     _option_members = {"task", "criterion", "metric"}
 
-    def __init__(self, model, task=(), criterion="mse", metric=("mae", "rmse"), num_mlp_layer=1,
-                 normalization=True, num_class=None, graph_construction_model=None, verbose=0):
+    def __init__(
+        self,
+        model,
+        task=(),
+        criterion="mse",
+        metric=("mae", "rmse"),
+        num_mlp_layer=1,
+        normalization=True,
+        num_class=None,
+        graph_construction_model=None,
+        verbose=0,
+    ):
         super(PropertyPrediction, self).__init__()
         self.model = model
         self.task = task
@@ -44,7 +54,9 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         self.metric = metric
         self.num_mlp_layer = num_mlp_layer
         # For classification tasks, we disable normalization tricks.
-        self.normalization = normalization and ("ce" not in criterion) and ("bce" not in criterion)
+        self.normalization = (
+            normalization and ("ce" not in criterion) and ("bce" not in criterion)
+        )
         self.num_class = (num_class,) if isinstance(num_class, int) else num_class
         self.graph_construction_model = graph_construction_model
         self.verbose = verbose
@@ -86,7 +98,9 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         self.num_class = self.num_class or num_class
 
         hidden_dims = [self.model.output_dim] * (self.num_mlp_layer - 1)
-        self.mlp = layers.MLP(self.model.output_dim, hidden_dims + [sum(self.num_class)])
+        self.mlp = layers.MLP(
+            self.model.output_dim, hidden_dims + [sum(self.num_class)]
+        )
 
     def forward(self, batch):
         """"""
@@ -106,13 +120,21 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         for criterion, weight in self.criterion.items():
             if criterion == "mse":
                 if self.normalization:
-                    loss = F.mse_loss((pred - self.mean) / self.std, (target - self.mean) / self.std, reduction="none")
+                    loss = F.mse_loss(
+                        (pred - self.mean) / self.std,
+                        (target - self.mean) / self.std,
+                        reduction="none",
+                    )
                 else:
                     loss = F.mse_loss(pred, target, reduction="none")
             elif criterion == "bce":
-                loss = F.binary_cross_entropy_with_logits(pred, target, reduction="none")
+                loss = F.binary_cross_entropy_with_logits(
+                    pred, target, reduction="none"
+                )
             elif criterion == "ce":
-                loss = F.cross_entropy(pred, target.long().squeeze(-1), reduction="none").unsqueeze(-1)
+                loss = F.cross_entropy(
+                    pred, target.long().squeeze(-1), reduction="none"
+                ).unsqueeze(-1)
             else:
                 raise ValueError("Unknown criterion `%s`" % criterion)
             loss = functional.masked_mean(loss, labeled, dim=0)
@@ -131,7 +153,9 @@ class PropertyPrediction(tasks.Task, core.Configurable):
         graph = batch["graph"]
         if self.graph_construction_model:
             graph = self.graph_construction_model(graph)
-        output = self.model(graph, graph.node_feature.float(), all_loss=all_loss, metric=metric)
+        output = self.model(
+            graph, graph.node_feature.float(), all_loss=all_loss, metric=metric
+        )
         pred = self.mlp(output["graph_feature"])
         if self.normalization:
             pred = pred * self.std + self.mean
@@ -139,7 +163,9 @@ class PropertyPrediction(tasks.Task, core.Configurable):
 
     def target(self, batch):
         target = torch.stack([batch[t].float() for t in self.task], dim=-1)
-        labeled = batch.get("labeled", torch.ones(len(target), dtype=torch.bool, device=target.device))
+        labeled = batch.get(
+            "labeled", torch.ones(len(target), dtype=torch.bool, device=target.device)
+        )
         target[~labeled] = math.nan
         return target
 
@@ -158,7 +184,7 @@ class PropertyPrediction(tasks.Task, core.Configurable):
                 score = []
                 num_class = 0
                 for i, cur_num_class in enumerate(self.num_class):
-                    _pred = pred[:, num_class:num_class + cur_num_class]
+                    _pred = pred[:, num_class : num_class + cur_num_class]
                     _target = target[:, i]
                     _labeled = labeled[:, i]
                     _score = metrics.accuracy(_pred[_labeled], _target[_labeled].long())
@@ -169,22 +195,28 @@ class PropertyPrediction(tasks.Task, core.Configurable):
                 score = []
                 num_class = 0
                 for i, cur_num_class in enumerate(self.num_class):
-                    _pred = pred[:, num_class:num_class + cur_num_class]
+                    _pred = pred[:, num_class : num_class + cur_num_class]
                     _target = target[:, i]
                     _labeled = labeled[:, i]
-                    _score = metrics.matthews_corrcoef(_pred[_labeled], _target[_labeled].long())
+                    _score = metrics.matthews_corrcoef(
+                        _pred[_labeled], _target[_labeled].long()
+                    )
                     score.append(_score)
                     num_class += cur_num_class
                 score = torch.stack(score)
             elif _metric == "auroc":
                 score = []
-                for _pred, _target, _labeled in zip(pred.t(), target.long().t(), labeled.t()):
+                for _pred, _target, _labeled in zip(
+                    pred.t(), target.long().t(), labeled.t()
+                ):
                     _score = metrics.area_under_roc(_pred[_labeled], _target[_labeled])
                     score.append(_score)
                 score = torch.stack(score)
             elif _metric == "auprc":
                 score = []
-                for _pred, _target, _labeled in zip(pred.t(), target.long().t(), labeled.t()):
+                for _pred, _target, _labeled in zip(
+                    pred.t(), target.long().t(), labeled.t()
+                ):
                     _score = metrics.area_under_prc(_pred[_labeled], _target[_labeled])
                     score.append(_score)
                 score = torch.stack(score)
@@ -238,8 +270,18 @@ class MultipleBinaryClassification(tasks.Task, core.Configurable):
     eps = 1e-10
     _option_members = {"criterion", "metric"}
 
-    def __init__(self, model, task=(), criterion="bce", metric=("auprc@micro", "f1_max"), num_mlp_layer=1,
-                 normalization=True, reweight=False, graph_construction_model=None, verbose=0):
+    def __init__(
+        self,
+        model,
+        task=(),
+        criterion="bce",
+        metric=("auprc@micro", "f1_max"),
+        num_mlp_layer=1,
+        normalization=True,
+        reweight=False,
+        graph_construction_model=None,
+        verbose=0,
+    ):
         super(MultipleBinaryClassification, self).__init__()
         self.model = model
         self.task = task
@@ -262,8 +304,8 @@ class MultipleBinaryClassification(tasks.Task, core.Configurable):
         values = []
         for data in train_set:
             values.append(data["targets"][self.task_indices])
-        values = torch.stack(values, dim=0)    
-        
+        values = torch.stack(values, dim=0)
+
         if self.reweight:
             num_positive = values.sum(dim=0)
             weight = (num_positive.mean() / num_positive).clamp(1, 10)
@@ -281,12 +323,14 @@ class MultipleBinaryClassification(tasks.Task, core.Configurable):
 
         for criterion, weight in self.criterion.items():
             if criterion == "bce":
-                loss = F.binary_cross_entropy_with_logits(pred, target, reduction="none")
+                loss = F.binary_cross_entropy_with_logits(
+                    pred, target, reduction="none"
+                )
             else:
                 raise ValueError("Unknown criterion `%s`" % criterion)
             loss = loss.mean(dim=0)
             loss = (loss * self.weight).sum() / self.weight.sum()
-            
+
             name = tasks._get_criterion_name(criterion)
             metric[name] = loss
             all_loss += loss * weight
@@ -297,7 +341,9 @@ class MultipleBinaryClassification(tasks.Task, core.Configurable):
         graph = batch["graph"]
         if self.graph_construction_model:
             graph = self.graph_construction_model(graph)
-        output = self.model(graph, graph.node_feature.float(), all_loss=all_loss, metric=metric)
+        output = self.model(
+            graph, graph.node_feature.float(), all_loss=all_loss, metric=metric
+        )
         pred = self.mlp(output["graph_feature"])
         return pred
 
@@ -311,11 +357,15 @@ class MultipleBinaryClassification(tasks.Task, core.Configurable):
             if _metric == "auroc@micro":
                 score = metrics.area_under_roc(pred.flatten(), target.long().flatten())
             elif _metric == "auroc@macro":
-                score = metrics.variadic_area_under_roc(pred, target.long(), dim=0).mean()
+                score = metrics.variadic_area_under_roc(
+                    pred, target.long(), dim=0
+                ).mean()
             elif _metric == "auprc@micro":
                 score = metrics.area_under_prc(pred.flatten(), target.long().flatten())
             elif _metric == "auprc@macro":
-                score = metrics.variadic_area_under_prc(pred, target.long(), dim=0).mean()
+                score = metrics.variadic_area_under_prc(
+                    pred, target.long(), dim=0
+                ).mean()
             elif _metric == "f1_max":
                 score = metrics.f1_max(pred, target)
             else:
@@ -347,14 +397,24 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
 
     _option_members = {"criterion", "metric"}
 
-    def __init__(self, model, criterion="bce", metric=("macro_auprc", "macro_auroc"), num_mlp_layer=1,
-                 normalization=True, num_class=None, verbose=0):
+    def __init__(
+        self,
+        model,
+        criterion="bce",
+        metric=("macro_auprc", "macro_auroc"),
+        num_mlp_layer=1,
+        normalization=True,
+        num_class=None,
+        verbose=0,
+    ):
         super(NodePropertyPrediction, self).__init__()
         self.model = model
         self.criterion = criterion
         self.metric = metric
         # For classification tasks, we disable normalization tricks.
-        self.normalization = normalization and ("ce" not in criterion) and ("bce" not in criterion)
+        self.normalization = (
+            normalization and ("ce" not in criterion) and ("bce" not in criterion)
+        )
         self.num_mlp_layer = num_mlp_layer
         self.num_class = num_class
         self.verbose = verbose
@@ -387,7 +447,9 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
 
     def predict(self, batch, all_loss=None, metric=None):
         graph = batch["graph"]
-        output = self.model(graph, graph.node_feature.float(), all_loss=all_loss, metric=metric)
+        output = self.model(
+            graph, graph.node_feature.float(), all_loss=all_loss, metric=metric
+        )
         if self.view in ["node", "atom"]:
             output_feature = output["node_feature"]
         else:
@@ -398,11 +460,15 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
         return pred
 
     def target(self, batch):
-        size = batch["graph"].num_nodes if self.view in ["node", "atom"] else batch["graph"].num_residues
+        size = (
+            batch["graph"].num_nodes
+            if self.view in ["node", "atom"]
+            else batch["graph"].num_residues
+        )
         return {
             "label": batch["graph"].target,
             "mask": batch["graph"].mask,
-            "size": size
+            "size": size,
         }
 
     def forward(self, batch):
@@ -416,11 +482,17 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
         for criterion, weight in self.criterion.items():
             if criterion == "mse":
                 if self.normalization:
-                    loss = F.mse_loss((pred - self.mean) / self.std, (target - self.mean) / self.std, reduction="none")
+                    loss = F.mse_loss(
+                        (pred - self.mean) / self.std,
+                        (target - self.mean) / self.std,
+                        reduction="none",
+                    )
                 else:
                     loss = F.mse_loss(pred, target, reduction="none")
             elif criterion == "bce":
-                loss = F.binary_cross_entropy_with_logits(pred, target["label"].float(), reduction="none")
+                loss = F.binary_cross_entropy_with_logits(
+                    pred, target["label"].float(), reduction="none"
+                )
             elif criterion == "ce":
                 loss = F.cross_entropy(pred, target["label"], reduction="none")
             else:
@@ -439,7 +511,7 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
         metric = {}
         _target = target["label"]
         _labeled = ~torch.isnan(_target) & target["mask"]
-        _size = functional.variadic_sum(_labeled.long(), target["size"]) 
+        _size = functional.variadic_sum(_labeled.long(), target["size"])
         for _metric in self.metric:
             if _metric == "micro_acc":
                 score = metrics.accuracy(pred[_labeled], _target[_labeled].long())
@@ -448,9 +520,13 @@ class NodePropertyPrediction(tasks.Task, core.Configurable):
             elif metric == "micro_auprc":
                 score = metrics.area_under_prc(pred[_labeled], _target[_labeled])
             elif _metric == "macro_auroc":
-                score = metrics.variadic_area_under_roc(pred[_labeled], _target[_labeled], _size).mean()
+                score = metrics.variadic_area_under_roc(
+                    pred[_labeled], _target[_labeled], _size
+                ).mean()
             elif _metric == "macro_auprc":
-                score = metrics.variadic_area_under_prc(pred[_labeled], _target[_labeled], _size).mean()
+                score = metrics.variadic_area_under_prc(
+                    pred[_labeled], _target[_labeled], _size
+                ).mean()
             elif _metric == "macro_acc":
                 score = pred[_labeled].argmax(-1) == _target[_labeled]
                 score = functional.variadic_mean(score.float(), _size).mean()
@@ -517,14 +593,23 @@ class InteractionPrediction(PropertyPrediction):
         self.num_class = self.num_class or num_class
 
         hidden_dims = [self.model.output_dim] * (self.num_mlp_layer - 1)
-        self.mlp = layers.MLP(self.model.output_dim + self.model2.output_dim, hidden_dims + [sum(self.num_class)])
+        self.mlp = layers.MLP(
+            self.model.output_dim + self.model2.output_dim,
+            hidden_dims + [sum(self.num_class)],
+        )
 
     def predict(self, batch, all_loss=None, metric=None):
         graph1 = batch["graph1"]
-        output1 = self.model(graph1, graph1.node_feature.float(), all_loss=all_loss, metric=metric)
+        output1 = self.model(
+            graph1, graph1.node_feature.float(), all_loss=all_loss, metric=metric
+        )
         graph2 = batch["graph2"]
-        output2 = self.model2(graph2, graph2.node_feature.float(), all_loss=all_loss, metric=metric)
-        pred = self.mlp(torch.cat([output1["graph_feature"], output2["graph_feature"]], dim=-1))
+        output2 = self.model2(
+            graph2, graph2.node_feature.float(), all_loss=all_loss, metric=metric
+        )
+        pred = self.mlp(
+            torch.cat([output1["graph_feature"], output2["graph_feature"]], dim=-1)
+        )
         if self.normalization:
             pred = pred * self.std + self.mean
         return pred
@@ -559,5 +644,7 @@ class Unsupervised(nn.Module, core.Configurable):
         graph = batch["graph"]
         if self.graph_construction_model:
             graph = self.graph_construction_model(graph)
-        pred = self.model(graph, graph.node_feature.float(), all_loss=all_loss, metric=metric)
+        pred = self.model(
+            graph, graph.node_feature.float(), all_loss=all_loss, metric=metric
+        )
         return pred

@@ -32,7 +32,11 @@ class IndependentGaussian(nn.Module):
         Parameters:
             input (Tensor): input data of shape :math:`(..., N)`
         """
-        log_likelihood = -0.5 * (math.log(2 * math.pi) + self.sigma2.log() + (input - self.mu) ** 2 / self.sigma2)
+        log_likelihood = -0.5 * (
+            math.log(2 * math.pi)
+            + self.sigma2.log()
+            + (input - self.mu) ** 2 / self.sigma2
+        )
         return log_likelihood
 
     def sample(self, *size):

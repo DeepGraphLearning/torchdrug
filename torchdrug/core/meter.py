@@ -20,6 +20,7 @@ class Meter(object):
         silent (int, optional): surpress all outputs or not
         logger (core.LoggerBase, optional): log handler
     """
+
     def __init__(self, log_interval=100, silent=False, logger=None):
         self.records = defaultdict(list)
         self.log_interval = log_interval
@@ -41,7 +42,7 @@ class Meter(object):
         """
         if self.silent:
             return
-            
+
         if category.endswith("batch"):
             step_id = self.batch_id
         elif category.endswith("epoch"):
@@ -57,7 +58,7 @@ class Meter(object):
         """
         if self.silent:
             return
-            
+
         self.logger.log_config(config)
 
     def update(self, record):
@@ -97,11 +98,16 @@ class Meter(object):
         logger.warning("duration: %s" % pretty.time(duration))
         logger.warning("speed: %.2f batch / sec" % speed)
 
-        eta = (self.time[-1] - self.time[self.start_epoch]) \
-              / (self.epoch_id - self.start_epoch) * (self.end_epoch - self.epoch_id)
+        eta = (
+            (self.time[-1] - self.time[self.start_epoch])
+            / (self.epoch_id - self.start_epoch)
+            * (self.end_epoch - self.epoch_id)
+        )
         logger.warning("ETA: %s" % pretty.time(eta))
         if torch.cuda.is_available():
-            logger.warning("max GPU memory: %.1f MiB" % (torch.cuda.max_memory_allocated() / 1e6))
+            logger.warning(
+                "max GPU memory: %.1f MiB" % (torch.cuda.max_memory_allocated() / 1e6)
+            )
             torch.cuda.reset_peak_memory_stats()
 
         record = {}

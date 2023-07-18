@@ -7,7 +7,9 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.HumanPPI")
-@utils.copy_args(data.ProteinPairDataset.load_lmdbs, ignore=("sequence_field", "target_fields"))
+@utils.copy_args(
+    data.ProteinPairDataset.load_lmdbs, ignore=("sequence_field", "target_fields")
+)
 class HumanPPI(data.ProteinPairDataset):
     """
     Binary labels indicating whether two human proteins interact or not.
@@ -36,11 +38,18 @@ class HumanPPI(data.ProteinPairDataset):
 
         zip_file = utils.download(self.url, path, md5=self.md5)
         data_path = utils.extract(zip_file)
-        lmdb_files = [os.path.join(data_path, "human_ppi/human_ppi_%s.lmdb" % split)
-                      for split in self.splits]
+        lmdb_files = [
+            os.path.join(data_path, "human_ppi/human_ppi_%s.lmdb" % split)
+            for split in self.splits
+        ]
 
-        self.load_lmdbs(lmdb_files, sequence_field=["primary_1", "primary_2"], target_fields=self.target_fields,
-                        verbose=verbose, **kwargs)
+        self.load_lmdbs(
+            lmdb_files,
+            sequence_field=["primary_1", "primary_2"],
+            target_fields=self.target_fields,
+            verbose=verbose,
+            **kwargs
+        )
 
     def split(self, keys=None):
         keys = keys or self.splits

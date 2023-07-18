@@ -44,7 +44,6 @@ def no_rdkit_log():
 
 
 class CaptureStdIO(object):
-
     def __init__(self, stdout=True, stderr=False):
         self.stdout = stdout
         self.stderr = stderr

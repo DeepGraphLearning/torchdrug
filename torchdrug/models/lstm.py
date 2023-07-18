@@ -26,11 +26,18 @@ class ProteinLSTM(nn.Module, core.Configurable):
         dropout (float, optional): dropout ratio of input features
     """
 
-    def __init__(self, input_dim, hidden_dim, num_layers, activation='tanh', layer_norm=False, 
-                dropout=0):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dim,
+        num_layers,
+        activation="tanh",
+        layer_norm=False,
+        dropout=0,
+    ):
         super(ProteinLSTM, self).__init__()
         self.input_dim = input_dim
-        self.output_dim = hidden_dim    # output_dim for node feature is 2 * hidden_dim
+        self.output_dim = hidden_dim  # output_dim for node feature is 2 * hidden_dim
         self.node_output_dim = 2 * hidden_dim
         self.num_layers = num_layers
         self.padding_id = input_dim - 1
@@ -49,8 +56,14 @@ class ProteinLSTM(nn.Module, core.Configurable):
         else:
             self.activation = activation
 
-        self.lstm = nn.LSTM(hidden_dim, hidden_dim, num_layers, batch_first=True, dropout=dropout,
-                            bidirectional=True)
+        self.lstm = nn.LSTM(
+            hidden_dim,
+            hidden_dim,
+            num_layers,
+            batch_first=True,
+            dropout=dropout,
+            bidirectional=True,
+        )
 
         self.reweight = nn.Linear(2 * num_layers, 1)
         self.linear = nn.Linear(hidden_dim, hidden_dim)
@@ -70,8 +83,10 @@ class ProteinLSTM(nn.Module, core.Configurable):
                 residue representations of shape :math:`(|V_{res}|, d)`, graph representations of shape :math:`(n, d)`
         """
         input = graph.residue_feature.float()
-        input = functional.variadic_to_padded(input, graph.num_residues, value=self.padding_id)[0]
-        
+        input = functional.variadic_to_padded(
+            input, graph.num_residues, value=self.padding_id
+        )[0]
+
         input = self.embedding(input)
         if self.layer_norm:
             input = self.layer_norm(input)
@@ -87,7 +102,4 @@ class ProteinLSTM(nn.Module, core.Configurable):
         graph_feature = self.linear(graph_feature)
         graph_feature = self.activation(graph_feature)
 
-        return {
-            "graph_feature": graph_feature,
-            "residue_feature": residue_feature
-        }
+        return {"graph_feature": graph_feature, "residue_feature": residue_feature}

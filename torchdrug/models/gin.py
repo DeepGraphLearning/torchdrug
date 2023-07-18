@@ -29,9 +29,20 @@ class GraphIsomorphismNetwork(nn.Module, core.Configurable):
         readout (str, optional): readout function. Available functions are ``sum`` and ``mean``.
     """
 
-    def __init__(self, input_dim, hidden_dims, edge_input_dim=None, num_mlp_layer=2, eps=0, learn_eps=False,
-                 short_cut=False, batch_norm=False, activation="relu", concat_hidden=False,
-                 readout="sum"):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dims,
+        edge_input_dim=None,
+        num_mlp_layer=2,
+        eps=0,
+        learn_eps=False,
+        short_cut=False,
+        batch_norm=False,
+        activation="relu",
+        concat_hidden=False,
+        readout="sum",
+    ):
         super(GraphIsomorphismNetwork, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -45,8 +56,18 @@ class GraphIsomorphismNetwork(nn.Module, core.Configurable):
         self.layers = nn.ModuleList()
         for i in range(len(self.dims) - 1):
             layer_hidden_dims = [self.dims[i + 1]] * (num_mlp_layer - 1)
-            self.layers.append(layers.GraphIsomorphismConv(self.dims[i], self.dims[i + 1], edge_input_dim,
-                                                           layer_hidden_dims, eps, learn_eps, batch_norm, activation))
+            self.layers.append(
+                layers.GraphIsomorphismConv(
+                    self.dims[i],
+                    self.dims[i + 1],
+                    edge_input_dim,
+                    layer_hidden_dims,
+                    eps,
+                    learn_eps,
+                    batch_norm,
+                    activation,
+                )
+            )
 
         if readout == "sum":
             self.readout = layers.SumReadout()
@@ -85,7 +106,4 @@ class GraphIsomorphismNetwork(nn.Module, core.Configurable):
             node_feature = hiddens[-1]
         graph_feature = self.readout(graph, node_feature)
 
-        return {
-            "graph_feature": graph_feature,
-            "node_feature": node_feature
-        }
+        return {"graph_feature": graph_feature, "node_feature": node_feature}

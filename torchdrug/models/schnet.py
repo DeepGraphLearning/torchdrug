@@ -27,8 +27,18 @@ class SchNet(nn.Module, core.Configurable):
         concat_hidden (bool, optional): concat hidden representations from all layers as output
     """
 
-    def __init__(self, input_dim, hidden_dims, edge_input_dim=None, cutoff=5, num_gaussian=100, short_cut=True,
-                 batch_norm=False, activation="shifted_softplus", concat_hidden=False):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dims,
+        edge_input_dim=None,
+        cutoff=5,
+        num_gaussian=100,
+        short_cut=True,
+        batch_norm=False,
+        activation="shifted_softplus",
+        concat_hidden=False,
+    ):
         super(SchNet, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -41,8 +51,18 @@ class SchNet(nn.Module, core.Configurable):
 
         self.layers = nn.ModuleList()
         for i in range(len(self.dims) - 1):
-            self.layers.append(layers.ContinuousFilterConv(self.dims[i], self.dims[i + 1], edge_input_dim, None, cutoff,
-                                                           num_gaussian, batch_norm, activation))
+            self.layers.append(
+                layers.ContinuousFilterConv(
+                    self.dims[i],
+                    self.dims[i + 1],
+                    edge_input_dim,
+                    None,
+                    cutoff,
+                    num_gaussian,
+                    batch_norm,
+                    activation,
+                )
+            )
 
         self.readout = layers.SumReadout()
 
@@ -78,7 +98,4 @@ class SchNet(nn.Module, core.Configurable):
             node_feature = hiddens[-1]
         graph_feature = self.readout(graph, node_feature)
 
-        return {
-            "graph_feature": graph_feature,
-            "node_feature": node_feature
-        }
+        return {"graph_feature": graph_feature, "node_feature": node_feature}

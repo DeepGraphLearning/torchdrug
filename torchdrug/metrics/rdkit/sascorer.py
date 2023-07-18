@@ -69,7 +69,14 @@ def calculateScore(m):
     if nMacrocycles > 0:
         macrocyclePenalty = math.log10(2)
 
-    score2 = 0.0 - sizePenalty - stereoPenalty - spiroPenalty - bridgePenalty - macrocyclePenalty
+    score2 = (
+        0.0
+        - sizePenalty
+        - stereoPenalty
+        - spiroPenalty
+        - bridgePenalty
+        - macrocyclePenalty
+    )
 
     score3 = 0.0
     if nAtoms > len(fps):
@@ -79,7 +86,7 @@ def calculateScore(m):
 
     min = -4.0
     max = 2.5
-    sascore = 11. - (sascore - min + 1) / (max - min) * 9.0
+    sascore = 11.0 - (sascore - min + 1) / (max - min) * 9.0
     if sascore > 8.0:
         sascore = 8.0 + math.log(sascore + 1.0 - 9.0)
     if sascore > 10.0:

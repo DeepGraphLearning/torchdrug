@@ -7,7 +7,25 @@ from torchdrug.core import Registry as R
 
 
 # orderd by perodic table
-atom_vocab = ["H", "B", "C", "N", "O", "F", "Mg", "Si", "P", "S", "Cl", "Cu", "Zn", "Se", "Br", "Sn", "I"]
+atom_vocab = [
+    "H",
+    "B",
+    "C",
+    "N",
+    "O",
+    "F",
+    "Mg",
+    "Si",
+    "P",
+    "S",
+    "Cl",
+    "Cu",
+    "Zn",
+    "Se",
+    "Br",
+    "Sn",
+    "I",
+]
 atom_vocab = {a: i for i, a in enumerate(atom_vocab)}
 degree_vocab = range(7)
 num_hs_vocab = range(7)
@@ -17,15 +35,39 @@ total_valence_vocab = range(8)
 num_radical_vocab = range(8)
 hybridization_vocab = range(len(Chem.rdchem.HybridizationType.values))
 
-bond_type_vocab = [Chem.rdchem.BondType.SINGLE, Chem.rdchem.BondType.DOUBLE,
-                   Chem.rdchem.BondType.TRIPLE, Chem.rdchem.BondType.AROMATIC]
+bond_type_vocab = [
+    Chem.rdchem.BondType.SINGLE,
+    Chem.rdchem.BondType.DOUBLE,
+    Chem.rdchem.BondType.TRIPLE,
+    Chem.rdchem.BondType.AROMATIC,
+]
 bond_type_vocab = {b: i for i, b in enumerate(bond_type_vocab)}
 bond_dir_vocab = range(len(Chem.rdchem.BondDir.values))
 bond_stereo_vocab = range(len(Chem.rdchem.BondStereo.values))
 
 # orderd by molecular mass
-residue_vocab = ["GLY", "ALA", "SER", "PRO", "VAL", "THR", "CYS", "ILE", "LEU", "ASN",
-                 "ASP", "GLN", "LYS", "GLU", "MET", "HIS", "PHE", "ARG", "TYR", "TRP"]
+residue_vocab = [
+    "GLY",
+    "ALA",
+    "SER",
+    "PRO",
+    "VAL",
+    "THR",
+    "CYS",
+    "ILE",
+    "LEU",
+    "ASN",
+    "ASP",
+    "GLN",
+    "LYS",
+    "GLU",
+    "MET",
+    "HIS",
+    "PHE",
+    "ARG",
+    "TYR",
+    "TRP",
+]
 
 
 def onehot(x, vocab, allow_unknown=False):
@@ -44,7 +86,9 @@ def onehot(x, vocab, allow_unknown=False):
     else:
         feature = [0] * len(vocab)
         if index == -1:
-            raise ValueError("Unknown value `%s`. Available vocabulary is `%s`" % (x, vocab))
+            raise ValueError(
+                "Unknown value `%s`. Available vocabulary is `%s`" % (x, vocab)
+            )
         feature[index] = 1
 
     return feature
@@ -56,31 +100,33 @@ def atom_default(atom):
 
     Features:
         GetSymbol(): one-hot embedding for the atomic symbol
-        
-        GetChiralTag(): one-hot embedding for atomic chiral tag 
-        
+
+        GetChiralTag(): one-hot embedding for atomic chiral tag
+
         GetTotalDegree(): one-hot embedding for the degree of the atom in the molecule including Hs
-        
+
         GetFormalCharge(): one-hot embedding for the number of formal charges in the molecule
-        
-        GetTotalNumHs(): one-hot embedding for the total number of Hs (explicit and implicit) on the atom 
-        
+
+        GetTotalNumHs(): one-hot embedding for the total number of Hs (explicit and implicit) on the atom
+
         GetNumRadicalElectrons(): one-hot embedding for the number of radical electrons on the atom
-        
+
         GetHybridization(): one-hot embedding for the atom's hybridization
-        
+
         GetIsAromatic(): whether the atom is aromatic
-        
+
         IsInRing(): whether the atom is in a ring
     """
-    return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + \
-           onehot(atom.GetChiralTag(), chiral_tag_vocab) + \
-           onehot(atom.GetTotalDegree(), degree_vocab, allow_unknown=True) + \
-           onehot(atom.GetFormalCharge(), formal_charge_vocab) + \
-           onehot(atom.GetTotalNumHs(), num_hs_vocab) + \
-           onehot(atom.GetNumRadicalElectrons(), num_radical_vocab) + \
-           onehot(atom.GetHybridization(), hybridization_vocab) + \
-           [atom.GetIsAromatic(), atom.IsInRing()]
+    return (
+        onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True)
+        + onehot(atom.GetChiralTag(), chiral_tag_vocab)
+        + onehot(atom.GetTotalDegree(), degree_vocab, allow_unknown=True)
+        + onehot(atom.GetFormalCharge(), formal_charge_vocab)
+        + onehot(atom.GetTotalNumHs(), num_hs_vocab)
+        + onehot(atom.GetNumRadicalElectrons(), num_radical_vocab)
+        + onehot(atom.GetHybridization(), hybridization_vocab)
+        + [atom.GetIsAromatic(), atom.IsInRing()]
+    )
 
 
 @R.register("features.atom.center_identification")
@@ -89,22 +135,24 @@ def atom_center_identification(atom):
 
     Features:
         GetSymbol(): one-hot embedding for the atomic symbol
-        
-        GetTotalNumHs(): one-hot embedding for the total number of Hs (explicit and implicit) on the atom 
-        
+
+        GetTotalNumHs(): one-hot embedding for the total number of Hs (explicit and implicit) on the atom
+
         GetTotalDegree(): one-hot embedding for the degree of the atom in the molecule including Hs
-        
+
         GetTotalValence(): one-hot embedding for the total valence (explicit + implicit) of the atom
-        
+
         GetIsAromatic(): whether the atom is aromatic
-        
+
         IsInRing(): whether the atom is in a ring
     """
-    return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + \
-           onehot(atom.GetTotalNumHs(), num_hs_vocab) + \
-           onehot(atom.GetTotalDegree(), degree_vocab, allow_unknown=True) + \
-           onehot(atom.GetTotalValence(), total_valence_vocab) + \
-           [atom.GetIsAromatic(), atom.IsInRing()]
+    return (
+        onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True)
+        + onehot(atom.GetTotalNumHs(), num_hs_vocab)
+        + onehot(atom.GetTotalDegree(), degree_vocab, allow_unknown=True)
+        + onehot(atom.GetTotalValence(), total_valence_vocab)
+        + [atom.GetIsAromatic(), atom.IsInRing()]
+    )
 
 
 @R.register("features.atom.synthon_completion")
@@ -114,23 +162,33 @@ def atom_synthon_completion(atom):
     Features:
         GetSymbol(): one-hot embedding for the atomic symbol
 
-        GetTotalNumHs(): one-hot embedding for the total number of Hs (explicit and implicit) on the atom 
-        
+        GetTotalNumHs(): one-hot embedding for the total number of Hs (explicit and implicit) on the atom
+
         GetTotalDegree(): one-hot embedding for the degree of the atom in the molecule including Hs
-        
+
         IsInRing(): whether the atom is in a ring
-        
+
         IsInRingSize(3, 4, 5, 6): whether the atom is in a ring of a particular size
-        
+
         IsInRing() and not IsInRingSize(3, 4, 5, 6): whether the atom is in a ring and not in a ring of 3, 4, 5, 6
     """
-    return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + \
-           onehot(atom.GetTotalNumHs(), num_hs_vocab) + \
-           onehot(atom.GetTotalDegree(), degree_vocab, allow_unknown=True) + \
-           [atom.IsInRing(), atom.IsInRingSize(3), atom.IsInRingSize(4),
-            atom.IsInRingSize(5), atom.IsInRingSize(6), 
-            atom.IsInRing() and (not atom.IsInRingSize(3)) and (not atom.IsInRingSize(4)) \
-            and (not atom.IsInRingSize(5)) and (not atom.IsInRingSize(6))]
+    return (
+        onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True)
+        + onehot(atom.GetTotalNumHs(), num_hs_vocab)
+        + onehot(atom.GetTotalDegree(), degree_vocab, allow_unknown=True)
+        + [
+            atom.IsInRing(),
+            atom.IsInRingSize(3),
+            atom.IsInRingSize(4),
+            atom.IsInRingSize(5),
+            atom.IsInRingSize(6),
+            atom.IsInRing()
+            and (not atom.IsInRingSize(3))
+            and (not atom.IsInRingSize(4))
+            and (not atom.IsInRingSize(5))
+            and (not atom.IsInRingSize(6)),
+        ]
+    )
 
 
 @R.register("features.atom.symbol")
@@ -153,16 +211,18 @@ def atom_explicit_property_prediction(atom):
         GetDegree(): one-hot embedding for the degree of the atom in the molecule
 
         GetTotalValence(): one-hot embedding for the total valence (explicit + implicit) of the atom
-        
+
         GetFormalCharge(): one-hot embedding for the number of formal charges in the molecule
-        
+
         GetIsAromatic(): whether the atom is aromatic
     """
-    return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + \
-           onehot(atom.GetDegree(), degree_vocab, allow_unknown=True) + \
-           onehot(atom.GetTotalValence(), total_valence_vocab, allow_unknown=True) + \
-           onehot(atom.GetFormalCharge(), formal_charge_vocab) + \
-           [atom.GetIsAromatic()]
+    return (
+        onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True)
+        + onehot(atom.GetDegree(), degree_vocab, allow_unknown=True)
+        + onehot(atom.GetTotalValence(), total_valence_vocab, allow_unknown=True)
+        + onehot(atom.GetFormalCharge(), formal_charge_vocab)
+        + [atom.GetIsAromatic()]
+    )
 
 
 @R.register("features.atom.property_prediction")
@@ -171,23 +231,25 @@ def atom_property_prediction(atom):
 
     Features:
         GetSymbol(): one-hot embedding for the atomic symbol
-        
+
         GetDegree(): one-hot embedding for the degree of the atom in the molecule
-        
-        GetTotalNumHs(): one-hot embedding for the total number of Hs (explicit and implicit) on the atom 
-        
+
+        GetTotalNumHs(): one-hot embedding for the total number of Hs (explicit and implicit) on the atom
+
         GetTotalValence(): one-hot embedding for the total valence (explicit + implicit) of the atom
-        
+
         GetFormalCharge(): one-hot embedding for the number of formal charges in the molecule
-        
+
         GetIsAromatic(): whether the atom is aromatic
     """
-    return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + \
-           onehot(atom.GetDegree(), degree_vocab, allow_unknown=True) + \
-           onehot(atom.GetTotalNumHs(), num_hs_vocab, allow_unknown=True) + \
-           onehot(atom.GetTotalValence(), total_valence_vocab, allow_unknown=True) + \
-           onehot(atom.GetFormalCharge(), formal_charge_vocab, allow_unknown=True) + \
-           [atom.GetIsAromatic()]
+    return (
+        onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True)
+        + onehot(atom.GetDegree(), degree_vocab, allow_unknown=True)
+        + onehot(atom.GetTotalNumHs(), num_hs_vocab, allow_unknown=True)
+        + onehot(atom.GetTotalValence(), total_valence_vocab, allow_unknown=True)
+        + onehot(atom.GetFormalCharge(), formal_charge_vocab, allow_unknown=True)
+        + [atom.GetIsAromatic()]
+    )
 
 
 @R.register("features.atom.position")
@@ -212,11 +274,12 @@ def atom_pretrain(atom):
 
     Features:
         GetSymbol(): one-hot embedding for the atomic symbol
-        
+
         GetChiralTag(): one-hot embedding for atomic chiral tag
     """
-    return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + \
-           onehot(atom.GetChiralTag(), chiral_tag_vocab)
+    return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + onehot(
+        atom.GetChiralTag(), chiral_tag_vocab
+    )
 
 
 @R.register("features.atom.residue_symbol")
@@ -228,8 +291,9 @@ def atom_residue_symbol(atom):
         GetResidueName(): one-hot embedding for the residue symbol
     """
     residue = atom.GetPDBResidueInfo()
-    return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + \
-           onehot(residue.GetResidueName() if residue else -1, residue_vocab, allow_unknown=True)
+    return onehot(atom.GetSymbol(), atom_vocab, allow_unknown=True) + onehot(
+        residue.GetResidueName() if residue else -1, residue_vocab, allow_unknown=True
+    )
 
 
 @R.register("features.bond.default")
@@ -238,17 +302,19 @@ def bond_default(bond):
 
     Features:
         GetBondType(): one-hot embedding for the type of the bond
-        
+
         GetBondDir(): one-hot embedding for the direction of the bond
-        
+
         GetStereo(): one-hot embedding for the stereo configuration of the bond
-        
+
         GetIsConjugated(): whether the bond is considered to be conjugated
     """
-    return onehot(bond.GetBondType(), bond_type_vocab) + \
-           onehot(bond.GetBondDir(), bond_dir_vocab) + \
-           onehot(bond.GetStereo(), bond_stereo_vocab) + \
-           [int(bond.GetIsConjugated())]
+    return (
+        onehot(bond.GetBondType(), bond_type_vocab)
+        + onehot(bond.GetBondDir(), bond_dir_vocab)
+        + onehot(bond.GetStereo(), bond_stereo_vocab)
+        + [int(bond.GetIsConjugated())]
+    )
 
 
 @R.register("features.bond.length")
@@ -273,13 +339,15 @@ def bond_property_prediction(bond):
 
     Features:
         GetBondType(): one-hot embedding for the type of the bond
-        
+
         GetIsConjugated(): whether the bond is considered to be conjugated
-        
+
         IsInRing(): whether the bond is in a ring
     """
-    return onehot(bond.GetBondType(), bond_type_vocab) + \
-           [int(bond.GetIsConjugated()), bond.IsInRing()]
+    return onehot(bond.GetBondType(), bond_type_vocab) + [
+        int(bond.GetIsConjugated()),
+        bond.IsInRing(),
+    ]
 
 
 @R.register("features.bond.pretrain")
@@ -288,11 +356,12 @@ def bond_pretrain(bond):
 
     Features:
         GetBondType(): one-hot embedding for the type of the bond
-        
+
         GetBondDir(): one-hot embedding for the direction of the bond
     """
-    return onehot(bond.GetBondType(), bond_type_vocab) + \
-           onehot(bond.GetBondDir(), bond_dir_vocab)
+    return onehot(bond.GetBondType(), bond_type_vocab) + onehot(
+        bond.GetBondDir(), bond_dir_vocab
+    )
 
 
 @R.register("features.residue.symbol")
@@ -331,15 +400,27 @@ def molecule_default(mol):
     """Default molecule feature."""
     return ExtendedConnectivityFingerprint(mol)
 
+
 ECFP = ExtendedConnectivityFingerprint
 
 
 __all__ = [
-    "atom_default", "atom_center_identification", "atom_synthon_completion",
-    "atom_symbol", "atom_explicit_property_prediction", "atom_property_prediction",
-    "atom_position", "atom_pretrain", "atom_residue_symbol",
-    "bond_default", "bond_length", "bond_property_prediction", "bond_pretrain",
-    "residue_symbol", "residue_default",
-    "ExtendedConnectivityFingerprint", "molecule_default",
+    "atom_default",
+    "atom_center_identification",
+    "atom_synthon_completion",
+    "atom_symbol",
+    "atom_explicit_property_prediction",
+    "atom_property_prediction",
+    "atom_position",
+    "atom_pretrain",
+    "atom_residue_symbol",
+    "bond_default",
+    "bond_length",
+    "bond_property_prediction",
+    "bond_pretrain",
+    "residue_symbol",
+    "residue_default",
+    "ExtendedConnectivityFingerprint",
+    "molecule_default",
     "ECFP",
 ]

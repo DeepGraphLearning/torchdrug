@@ -60,16 +60,22 @@ class KNNEdge(nn.Module, core.Configurable):
 
         if self.min_distance > 0:
             node_in, node_out = edge_list.t()[:2]
-            mask = (graph.atom2residue[node_in] - graph.atom2residue[node_out]).abs() < self.min_distance
+            mask = (
+                graph.atom2residue[node_in] - graph.atom2residue[node_out]
+            ).abs() < self.min_distance
             edge_list = edge_list[~mask]
 
         if self.max_distance > 0:
             node_in, node_out = edge_list.t()[:2]
-            mask = (graph.atom2residue[node_in] - graph.atom2residue[node_out]).abs() > self.max_distance
+            mask = (
+                graph.atom2residue[node_in] - graph.atom2residue[node_out]
+            ).abs() > self.max_distance
             edge_list = edge_list[~mask]
 
         node_in, node_out = edge_list.t()[:2]
-        mask = (graph.node_position[node_in] - graph.node_position[node_out]).norm(dim=-1) < self.eps
+        mask = (graph.node_position[node_in] - graph.node_position[node_out]).norm(
+            dim=-1
+        ) < self.eps
         edge_list = edge_list[~mask]
 
         return edge_list, 1
@@ -103,17 +109,26 @@ class SpatialEdge(nn.Module, core.Configurable):
         Returns:
             (Tensor, int): edge list of shape :math:`(|E|, 3)`, number of relations
         """
-        edge_list = radius_graph(graph.node_position, r=self.radius, batch=graph.node2graph, max_num_neighbors=self.max_num_neighbors).t()
+        edge_list = radius_graph(
+            graph.node_position,
+            r=self.radius,
+            batch=graph.node2graph,
+            max_num_neighbors=self.max_num_neighbors,
+        ).t()
         relation = torch.zeros(len(edge_list), 1, dtype=torch.long, device=graph.device)
         edge_list = torch.cat([edge_list, relation], dim=-1)
 
         if self.min_distance > 0:
             node_in, node_out = edge_list.t()[:2]
-            mask = (graph.atom2residue[node_in] - graph.atom2residue[node_out]).abs() < self.min_distance
+            mask = (
+                graph.atom2residue[node_in] - graph.atom2residue[node_out]
+            ).abs() < self.min_distance
             edge_list = edge_list[~mask]
 
         node_in, node_out = edge_list.t()[:2]
-        mask = (graph.node_position[node_in] - graph.node_position[node_out]).norm(dim=-1) < self.eps
+        mask = (graph.node_position[node_in] - graph.node_position[node_out]).norm(
+            dim=-1
+        ) < self.eps
         edge_list = edge_list[~mask]
 
         return edge_list, 1
@@ -149,15 +164,43 @@ class SequentialEdge(nn.Module, core.Configurable):
             node_index = torch.arange(graph.num_node, device=graph.device)
             residue_index = torch.arange(graph.num_residue, device=graph.device)
             if i > 0:
-                is_node_in = graph.atom2residue < graph.num_cum_residues[graph.atom2graph] - i
-                is_node_out = graph.atom2residue >= (graph.num_cum_residues - graph.num_residues)[graph.atom2graph] + i
-                is_residue_in = residue_index < graph.num_cum_residues[graph.residue2graph] - i
-                is_residue_out = residue_index >= (graph.num_cum_residues - graph.num_residues)[graph.residue2graph] + i
+                is_node_in = (
+                    graph.atom2residue < graph.num_cum_residues[graph.atom2graph] - i
+                )
+                is_node_out = (
+                    graph.atom2residue
+                    >= (graph.num_cum_residues - graph.num_residues)[graph.atom2graph]
+                    + i
+                )
+                is_residue_in = (
+                    residue_index < graph.num_cum_residues[graph.residue2graph] - i
+                )
+                is_residue_out = (
+                    residue_index
+                    >= (graph.num_cum_residues - graph.num_residues)[
+                        graph.residue2graph
+                    ]
+                    + i
+                )
             else:
-                is_node_in = graph.atom2residue >= (graph.num_cum_residues - graph.num_residues)[graph.atom2graph] - i
-                is_node_out = graph.atom2residue < graph.num_cum_residues[graph.atom2graph] + i
-                is_residue_in = residue_index >= (graph.num_cum_residues - graph.num_residues)[graph.residue2graph] - i
-                is_residue_out = residue_index < graph.num_cum_residues[graph.residue2graph] + i
+                is_node_in = (
+                    graph.atom2residue
+                    >= (graph.num_cum_residues - graph.num_residues)[graph.atom2graph]
+                    - i
+                )
+                is_node_out = (
+                    graph.atom2residue < graph.num_cum_residues[graph.atom2graph] + i
+                )
+                is_residue_in = (
+                    residue_index
+                    >= (graph.num_cum_residues - graph.num_residues)[
+                        graph.residue2graph
+                    ]
+                    - i
+                )
+                is_residue_out = (
+                    residue_index < graph.num_cum_residues[graph.residue2graph] + i
+                )
             node_in = node_index[is_node_in]
             node_out = node_index[is_node_out]
             # group atoms by residue ids
@@ -165,12 +208,19 @@ class SequentialEdge(nn.Module, core.Configurable):
             node_out = node_out[graph.atom2residue[node_out].argsort()]
             num_node_in = residue2num_atom[is_residue_in]
             num_node_out = residue2num_atom[is_residue_out]
-            node_in, node_out = functional.variadic_meshgrid(node_in, num_node_in, node_out, num_node_out)
+            node_in, node_out = functional.variadic_meshgrid(
+                node_in, num_node_in, node_out, num_node_out
+            )
             # exclude cross-chain edges
-            is_same_chain = (graph.chain_id[graph.atom2residue[node_in]] == graph.chain_id[graph.atom2residue[node_out]])
+            is_same_chain = (
+                graph.chain_id[graph.atom2residue[node_in]]
+                == graph.chain_id[graph.atom2residue[node_out]]
+            )
             node_in = node_in[is_same_chain]
             node_out = node_out[is_same_chain]
-            relation = torch.ones(len(node_in), dtype=torch.long, device=graph.device) * (i + self.max_distance)
+            relation = torch.ones(
+                len(node_in), dtype=torch.long, device=graph.device
+            ) * (i + self.max_distance)
             edges = torch.stack([node_in, node_out, relation], dim=-1)
             edge_list.append(edges)
 
@@ -192,8 +242,12 @@ class AlphaCarbonNode(nn.Module, core.Configurable):
         Parameters:
             graph (Graph): :math:`n` graph(s)
         """
-        mask = (graph.atom_name == data.Protein.atom_name2id["CA"]) & (graph.atom2residue != -1)
-        residue2num_atom = graph.atom2residue[mask].bincount(minlength=graph.num_residue)
+        mask = (graph.atom_name == data.Protein.atom_name2id["CA"]) & (
+            graph.atom2residue != -1
+        )
+        residue2num_atom = graph.atom2residue[mask].bincount(
+            minlength=graph.num_residue
+        )
         residue_mask = residue2num_atom > 0
         mask = mask & residue_mask[graph.atom2residue]
         graph = graph.subgraph(mask).subresidue(residue_mask)
@@ -241,7 +295,9 @@ class RandomEdgeMask(nn.Module, core.Configurable):
         num_samples = (graph.num_edges * self.mask_rate).long().clamp(min=1)
         num_sample = num_samples.sum()
         sample2graph = functional._size_to_index(num_samples)
-        edge_index = (torch.rand(num_sample, device=graph.device) * graph.num_edges[sample2graph]).long()
+        edge_index = (
+            torch.rand(num_sample, device=graph.device) * graph.num_edges[sample2graph]
+        ).long()
         edge_index = edge_index + (graph.num_cum_edges - graph.num_edges)[sample2graph]
         edge_mask = ~functional.as_mask(edge_index, graph.num_edge)
 
@@ -269,8 +325,10 @@ class SubsequenceNode(nn.Module, core.Configurable):
         Parameters:
             graph (Graph): :math:`n` graph(s)
         """
-        starts = (torch.rand(graph.batch_size, device=graph.device) *
-                  (graph.num_residues - self.max_length).clamp(min=0)).long()
+        starts = (
+            torch.rand(graph.batch_size, device=graph.device)
+            * (graph.num_residues - self.max_length).clamp(min=0)
+        ).long()
         ends = torch.min(starts + self.max_length, graph.num_residues)
         starts = starts + graph.num_cum_residues - graph.num_residues
         ends = ends + graph.num_cum_residues - graph.num_residues
@@ -287,7 +345,7 @@ class SubspaceNode(nn.Module, core.Configurable):
     Construct nodes by taking a spatial ball of the original graph.
 
     Parameters:
-        entity_level (str, optional): level to perform cropping. 
+        entity_level (str, optional): level to perform cropping.
             Available options are ``node``, ``atom`` and ``residue``.
         min_radius (float, optional): minimum radius of the spatial ball
         min_neighbor (int, optional): minimum number of nodes in the spatial ball
@@ -311,8 +369,12 @@ class SubspaceNode(nn.Module, core.Configurable):
         node_in = functional.variadic_sample(node_in, graph.num_nodes, 1).squeeze(-1)
         node_in = node_in.repeat_interleave(graph.num_nodes)
         node_out = torch.arange(graph.num_node, device=graph.device)
-        dist = (graph.node_position[node_in] - graph.node_position[node_out]).norm(dim=-1)
-        topk_dist = functional.variadic_topk(dist, graph.num_nodes, self.min_neighbor, largest=False)[0]
+        dist = (graph.node_position[node_in] - graph.node_position[node_out]).norm(
+            dim=-1
+        )
+        topk_dist = functional.variadic_topk(
+            dist, graph.num_nodes, self.min_neighbor, largest=False
+        )[0]
         radius = (topk_dist[:, -1] * 1.5).clamp(min=self.min_radius)
         radius = radius.repeat_interleave(graph.num_nodes)
         node_index = node_out[dist < radius]

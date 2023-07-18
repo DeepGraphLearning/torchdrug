@@ -38,7 +38,9 @@ class NodeSampler(nn.Module):
         if self.ratio:
             num_sample = min(num_sample, int(self.ratio * graph.num_node))
 
-        prob = scatter_add(graph.edge_weight ** 2, graph.edge_list[:, 1], dim_size=graph.num_node)
+        prob = scatter_add(
+            graph.edge_weight**2, graph.edge_list[:, 1], dim_size=graph.num_node
+        )
         prob /= prob.mean()
         index = functional.multinomial(prob, num_sample)
         new_graph = graph.node_mask(index)

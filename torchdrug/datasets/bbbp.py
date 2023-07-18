@@ -5,7 +5,9 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.BBBP")
-@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(
+    data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields")
+)
 class BBBP(data.MoleculeDataset):
     """
     Binary labels of blood-brain barrier penetration.
@@ -32,5 +34,10 @@ class BBBP(data.MoleculeDataset):
 
         file_name = utils.download(self.url, path, md5=self.md5)
 
-        self.load_csv(file_name, smiles_field="smiles", target_fields=self.target_fields,
-                      verbose=verbose, **kwargs)
+        self.load_csv(
+            file_name,
+            smiles_field="smiles",
+            target_fields=self.target_fields,
+            verbose=verbose,
+            **kwargs
+        )

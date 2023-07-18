@@ -25,7 +25,13 @@ class Fold(data.ProteinDataset):
 
     url = "http://s3.amazonaws.com/songlabdata/proteindata/data_pytorch/remote_homology.tar.gz"
     md5 = "1d687bdeb9e3866f77504d6079eed00a"
-    splits = ["train", "valid", "test_fold_holdout", "test_family_holdout", "test_superfamily_holdout"]
+    splits = [
+        "train",
+        "valid",
+        "test_fold_holdout",
+        "test_family_holdout",
+        "test_superfamily_holdout",
+    ]
     target_fields = ["fold_label"]
 
     def __init__(self, path, verbose=1, **kwargs):
@@ -36,10 +42,14 @@ class Fold(data.ProteinDataset):
 
         zip_file = utils.download(self.url, path, md5=self.md5)
         data_path = utils.extract(zip_file)
-        lmdb_files = [os.path.join(data_path, "remote_homology/remote_homology_%s.lmdb" % split)
-                      for split in self.splits]
+        lmdb_files = [
+            os.path.join(data_path, "remote_homology/remote_homology_%s.lmdb" % split)
+            for split in self.splits
+        ]
 
-        self.load_lmdbs(lmdb_files, target_fields=self.target_fields, verbose=verbose, **kwargs)
+        self.load_lmdbs(
+            lmdb_files, target_fields=self.target_fields, verbose=verbose, **kwargs
+        )
 
     def split(self, keys=None):
         keys = keys or self.splits

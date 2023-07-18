@@ -1,9 +1,20 @@
 from .task import Task
 
-from .property_prediction import PropertyPrediction, MultipleBinaryClassification, \
-    NodePropertyPrediction, InteractionPrediction, Unsupervised
-from .pretrain import EdgePrediction, AttributeMasking, ContextPrediction, DistancePrediction, \
-    AnglePrediction, DihedralPrediction
+from .property_prediction import (
+    PropertyPrediction,
+    MultipleBinaryClassification,
+    NodePropertyPrediction,
+    InteractionPrediction,
+    Unsupervised,
+)
+from .pretrain import (
+    EdgePrediction,
+    AttributeMasking,
+    ContextPrediction,
+    DistancePrediction,
+    AnglePrediction,
+    DihedralPrediction,
+)
 from .generation import AutoregressiveGeneration, GCPNGeneration
 from .retrosynthesis import CenterIdentification, SynthonCompletion, Retrosynthesis
 from .reasoning import KnowledgeGraphCompletion
@@ -39,12 +50,22 @@ def _get_metric_name(metric):
 
 
 __all__ = [
-    "PropertyPrediction", "MultipleBinaryClassification", "NodePropertyPrediction", "InteractionPrediction",
+    "PropertyPrediction",
+    "MultipleBinaryClassification",
+    "NodePropertyPrediction",
+    "InteractionPrediction",
     "Unsupervised",
-    "EdgePrediction", "AttributeMasking", "ContextPrediction", "DistancePrediction", "AnglePrediction",
+    "EdgePrediction",
+    "AttributeMasking",
+    "ContextPrediction",
+    "DistancePrediction",
+    "AnglePrediction",
     "DihedralPrediction",
-    "AutoregressiveGeneration", "GCPNGeneration",
-    "CenterIdentification", "SynthonCompletion", "Retrosynthesis",
+    "AutoregressiveGeneration",
+    "GCPNGeneration",
+    "CenterIdentification",
+    "SynthonCompletion",
+    "Retrosynthesis",
     "KnowledgeGraphCompletion",
     "ContactPrediction",
 ]

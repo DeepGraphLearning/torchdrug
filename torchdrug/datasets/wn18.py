@@ -29,7 +29,7 @@ class WN18(data.KnowledgeGraphDataset):
     md5s = [
         "7d68324d293837ac165c3441a6c8b0eb",
         "f4f66fec0ca83b5ebe7ad7003404e61d",
-        "b035247a8916c7ec3443fa949e1ff02c"
+        "b035247a8916c7ec3443fa949e1ff02c",
     ]
 
     def __init__(self, path, verbose=1):
@@ -79,7 +79,7 @@ class WN18RR(data.KnowledgeGraphDataset):
     md5s = [
         "35e81af3ae233327c52a87f23b30ad3c",
         "74a2ee9eca9a8d31f1a7d4d95b5e0887",
-        "2b45ba1ba436b9d4ff27f1d3511224c9"
+        "2b45ba1ba436b9d4ff27f1d3511224c9",
     ]
 
     def __init__(self, path, verbose=1):

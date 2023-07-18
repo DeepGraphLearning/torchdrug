@@ -30,8 +30,18 @@ class ContactPrediction(tasks.Task, core.Configurable):
     eps = 1e-10
     _option_members = {"task", "criterion", "metric"}
 
-    def __init__(self, model, max_length=500, random_truncate=True, threshold=8.0, gap=6, criterion="bce",
-                 metric=("accuracy", "prec@L5"), num_mlp_layer=1, verbose=0):
+    def __init__(
+        self,
+        model,
+        max_length=500,
+        random_truncate=True,
+        threshold=8.0,
+        gap=6,
+        criterion="bce",
+        metric=("accuracy", "prec@L5"),
+        num_mlp_layer=1,
+        verbose=0,
+    ):
         super(ContactPrediction, self).__init__()
         self.model = model
         self.max_length = max_length
@@ -55,8 +65,10 @@ class ContactPrediction(tasks.Task, core.Configurable):
         size = graph.num_residues
         if (size > self.max_length).any():
             if self.random_truncate:
-                starts = (torch.rand(graph.batch_size, device=graph.device) * \
-                          (graph.num_residues - self.max_length).clamp(min=0)).long()
+                starts = (
+                    torch.rand(graph.batch_size, device=graph.device)
+                    * (graph.num_residues - self.max_length).clamp(min=0)
+                ).long()
                 ends = torch.min(starts + self.max_length, graph.num_residues)
                 starts = starts + (graph.num_cum_residues - graph.num_residues)
                 ends = ends + (graph.num_cum_residues - graph.num_residues)
@@ -68,9 +80,7 @@ class ContactPrediction(tasks.Task, core.Configurable):
                 mask = functional.multi_slice_mask(starts, ends, graph.num_residue)
             graph = graph.subresidue(mask)
 
-        return {
-            "graph": graph
-        }
+        return {"graph": graph}
 
     def forward(self, batch):
         """"""
@@ -83,8 +93,12 @@ class ContactPrediction(tasks.Task, core.Configurable):
 
         for criterion, weight in self.criterion.items():
             if criterion == "bce":
-                loss = F.binary_cross_entropy_with_logits(pred, target["label"], reduction="none")
-                loss = functional.variadic_mean(loss * target["mask"].float(), size=target["size"])
+                loss = F.binary_cross_entropy_with_logits(
+                    pred, target["label"], reduction="none"
+                )
+                loss = functional.variadic_mean(
+                    loss * target["mask"].float(), size=target["size"]
+                )
             else:
                 raise ValueError("Unknown criterion `%s`" % criterion)
             loss = loss.mean()
@@ -97,15 +111,22 @@ class ContactPrediction(tasks.Task, core.Configurable):
 
     def predict(self, batch, all_loss=None, metric=None):
         graph = batch["graph"]
-        output = self.model(graph, graph.residue_feature.float(), all_loss=all_loss, metric=metric)
+        output = self.model(
+            graph, graph.residue_feature.float(), all_loss=all_loss, metric=metric
+        )
         output = output["residue_feature"]
 
         range = torch.arange(graph.num_residue, device=self.device)
-        node_in, node_out = functional.variadic_meshgrid(range, graph.num_residues, range, graph.num_residues)
-        if all_loss is None and node_in.shape[0] > (self.max_length ** 2) * graph.batch_size:
+        node_in, node_out = functional.variadic_meshgrid(
+            range, graph.num_residues, range, graph.num_residues
+        )
+        if (
+            all_loss is None
+            and node_in.shape[0] > (self.max_length**2) * graph.batch_size
+        ):
             # test
             # split large input to reduce memory cost
-            size = (self.max_length ** 2) * graph.batch_size
+            size = (self.max_length**2) * graph.batch_size
             node_in_splits = node_in.split(size, dim=0)
             node_out_splits = node_out.split(size, dim=0)
             pred = []
@@ -130,17 +151,21 @@ class ContactPrediction(tasks.Task, core.Configurable):
         residue_position = graph.residue_position
 
         range = torch.arange(graph.num_residue, device=self.device)
-        node_in, node_out = functional.variadic_meshgrid(range, graph.num_residues, range, graph.num_residues)
-        dist = (residue_position[node_in] - residue_position[node_out]).norm(p=2, dim=-1)
+        node_in, node_out = functional.variadic_meshgrid(
+            range, graph.num_residues, range, graph.num_residues
+        )
+        dist = (residue_position[node_in] - residue_position[node_out]).norm(
+            p=2, dim=-1
+        )
         label = (dist < self.threshold).float()
 
-        mask = valid_mask[node_in] & valid_mask[node_out] & ((node_in - node_out).abs() >= self.gap)
+        mask = (
+            valid_mask[node_in]
+            & valid_mask[node_out]
+            & ((node_in - node_out).abs() >= self.gap)
+        )
 
-        return {
-            "label": label,
-            "mask": mask,
-            "size": graph.num_residues ** 2
-        }
+        return {"label": label, "mask": mask, "size": graph.num_residues**2}
 
     def evaluate(self, pred, target):
         label = target["label"]

@@ -29,8 +29,20 @@ class MessagePassingNeuralNetwork(nn.Module, core.Configurable):
         concat_hidden (bool, optional): concat hidden representations from all layers as output
     """
 
-    def __init__(self, input_dim, hidden_dim, edge_input_dim, num_layer=1, num_gru_layer=1, num_mlp_layer=2,
-                 num_s2s_step=3, short_cut=False, batch_norm=False, activation="relu", concat_hidden=False):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dim,
+        edge_input_dim,
+        num_layer=1,
+        num_gru_layer=1,
+        num_mlp_layer=2,
+        num_s2s_step=3,
+        short_cut=False,
+        batch_norm=False,
+        activation="relu",
+        concat_hidden=False,
+    ):
         super(MessagePassingNeuralNetwork, self).__init__()
 
         self.input_dim = input_dim
@@ -46,8 +58,13 @@ class MessagePassingNeuralNetwork(nn.Module, core.Configurable):
         self.concat_hidden = concat_hidden
 
         self.linear = nn.Linear(input_dim, hidden_dim)
-        self.layer = layers.MessagePassing(hidden_dim, edge_input_dim, [hidden_dim] * (num_mlp_layer - 1),
-                                           batch_norm, activation)
+        self.layer = layers.MessagePassing(
+            hidden_dim,
+            edge_input_dim,
+            [hidden_dim] * (num_mlp_layer - 1),
+            batch_norm,
+            activation,
+        )
         self.gru = nn.GRU(hidden_dim, hidden_dim, num_gru_layer)
 
         self.readout = layers.Set2Set(feature_dim, num_s2s_step)
@@ -85,7 +102,4 @@ class MessagePassingNeuralNetwork(nn.Module, core.Configurable):
             node_feature = hiddens[-1]
         graph_feature = self.readout(graph, node_feature)
 
-        return {
-            "graph_feature": graph_feature,
-            "node_feature": node_feature
-        }
+        return {"graph_feature": graph_feature, "node_feature": node_feature}

@@ -30,7 +30,9 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
     """
 
     @utils.copy_args(data.Molecule.from_molecule)
-    def load_smiles(self, smiles_list, targets, transform=None, lazy=False, verbose=0, **kwargs):
+    def load_smiles(
+        self, smiles_list, targets, transform=None, lazy=False, verbose=0, **kwargs
+    ):
         """
         Load the dataset from SMILES and targets.
 
@@ -45,12 +47,16 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
         """
         num_sample = len(smiles_list)
         if num_sample > 1000000:
-            warnings.warn("Preprocessing molecules of a large dataset consumes a lot of CPU memory and time. "
-                          "Use load_smiles(lazy=True) to construct molecules in the dataloader instead.")
+            warnings.warn(
+                "Preprocessing molecules of a large dataset consumes a lot of CPU memory and time. "
+                "Use load_smiles(lazy=True) to construct molecules in the dataloader instead."
+            )
         for field, target_list in targets.items():
             if len(target_list) != num_sample:
-                raise ValueError("Number of target `%s` doesn't match with number of molecules. "
-                                 "Expect %d but found %d" % (field, num_sample, len(target_list)))
+                raise ValueError(
+                    "Number of target `%s` doesn't match with number of molecules. "
+                    "Expect %d but found %d" % (field, num_sample, len(target_list))
+                )
 
         self.transform = transform
         self.lazy = lazy
@@ -65,7 +71,10 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
             if not self.lazy or len(self.data) == 0:
                 mol = Chem.MolFromSmiles(smiles)
                 if not mol:
-                    logger.debug("Can't construct molecule from SMILES `%s`. Ignore this sample." % smiles)
+                    logger.debug(
+                        "Can't construct molecule from SMILES `%s`. Ignore this sample."
+                        % smiles
+                    )
                     continue
                 mol = data.Molecule.from_molecule(mol, **kwargs)
             else:
@@ -76,7 +85,9 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
                 self.targets[field].append(targets[field][i])
 
     @utils.copy_args(load_smiles)
-    def load_csv(self, csv_file, smiles_field="smiles", target_fields=None, verbose=0, **kwargs):
+    def load_csv(
+        self, csv_file, smiles_field="smiles", target_fields=None, verbose=0, **kwargs
+    ):
         """
         Load the dataset from a csv file.
 
@@ -95,7 +106,11 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
         with open(csv_file, "r") as fin:
             reader = csv.reader(fin)
             if verbose:
-                reader = iter(tqdm(reader, "Loading %s" % csv_file, utils.get_line_count(csv_file)))
+                reader = iter(
+                    tqdm(
+                        reader, "Loading %s" % csv_file, utils.get_line_count(csv_file)
+                    )
+                )
             fields = next(reader)
             smiles = []
             targets = defaultdict(list)
@@ -176,7 +191,11 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
     def get_item(self, index):
         if getattr(self, "lazy", False):
             # TODO: what if the smiles is invalid here?
-            item = {"graph": data.Molecule.from_smiles(self.smiles_list[index], **self.kwargs)}
+            item = {
+                "graph": data.Molecule.from_smiles(
+                    self.smiles_list[index], **self.kwargs
+                )
+            }
         else:
             item = {"graph": self.data[index]}
         item.update({k: v[index] for k, v in self.targets.items()})
@@ -222,7 +241,9 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
         atom_types = set()
 
         if getattr(self, "lazy", False):
-            warnings.warn("Calling this function for dataset with lazy=True may take a large amount of time.")             
+            warnings.warn(
+                "Calling this function for dataset with lazy=True may take a large amount of time."
+            )
             for smiles in self.smiles_list:
                 graph = data.Molecule.from_smiles(smiles, **self.kwargs)
                 atom_types.update(graph.atom_type.tolist())
@@ -238,7 +259,9 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
         bond_types = set()
 
         if getattr(self, "lazy", False):
-            warnings.warn("Calling this function for dataset with lazy=True may take a large amount of time.")             
+            warnings.warn(
+                "Calling this function for dataset with lazy=True may take a large amount of time."
+            )
             for smiles in self.smiles_list:
                 graph = data.Molecule.from_smiles(smiles, **self.kwargs)
                 bond_types.update(graph.edge_list[:, 2].tolist())
@@ -281,8 +304,10 @@ class ReactionDataset(MoleculeDataset, core.Configurable):
         num_sample = len(smiles_list)
         for field, target_list in targets.items():
             if len(target_list) != num_sample:
-                raise ValueError("Number of target `%s` doesn't match with number of molecules. "
-                                 "Expect %d but found %d" % (field, num_sample, len(target_list)))
+                raise ValueError(
+                    "Number of target `%s` doesn't match with number of molecules. "
+                    "Expect %d but found %d" % (field, num_sample, len(target_list))
+                )
 
         self.smiles_list = []
         self.data = []
@@ -296,7 +321,10 @@ class ReactionDataset(MoleculeDataset, core.Configurable):
             for _smiles in [smiles_reactant, smiles_product]:
                 mol = Chem.MolFromSmiles(_smiles)
                 if not mol:
-                    logger.debug("Can't construct molecule from SMILES `%s`. Ignore this sample." % _smiles)
+                    logger.debug(
+                        "Can't construct molecule from SMILES `%s`. Ignore this sample."
+                        % _smiles
+                    )
                     break
                 mol = data.Molecule.from_molecule(mol, **kwargs)
                 mols.append(mol)
@@ -373,10 +401,12 @@ class NodeClassificationDataset(torch_data.Dataset, core.Configurable):
         with open(node_file, "r") as fin:
             reader = csv.reader(fin, delimiter="\t")
             if verbose:
-                reader = tqdm(reader, "Loading %s" % node_file, utils.get_line_count(node_file))
+                reader = tqdm(
+                    reader, "Loading %s" % node_file, utils.get_line_count(node_file)
+                )
             for tokens in reader:
                 node_token = tokens[0]
-                feature_tokens = tokens[1: -1]
+                feature_tokens = tokens[1:-1]
                 label_token = tokens[-1]
                 inv_node_vocab[node_token] = len(inv_node_vocab)
                 if label_token not in inv_label_vocab:
@@ -391,7 +421,9 @@ class NodeClassificationDataset(torch_data.Dataset, core.Configurable):
         with open(edge_file, "r") as fin:
             reader = csv.reader(fin, delimiter="\t")
             if verbose:
-                reader = tqdm(reader, "Loading %s" % edge_file, utils.get_line_count(edge_file))
+                reader = tqdm(
+                    reader, "Loading %s" % edge_file, utils.get_line_count(edge_file)
+                )
             for tokens in reader:
                 h_token, t_token = tokens
                 if h_token not in inv_node_vocab:
@@ -402,24 +434,43 @@ class NodeClassificationDataset(torch_data.Dataset, core.Configurable):
                 t = inv_node_vocab[t_token]
                 edge_list.append((h, t))
 
-        self.load_edge(edge_list, node_feature, node_label, inv_node_vocab=inv_node_vocab,
-                       inv_label_vocab=inv_label_vocab)
+        self.load_edge(
+            edge_list,
+            node_feature,
+            node_label,
+            inv_node_vocab=inv_node_vocab,
+            inv_label_vocab=inv_label_vocab,
+        )
 
-    def load_edge(self, edge_list, node_feature, node_label, node_vocab=None, inv_node_vocab=None, label_vocab=None,
-                  inv_label_vocab=None):
+    def load_edge(
+        self,
+        edge_list,
+        node_feature,
+        node_label,
+        node_vocab=None,
+        inv_node_vocab=None,
+        label_vocab=None,
+        inv_label_vocab=None,
+    ):
         node_vocab, inv_node_vocab = self._standarize_vocab(node_vocab, inv_node_vocab)
-        label_vocab, inv_label_vocab = self._standarize_vocab(label_vocab, inv_label_vocab)
+        label_vocab, inv_label_vocab = self._standarize_vocab(
+            label_vocab, inv_label_vocab
+        )
 
         self.num_labeled_node = len(node_feature)
         if len(node_vocab) > len(node_feature):
-            logger.warning("Missing features & labels for %d / %d nodes" %
-                           (len(node_vocab) - len(node_feature), len(node_vocab)))
+            logger.warning(
+                "Missing features & labels for %d / %d nodes"
+                % (len(node_vocab) - len(node_feature), len(node_vocab))
+            )
             dummy_label = 0
             dummy_feature = [0] * len(node_feature[0])
             node_label += [dummy_label] * (len(node_vocab) - len(node_feature))
             node_feature += [dummy_feature] * (len(node_vocab) - len(node_feature))
 
-        self.graph = data.Graph(edge_list, num_node=len(node_vocab), node_feature=node_feature)
+        self.graph = data.Graph(
+            edge_list, num_node=len(node_vocab), node_feature=node_feature
+        )
         with self.graph.node():
             self.graph.node_label = torch.as_tensor(node_label)
         self.node_vocab = node_vocab
@@ -430,13 +481,16 @@ class NodeClassificationDataset(torch_data.Dataset, core.Configurable):
     def _standarize_vocab(self, vocab, inverse_vocab):
         if vocab is not None:
             if isinstance(vocab, dict):
-                assert set(vocab.keys()) == set(range(len(vocab))), "Vocab keys should be consecutive numbers"
+                assert set(vocab.keys()) == set(
+                    range(len(vocab))
+                ), "Vocab keys should be consecutive numbers"
                 vocab = [vocab[k] for k in range(len(vocab))]
             if inverse_vocab is None:
                 inverse_vocab = {v: i for i, v in enumerate(vocab)}
         if inverse_vocab is not None:
-            assert set(inverse_vocab.values()) == set(range(len(inverse_vocab))), \
-                "Inverse vocab values should be consecutive numbers"
+            assert set(inverse_vocab.values()) == set(
+                range(len(inverse_vocab))
+            ), "Inverse vocab values should be consecutive numbers"
             if vocab is None:
                 vocab = sorted(inverse_vocab, key=lambda k: inverse_vocab[k])
         return vocab, inverse_vocab
@@ -457,10 +511,7 @@ class NodeClassificationDataset(torch_data.Dataset, core.Configurable):
         return self.graph.node_feature.shape[-1]
 
     def __getitem__(self, index):
-        return {
-            "node_index": index,
-            "label": self.graph.node_label[index]
-        }
+        return {"node_index": index, "label": self.graph.node_label[index]}
 
     def __len__(self):
         return self.num_labeled_node
@@ -481,8 +532,14 @@ class KnowledgeGraphDataset(torch_data.Dataset, core.Configurable):
     The whole dataset contains one knowledge graph.
     """
 
-    def load_triplet(self, triplets, entity_vocab=None, relation_vocab=None, inv_entity_vocab=None,
-                     inv_relation_vocab=None):
+    def load_triplet(
+        self,
+        triplets,
+        entity_vocab=None,
+        relation_vocab=None,
+        inv_entity_vocab=None,
+        inv_relation_vocab=None,
+    ):
         """
         Load the dataset from triplets.
         The mapping between indexes and tokens is specified through either vocabularies or inverse vocabularies.
@@ -494,8 +551,12 @@ class KnowledgeGraphDataset(torch_data.Dataset, core.Configurable):
             inv_entity_vocab (dict of str, optional): maps tokens to entity indexes
             inv_relation_vocab (dict of str, optional): maps tokens to relation indexes
         """
-        entity_vocab, inv_entity_vocab = self._standarize_vocab(entity_vocab, inv_entity_vocab)
-        relation_vocab, inv_relation_vocab = self._standarize_vocab(relation_vocab, inv_relation_vocab)
+        entity_vocab, inv_entity_vocab = self._standarize_vocab(
+            entity_vocab, inv_entity_vocab
+        )
+        relation_vocab, inv_relation_vocab = self._standarize_vocab(
+            relation_vocab, inv_relation_vocab
+        )
 
         num_node = len(entity_vocab) if entity_vocab else None
         num_relation = len(relation_vocab) if relation_vocab else None
@@ -534,7 +595,11 @@ class KnowledgeGraphDataset(torch_data.Dataset, core.Configurable):
                 t = inv_entity_vocab[t_token]
                 triplets.append((h, t, r))
 
-        self.load_triplet(triplets, inv_entity_vocab=inv_entity_vocab, inv_relation_vocab=inv_relation_vocab)
+        self.load_triplet(
+            triplets,
+            inv_entity_vocab=inv_entity_vocab,
+            inv_relation_vocab=inv_relation_vocab,
+        )
 
     def load_tsvs(self, tsv_files, verbose=0):
         """
@@ -553,7 +618,9 @@ class KnowledgeGraphDataset(torch_data.Dataset, core.Configurable):
             with open(tsv_file, "r") as fin:
                 reader = csv.reader(fin, delimiter="\t")
                 if verbose:
-                    reader = tqdm(reader, "Loading %s" % tsv_file, utils.get_line_count(tsv_file))
+                    reader = tqdm(
+                        reader, "Loading %s" % tsv_file, utils.get_line_count(tsv_file)
+                    )
 
                 num_sample = 0
                 for tokens in reader:
@@ -571,19 +638,26 @@ class KnowledgeGraphDataset(torch_data.Dataset, core.Configurable):
                     num_sample += 1
             num_samples.append(num_sample)
 
-        self.load_triplet(triplets, inv_entity_vocab=inv_entity_vocab, inv_relation_vocab=inv_relation_vocab)
+        self.load_triplet(
+            triplets,
+            inv_entity_vocab=inv_entity_vocab,
+            inv_relation_vocab=inv_relation_vocab,
+        )
         self.num_samples = num_samples
 
     def _standarize_vocab(self, vocab, inverse_vocab):
         if vocab is not None:
             if isinstance(vocab, dict):
-                assert set(vocab.keys()) == set(range(len(vocab))), "Vocab keys should be consecutive numbers"
+                assert set(vocab.keys()) == set(
+                    range(len(vocab))
+                ), "Vocab keys should be consecutive numbers"
                 vocab = [vocab[k] for k in range(len(vocab))]
             if inverse_vocab is None:
                 inverse_vocab = {v: i for i, v in enumerate(vocab)}
         if inverse_vocab is not None:
-            assert set(inverse_vocab.values()) == set(range(len(inverse_vocab))), \
-                "Inverse vocab values should be consecutive numbers"
+            assert set(inverse_vocab.values()) == set(
+                range(len(inverse_vocab))
+            ), "Inverse vocab values should be consecutive numbers"
             if vocab is None:
                 vocab = sorted(inverse_vocab, key=lambda k: inverse_vocab[k])
         return vocab, inverse_vocab
@@ -626,7 +700,16 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
     """
 
     @utils.copy_args(data.Protein.from_sequence)
-    def load_sequence(self, sequences, targets, attributes=None, transform=None, lazy=False, verbose=0, **kwargs):
+    def load_sequence(
+        self,
+        sequences,
+        targets,
+        attributes=None,
+        transform=None,
+        lazy=False,
+        verbose=0,
+        **kwargs
+    ):
         """
         Load the dataset from protein sequences and targets.
 
@@ -642,12 +725,16 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
         """
         num_sample = len(sequences)
         if num_sample > 1000000:
-            warnings.warn("Preprocessing proteins of a large dataset consumes a lot of CPU memory and time. "
-                          "Use load_sequence(lazy=True) to construct molecules in the dataloader instead.")
+            warnings.warn(
+                "Preprocessing proteins of a large dataset consumes a lot of CPU memory and time. "
+                "Use load_sequence(lazy=True) to construct molecules in the dataloader instead."
+            )
         for field, target_list in targets.items():
             if len(target_list) != num_sample:
-                raise ValueError("Number of target `%s` doesn't match with number of molecules. "
-                                 "Expect %d but found %d" % (field, num_sample, len(target_list)))
+                raise ValueError(
+                    "Number of target `%s` doesn't match with number of molecules. "
+                    "Expect %d but found %d" % (field, num_sample, len(target_list))
+                )
 
         self.transform = transform
         self.lazy = lazy
@@ -673,8 +760,17 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
                 self.targets[field].append(targets[field][i])
 
     @utils.copy_args(load_sequence)
-    def load_lmdbs(self, lmdb_files, sequence_field="primary", target_fields=None, number_field="num_examples",
-                   transform=None, lazy=False, verbose=0, **kwargs):
+    def load_lmdbs(
+        self,
+        lmdb_files,
+        sequence_field="primary",
+        target_fields=None,
+        number_field="num_examples",
+        transform=None,
+        lazy=False,
+        verbose=0,
+        **kwargs
+    ):
         """
         Load the dataset from lmdb files.
 
@@ -691,12 +787,14 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
         """
         if target_fields is not None:
             target_fields = set(target_fields)
-    
+
         sequences = []
         num_samples = []
         targets = defaultdict(list)
         for lmdb_file in lmdb_files:
-            env = lmdb.open(lmdb_file, readonly=True, lock=False, readahead=False, meminit=False)
+            env = lmdb.open(
+                lmdb_file, readonly=True, lock=False, readahead=False, meminit=False
+            )
             with env.begin(write=False) as txn:
                 num_sample = pickle.loads(txn.get(number_field.encode()))
                 for i in range(num_sample):
@@ -709,9 +807,16 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
                                 value = value.item()
                             targets[field].append(value)
                 num_samples.append(num_sample)
-    
-        self.load_sequence(sequences, targets, attributes=None, transform=transform,
-                           lazy=lazy, verbose=verbose, **kwargs)
+
+        self.load_sequence(
+            sequences,
+            targets,
+            attributes=None,
+            transform=transform,
+            lazy=lazy,
+            verbose=verbose,
+            **kwargs
+        )
         self.num_samples = num_samples
 
     @utils.copy_args(data.Protein.from_molecule)
@@ -729,8 +834,10 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
         """
         num_sample = len(pdb_files)
         if num_sample > 1000000:
-            warnings.warn("Preprocessing proteins of a large dataset consumes a lot of CPU memory and time. "
-                          "Use load_pdbs(lazy=True) to construct molecules in the dataloader instead.")
+            warnings.warn(
+                "Preprocessing proteins of a large dataset consumes a lot of CPU memory and time. "
+                "Use load_pdbs(lazy=True) to construct molecules in the dataloader instead."
+            )
 
         self.transform = transform
         self.lazy = lazy
@@ -745,11 +852,17 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
             if not lazy or i == 0:
                 mol = Chem.MolFromPDBFile(pdb_file)
                 if not mol:
-                    logger.debug("Can't construct molecule from pdb file `%s`. Ignore this sample." % pdb_file)
+                    logger.debug(
+                        "Can't construct molecule from pdb file `%s`. Ignore this sample."
+                        % pdb_file
+                    )
                     continue
                 protein = data.Protein.from_molecule(mol, **kwargs)
                 if not protein:
-                    logger.debug("Can't construct protein from pdb file `%s`. Ignore this sample." % pdb_file)
+                    logger.debug(
+                        "Can't construct protein from pdb file `%s`. Ignore this sample."
+                        % pdb_file
+                    )
                     continue
             else:
                 protein = None
@@ -772,7 +885,9 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
         """
         with open(fasta_file, "r") as fin:
             if verbose:
-                fin = tqdm(fin, "Loading %s" % fasta_file, utils.get_line_count(fasta_file))
+                fin = tqdm(
+                    fin, "Loading %s" % fasta_file, utils.get_line_count(fasta_file)
+                )
             sequences = []
             lines = []
             for line in fin:
@@ -848,7 +963,16 @@ class ProteinPairDataset(ProteinDataset, core.Configurable):
     """
 
     @utils.copy_args(data.Protein.from_sequence)
-    def load_sequence(self, sequences, targets, attributes=None, transform=None, lazy=False, verbose=0, **kwargs):
+    def load_sequence(
+        self,
+        sequences,
+        targets,
+        attributes=None,
+        transform=None,
+        lazy=False,
+        verbose=0,
+        **kwargs
+    ):
         """
         Load the dataset from protein sequences and targets.
 
@@ -864,12 +988,16 @@ class ProteinPairDataset(ProteinDataset, core.Configurable):
         """
         num_sample = len(sequences)
         if num_sample > 1000000:
-            warnings.warn("Preprocessing proteins of a large dataset consumes a lot of CPU memory and time. "
-                          "Use load_sequence(lazy=True) to construct molecules in the dataloader instead.")
+            warnings.warn(
+                "Preprocessing proteins of a large dataset consumes a lot of CPU memory and time. "
+                "Use load_sequence(lazy=True) to construct molecules in the dataloader instead."
+            )
         for field, target_list in targets.items():
             if len(target_list) != num_sample:
-                raise ValueError("Number of target `%s` doesn't match with number of molecules. "
-                                 "Expect %d but found %d" % (field, num_sample, len(target_list)))
+                raise ValueError(
+                    "Number of target `%s` doesn't match with number of molecules. "
+                    "Expect %d but found %d" % (field, num_sample, len(target_list))
+                )
 
         self.transform = transform
         self.lazy = lazy
@@ -882,7 +1010,9 @@ class ProteinPairDataset(ProteinDataset, core.Configurable):
             sequences = tqdm(sequences, "Constructing proteins from sequences")
         for i, sequence in enumerate(sequences):
             if not self.lazy or len(self.data) == 0:
-                proteins = [data.Protein.from_sequence(seq, **kwargs) for seq in sequence]
+                proteins = [
+                    data.Protein.from_sequence(seq, **kwargs) for seq in sequence
+                ]
             else:
                 proteins = None
             if attributes is not None:
@@ -896,8 +1026,17 @@ class ProteinPairDataset(ProteinDataset, core.Configurable):
                 self.targets[field].append(targets[field][i])
 
     @utils.copy_args(load_sequence)
-    def load_lmdbs(self, lmdb_files, sequence_field="primary", target_fields=None, number_field="num_examples",
-                   transform=None, lazy=False, verbose=0, **kwargs):
+    def load_lmdbs(
+        self,
+        lmdb_files,
+        sequence_field="primary",
+        target_fields=None,
+        number_field="num_examples",
+        transform=None,
+        lazy=False,
+        verbose=0,
+        **kwargs
+    ):
         """
         Load the dataset from lmdb files.
 
@@ -918,12 +1057,14 @@ class ProteinPairDataset(ProteinDataset, core.Configurable):
             target_fields = set()
         if not isinstance(sequence_field, Sequence):
             sequence_field = [sequence_field]
-    
+
         sequences = []
         num_samples = []
         targets = defaultdict(list)
         for lmdb_file in lmdb_files:
-            env = lmdb.open(lmdb_file, readonly=True, lock=False, readahead=False, meminit=False)
+            env = lmdb.open(
+                lmdb_file, readonly=True, lock=False, readahead=False, meminit=False
+            )
             with env.begin(write=False) as txn:
                 num_sample = pickle.loads(txn.get(number_field.encode()))
                 for i in range(num_sample):
@@ -935,10 +1076,17 @@ class ProteinPairDataset(ProteinDataset, core.Configurable):
                             value = value.item()
                         targets[field].append(value)
                 num_samples.append(num_sample)
-    
-        self.load_sequence(sequences, targets, transform=transform, lazy=lazy, verbose=verbose, **kwargs)
+
+        self.load_sequence(
+            sequences,
+            targets,
+            transform=transform,
+            lazy=lazy,
+            verbose=verbose,
+            **kwargs
+        )
         self.num_samples = num_samples
-    
+
     @property
     def node_feature_dim(self):
         """Dimension of node features."""
@@ -958,8 +1106,18 @@ class ProteinLigandDataset(ProteinDataset, core.Configurable):
     """
 
     @utils.copy_args(data.Protein.from_sequence)
-    def load_sequence(self, sequences, smiles, targets, num_samples, attributes=None, transform=None,
-                      lazy=False, verbose=0, **kwargs):
+    def load_sequence(
+        self,
+        sequences,
+        smiles,
+        targets,
+        num_samples,
+        attributes=None,
+        transform=None,
+        lazy=False,
+        verbose=0,
+        **kwargs
+    ):
         """
         Load the dataset from protein sequences, ligand SMILES strings and targets.
 
@@ -977,15 +1135,21 @@ class ProteinLigandDataset(ProteinDataset, core.Configurable):
         """
         num_sample = len(sequences)
         if num_sample > 1000000:
-            warnings.warn("Preprocessing proteins of a large dataset consumes a lot of CPU memory and time. "
-                          "Use load_sequence(lazy=True) to construct molecules in the dataloader instead.")
+            warnings.warn(
+                "Preprocessing proteins of a large dataset consumes a lot of CPU memory and time. "
+                "Use load_sequence(lazy=True) to construct molecules in the dataloader instead."
+            )
         if len(smiles) != len(sequences):
-            raise ValueError("Number of smiles doesn't match with number of proteins. "
-                                 "Expect %d but found %d" % (num_sample, len(smiles)))
+            raise ValueError(
+                "Number of smiles doesn't match with number of proteins. "
+                "Expect %d but found %d" % (num_sample, len(smiles))
+            )
         for field, target_list in targets.items():
             if len(target_list) != num_sample:
-                raise ValueError("Number of target `%s` doesn't match with number of molecules. "
-                                 "Expect %d but found %d" % (field, num_sample, len(target_list)))
+                raise ValueError(
+                    "Number of target `%s` doesn't match with number of molecules. "
+                    "Expect %d but found %d" % (field, num_sample, len(target_list))
+                )
 
         self.transform = transform
         self.lazy = lazy
@@ -1008,7 +1172,10 @@ class ProteinLigandDataset(ProteinDataset, core.Configurable):
                 protein = data.Protein.from_sequence(sequence, **kwargs)
                 mol = Chem.MolFromSmiles(smile)
                 if not mol:
-                    logger.debug("Can't construct molecule from SMILES `%s`. Ignore this sample." % smile)
+                    logger.debug(
+                        "Can't construct molecule from SMILES `%s`. Ignore this sample."
+                        % smile
+                    )
                     num_samples[_cur_split] -= 1
                     continue
                 mol = data.Molecule.from_molecule(mol)
@@ -1028,8 +1195,18 @@ class ProteinLigandDataset(ProteinDataset, core.Configurable):
         return num_samples
 
     @utils.copy_args(load_sequence)
-    def load_lmdbs(self, lmdb_files, sequence_field="target", smiles_field="drug", target_fields=None,
-                   number_field="num_examples", transform=None, lazy=False, verbose=0, **kwargs):
+    def load_lmdbs(
+        self,
+        lmdb_files,
+        sequence_field="target",
+        smiles_field="drug",
+        target_fields=None,
+        number_field="num_examples",
+        transform=None,
+        lazy=False,
+        verbose=0,
+        **kwargs
+    ):
         """
         Load the dataset from lmdb files.
 
@@ -1047,13 +1224,15 @@ class ProteinLigandDataset(ProteinDataset, core.Configurable):
         """
         if target_fields is not None:
             target_fields = set(target_fields)
-    
+
         sequences = []
         smiles = []
         num_samples = []
         targets = defaultdict(list)
         for lmdb_file in lmdb_files:
-            env = lmdb.open(lmdb_file, readonly=True, lock=False, readahead=False, meminit=False)
+            env = lmdb.open(
+                lmdb_file, readonly=True, lock=False, readahead=False, meminit=False
+            )
             with env.begin(write=False) as txn:
                 num_sample = pickle.loads(txn.get(number_field.encode()))
                 for i in range(num_sample):
@@ -1067,11 +1246,19 @@ class ProteinLigandDataset(ProteinDataset, core.Configurable):
                                 value = value.item()
                             targets[field].append(value)
                 num_samples.append(num_sample)
-    
-        num_samples = self.load_sequence(sequences, smiles, targets, num_samples, transform=transform,
-                                         lazy=lazy, verbose=verbose, **kwargs)
+
+        num_samples = self.load_sequence(
+            sequences,
+            smiles,
+            targets,
+            num_samples,
+            transform=transform,
+            lazy=lazy,
+            verbose=verbose,
+            **kwargs
+        )
         self.num_samples = num_samples
-    
+
     @property
     def ligand_node_feature_dim(self):
         """Dimension of node features for ligands."""
@@ -1103,7 +1290,7 @@ class SemiSupervised(torch_data.Dataset, core.Configurable):
 
     def __getitem__(self, idx):
         item = self.dataset[idx]
-        item["labeled"] = (idx in self.indices)
+        item["labeled"] = idx in self.indices
         return item
 
     def __len__(self):
@@ -1126,7 +1313,6 @@ def semisupervised(dataset, length):
 
 
 def key_split(dataset, keys, lengths=None, key_lengths=None):
-
     def round_to_boundary(i):
         for j in range(min(i, len(dataset) - i)):
             if keys[indexes[i - j]] != keys[indexes[i - j - 1]]:
@@ -1150,7 +1336,7 @@ def key_split(dataset, keys, lengths=None, key_lengths=None):
         key_offset = 0
         lengths = []
         for key_length in key_lengths:
-            lengths.append(key2count[key_offset: key_offset + key_length].sum().item())
+            lengths.append(key2count[key_offset : key_offset + key_length].sum().item())
             key_offset += key_length
 
     offset = 0
@@ -1159,7 +1345,10 @@ def key_split(dataset, keys, lengths=None, key_lengths=None):
         offset = round_to_boundary(offset + length)
         offsets.append(offset)
     offsets[-1] = len(dataset)
-    return [torch_data.Subset(dataset, indexes[offsets[i]: offsets[i + 1]]) for i in range(len(lengths))]
+    return [
+        torch_data.Subset(dataset, indexes[offsets[i] : offsets[i + 1]])
+        for i in range(len(lengths))
+    ]
 
 
 def scaffold_split(dataset, lengths):
@@ -1199,13 +1388,17 @@ def ordered_scaffold_split(dataset, lengths, chirality=True):
 
     scaffold2id = defaultdict(list)
     for idx, smiles in enumerate(dataset.smiles_list):
-        scaffold = MurckoScaffold.MurckoScaffoldSmiles(smiles=smiles, includeChirality=chirality)
+        scaffold = MurckoScaffold.MurckoScaffoldSmiles(
+            smiles=smiles, includeChirality=chirality
+        )
         scaffold2id[scaffold].append(idx)
 
     scaffold2id = {key: sorted(value) for key, value in scaffold2id.items()}
     scaffold_sets = [
-        scaffold_set for (scaffold, scaffold_set) in sorted(
-            scaffold2id.items(), key=lambda x: (len(x[1]), x[1][0]), reverse=True)
+        scaffold_set
+        for (scaffold, scaffold_set) in sorted(
+            scaffold2id.items(), key=lambda x: (len(x[1]), x[1][0]), reverse=True
+        )
     ]
     train_cutoff = frac_train * len(dataset)
     valid_cutoff = (frac_train + frac_valid) * len(dataset)
@@ -1219,4 +1412,8 @@ def ordered_scaffold_split(dataset, lengths, chirality=True):
         else:
             train_idx.extend(scaffold_set)
 
-    return torch_data.Subset(dataset, train_idx), torch_data.Subset(dataset, valid_idx), torch_data.Subset(dataset, test_idx)
+    return (
+        torch_data.Subset(dataset, train_idx),
+        torch_data.Subset(dataset, valid_idx),
+        torch_data.Subset(dataset, test_idx),
+    )

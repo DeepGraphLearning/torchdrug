@@ -29,7 +29,7 @@ class Hetionet(data.KnowledgeGraphDataset):
     md5s = [
         "6e58915d70ce6d9389c6e4785245e0b3",
         "77f15fac4f8170b836392a5b1d315afa",
-        "e8877aafe89d0c9b9c1efb9027cb7226"
+        "e8877aafe89d0c9b9c1efb9027cb7226",
     ]
 
     def __init__(self, path, verbose=1):
@@ -54,4 +54,3 @@ class Hetionet(data.KnowledgeGraphDataset):
             splits.append(split)
             offset += num_sample
         return splits
-

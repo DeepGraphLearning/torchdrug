@@ -30,8 +30,14 @@ class TransE(nn.Module, core.Configurable):
         self.entity = nn.Parameter(torch.empty(num_entity, embedding_dim))
         self.relation = nn.Parameter(torch.empty(num_relation, embedding_dim))
 
-        nn.init.uniform_(self.entity, -self.max_score / embedding_dim, self.max_score / embedding_dim)
-        nn.init.uniform_(self.relation, -self.max_score / embedding_dim, self.max_score / embedding_dim)
+        nn.init.uniform_(
+            self.entity, -self.max_score / embedding_dim, self.max_score / embedding_dim
+        )
+        nn.init.uniform_(
+            self.relation,
+            -self.max_score / embedding_dim,
+            self.max_score / embedding_dim,
+        )
 
     def forward(self, graph, h_index, t_index, r_index, all_loss=None, metric=None):
         """
@@ -45,7 +51,9 @@ class TransE(nn.Module, core.Configurable):
             all_loss (Tensor, optional): if specified, add loss to this tensor
             metric (dict, optional): if specified, output metrics to this dict
         """
-        score = functional.transe_score(self.entity, self.relation, h_index, t_index, r_index)
+        score = functional.transe_score(
+            self.entity, self.relation, h_index, t_index, r_index
+        )
         return self.max_score - score
 
 
@@ -88,7 +96,9 @@ class DistMult(nn.Module, core.Configurable):
             all_loss (Tensor, optional): if specified, add loss to this tensor
             metric (dict, optional): if specified, output metrics to this dict
         """
-        score = functional.distmult_score(self.entity, self.relation, h_index, t_index, r_index)
+        score = functional.distmult_score(
+            self.entity, self.relation, h_index, t_index, r_index
+        )
 
         if all_loss is not None and self.l3_regularization > 0:
             loss = (self.entity.abs() ** 3).sum() + (self.relation.abs() ** 3).sum()
@@ -137,7 +147,9 @@ class ComplEx(nn.Module, core.Configurable):
             all_loss (Tensor, optional): if specified, add loss to this tensor
             metric (dict, optional): if specified, output metrics to this dict
         """
-        score = functional.complex_score(self.entity, self.relation, h_index, t_index, r_index)
+        score = functional.complex_score(
+            self.entity, self.relation, h_index, t_index, r_index
+        )
 
         if all_loss is not None and self.l3_regularization > 0:
             loss = (self.entity.abs() ** 3).sum() + (self.relation.abs() ** 3).sum()
@@ -171,8 +183,12 @@ class RotatE(nn.Module, core.Configurable):
         self.entity = nn.Parameter(torch.empty(num_entity, embedding_dim))
         self.relation = nn.Parameter(torch.empty(num_relation, embedding_dim // 2))
 
-        nn.init.uniform_(self.entity, -max_score * 2 / embedding_dim, max_score * 2 / embedding_dim)
-        nn.init.uniform_(self.relation, -max_score * 2 / embedding_dim, max_score * 2 / embedding_dim)
+        nn.init.uniform_(
+            self.entity, -max_score * 2 / embedding_dim, max_score * 2 / embedding_dim
+        )
+        nn.init.uniform_(
+            self.relation, -max_score * 2 / embedding_dim, max_score * 2 / embedding_dim
+        )
         pi = torch.acos(torch.zeros(1)).item() * 2
         self.relation_scale = pi * embedding_dim / max_score / 2
 
@@ -188,8 +204,9 @@ class RotatE(nn.Module, core.Configurable):
             all_loss (Tensor, optional): if specified, add loss to this tensor
             metric (dict, optional): if specified, output metrics to this dict
         """
-        score = functional.rotate_score(self.entity, self.relation * self.relation_scale,
-                                        h_index, t_index, r_index)
+        score = functional.rotate_score(
+            self.entity, self.relation * self.relation_scale, h_index, t_index, r_index
+        )
         return self.max_score - score
 
 
@@ -232,7 +249,9 @@ class SimplE(nn.Module, core.Configurable):
             all_loss (Tensor, optional): if specified, add loss to this tensor
             metric (dict, optional): if specified, output metrics to this dict
         """
-        score = functional.simple_score(self.entity, self.relation, h_index, t_index, r_index)
+        score = functional.simple_score(
+            self.entity, self.relation, h_index, t_index, r_index
+        )
 
         if all_loss is not None and self.l3_regularization > 0:
             loss = (self.entity.abs() ** 3).sum() + (self.relation.abs() ** 3).sum()

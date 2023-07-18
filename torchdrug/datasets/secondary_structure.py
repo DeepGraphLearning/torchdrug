@@ -11,7 +11,7 @@ from torchdrug.core import Registry as R
 @utils.copy_args(data.ProteinDataset.load_lmdbs, ignore=("target_fields",))
 class SecondaryStructure(data.ProteinDataset):
     """
-    Secondary structure labels for a set of proteins determined by the local structures 
+    Secondary structure labels for a set of proteins determined by the local structures
     of protein residues in their natural state
 
     Statistics:
@@ -38,10 +38,16 @@ class SecondaryStructure(data.ProteinDataset):
 
         zip_file = utils.download(self.url, path, md5=self.md5)
         data_path = utils.extract(zip_file)
-        lmdb_files = [os.path.join(data_path, "secondary_structure/secondary_structure_%s.lmdb" % split) 
-                                    for split in self.splits]
+        lmdb_files = [
+            os.path.join(
+                data_path, "secondary_structure/secondary_structure_%s.lmdb" % split
+            )
+            for split in self.splits
+        ]
 
-        self.load_lmdbs(lmdb_files, target_fields=self.target_fields, verbose=verbose, **kwargs)
+        self.load_lmdbs(
+            lmdb_files, target_fields=self.target_fields, verbose=verbose, **kwargs
+        )
 
     def get_item(self, index):
         if self.lazy:

@@ -30,11 +30,22 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
             Set ``None`` to use the whole training set as both facts and labels.
         sample_weight (bool, optional): whether to down-weight triplets from entities of large degrees
     """
+
     _option_members = {"criterion", "metric"}
 
-    def __init__(self, model, criterion="bce", metric=("mr", "mrr", "hits@1", "hits@3", "hits@10"),
-                 num_negative=128, margin=6, adversarial_temperature=0, strict_negative=True, filtered_ranking=True,
-                 fact_ratio=None, sample_weight=True):
+    def __init__(
+        self,
+        model,
+        criterion="bce",
+        metric=("mr", "mrr", "hits@1", "hits@3", "hits@10"),
+        num_negative=128,
+        margin=6,
+        adversarial_temperature=0,
+        strict_negative=True,
+        filtered_ranking=True,
+        fact_ratio=None,
+        sample_weight=True,
+    ):
         super(KnowledgeGraphCompletion, self).__init__()
         self.model = model
         self.criterion = criterion
@@ -67,8 +78,12 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
         self.register_buffer("fact_graph", dataset.graph.edge_mask(fact_mask))
 
         if self.sample_weight:
-            degree_hr = torch.zeros(self.num_entity, self.num_relation, dtype=torch.long)
-            degree_tr = torch.zeros(self.num_entity, self.num_relation, dtype=torch.long)
+            degree_hr = torch.zeros(
+                self.num_entity, self.num_relation, dtype=torch.long
+            )
+            degree_tr = torch.zeros(
+                self.num_entity, self.num_relation, dtype=torch.long
+            )
             for h, t, r in train_set:
                 degree_hr[h, r] += 1
                 degree_tr[t, r] += 1
@@ -89,12 +104,16 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
             if criterion == "bce":
                 target = torch.zeros_like(pred)
                 target[:, 0] = 1
-                loss = F.binary_cross_entropy_with_logits(pred, target, reduction="none")
+                loss = F.binary_cross_entropy_with_logits(
+                    pred, target, reduction="none"
+                )
 
                 neg_weight = torch.ones_like(pred)
                 if self.adversarial_temperature > 0:
                     with torch.no_grad():
-                        neg_weight[:, 1:] = F.softmax(pred[:, 1:] / self.adversarial_temperature, dim=-1)
+                        neg_weight[:, 1:] = F.softmax(
+                            pred[:, 1:] / self.adversarial_temperature, dim=-1
+                        )
                 else:
                     neg_weight[:, 1:] = 1 / self.num_negative
                 loss = (loss * neg_weight).sum(dim=-1) / neg_weight.sum(dim=-1)
@@ -105,12 +124,17 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
                 positive = pred[:, :1]
                 negative = pred[:, 1:]
                 target = torch.ones_like(negative)
-                loss = F.margin_ranking_loss(positive, negative, target, margin=self.margin)
+                loss = F.margin_ranking_loss(
+                    positive, negative, target, margin=self.margin
+                )
             else:
                 raise ValueError("Unknown criterion `%s`" % criterion)
 
             if self.sample_weight:
-                sample_weight = self.degree_hr[pos_h_index, pos_r_index] * self.degree_tr[pos_t_index, pos_r_index]
+                sample_weight = (
+                    self.degree_hr[pos_h_index, pos_r_index]
+                    * self.degree_tr[pos_t_index, pos_r_index]
+                )
                 sample_weight = 1 / sample_weight.float().sqrt()
                 loss = (loss * sample_weight).sum() / sample_weight.sum()
             else:
@@ -134,13 +158,27 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
             for neg_index in all_index.split(self.num_negative):
                 r_index = pos_r_index.unsqueeze(-1).expand(-1, len(neg_index))
                 h_index, t_index = torch.meshgrid(pos_h_index, neg_index)
-                t_pred = self.model(self.fact_graph, h_index, t_index, r_index, all_loss=all_loss, metric=metric)
+                t_pred = self.model(
+                    self.fact_graph,
+                    h_index,
+                    t_index,
+                    r_index,
+                    all_loss=all_loss,
+                    metric=metric,
+                )
                 t_preds.append(t_pred)
             t_pred = torch.cat(t_preds, dim=-1)
             for neg_index in all_index.split(self.num_negative):
                 r_index = pos_r_index.unsqueeze(-1).expand(-1, len(neg_index))
                 t_index, h_index = torch.meshgrid(pos_t_index, neg_index)
-                h_pred = self.model(self.fact_graph, h_index, t_index, r_index, all_loss=all_loss, metric=metric)
+                h_pred = self.model(
+                    self.fact_graph,
+                    h_index,
+                    t_index,
+                    r_index,
+                    all_loss=all_loss,
+                    metric=metric,
+                )
                 h_preds.append(h_pred)
             h_pred = torch.cat(h_preds, dim=-1)
             pred = torch.stack([t_pred, h_pred], dim=1)
@@ -151,13 +189,22 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
             if self.strict_negative:
                 neg_index = self._strict_negative(pos_h_index, pos_t_index, pos_r_index)
             else:
-                neg_index = torch.randint(self.num_entity, (batch_size, self.num_negative), device=self.device)
+                neg_index = torch.randint(
+                    self.num_entity, (batch_size, self.num_negative), device=self.device
+                )
             h_index = pos_h_index.unsqueeze(-1).repeat(1, self.num_negative + 1)
             t_index = pos_t_index.unsqueeze(-1).repeat(1, self.num_negative + 1)
             r_index = pos_r_index.unsqueeze(-1).repeat(1, self.num_negative + 1)
-            t_index[:batch_size // 2, 1:] = neg_index[:batch_size // 2]
-            h_index[batch_size // 2:, 1:] = neg_index[batch_size // 2:]
-            pred = self.model(self.fact_graph, h_index, t_index, r_index, all_loss=all_loss, metric=metric)
+            t_index[: batch_size // 2, 1:] = neg_index[: batch_size // 2]
+            h_index[batch_size // 2 :, 1:] = neg_index[batch_size // 2 :]
+            pred = self.model(
+                self.fact_graph,
+                h_index,
+                t_index,
+                r_index,
+                all_loss=all_loss,
+                metric=metric,
+            )
 
         return pred
 
@@ -171,14 +218,18 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
         edge_index, num_t_truth = self.graph.match(pattern)
         t_truth_index = self.graph.edge_list[edge_index, 1]
         pos_index = functional._size_to_index(num_t_truth)
-        t_mask = torch.ones(batch_size, self.num_entity, dtype=torch.bool, device=self.device)
+        t_mask = torch.ones(
+            batch_size, self.num_entity, dtype=torch.bool, device=self.device
+        )
         t_mask[pos_index, t_truth_index] = 0
 
         pattern = torch.stack([any, pos_t_index, pos_r_index], dim=-1)
         edge_index, num_h_truth = self.graph.match(pattern)
         h_truth_index = self.graph.edge_list[edge_index, 0]
         pos_index = functional._size_to_index(num_h_truth)
-        h_mask = torch.ones(batch_size, self.num_entity, dtype=torch.bool, device=self.device)
+        h_mask = torch.ones(
+            batch_size, self.num_entity, dtype=torch.bool, device=self.device
+        )
         h_mask[pos_index, h_truth_index] = 0
 
         mask = torch.stack([t_mask, h_mask], dim=1)
@@ -223,26 +274,34 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
         any = -torch.ones_like(pos_h_index)
 
         pattern = torch.stack([pos_h_index, any, pos_r_index], dim=-1)
-        pattern = pattern[:batch_size // 2]
+        pattern = pattern[: batch_size // 2]
         edge_index, num_t_truth = self.fact_graph.match(pattern)
         t_truth_index = self.fact_graph.edge_list[edge_index, 1]
         pos_index = functional._size_to_index(num_t_truth)
-        t_mask = torch.ones(len(pattern), self.num_entity, dtype=torch.bool, device=self.device)
+        t_mask = torch.ones(
+            len(pattern), self.num_entity, dtype=torch.bool, device=self.device
+        )
         t_mask[pos_index, t_truth_index] = 0
         neg_t_candidate = t_mask.nonzero()[:, 1]
         num_t_candidate = t_mask.sum(dim=-1)
-        neg_t_index = functional.variadic_sample(neg_t_candidate, num_t_candidate, self.num_negative)
+        neg_t_index = functional.variadic_sample(
+            neg_t_candidate, num_t_candidate, self.num_negative
+        )
 
         pattern = torch.stack([any, pos_t_index, pos_r_index], dim=-1)
-        pattern = pattern[batch_size // 2:]
+        pattern = pattern[batch_size // 2 :]
         edge_index, num_h_truth = self.fact_graph.match(pattern)
         h_truth_index = self.fact_graph.edge_list[edge_index, 0]
         pos_index = functional._size_to_index(num_h_truth)
-        h_mask = torch.ones(len(pattern), self.num_entity, dtype=torch.bool, device=self.device)
+        h_mask = torch.ones(
+            len(pattern), self.num_entity, dtype=torch.bool, device=self.device
+        )
         h_mask[pos_index, h_truth_index] = 0
         neg_h_candidate = h_mask.nonzero()[:, 1]
         num_h_candidate = h_mask.sum(dim=-1)
-        neg_h_index = functional.variadic_sample(neg_h_candidate, num_h_candidate, self.num_negative)
+        neg_h_index = functional.variadic_sample(
+            neg_h_candidate, num_h_candidate, self.num_negative
+        )
 
         neg_index = torch.cat([neg_t_index, neg_h_index])
 

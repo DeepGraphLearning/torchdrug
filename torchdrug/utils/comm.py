@@ -45,8 +45,10 @@ def get_group(device):
     """
     group = cpu_group if device.type == "cpu" else gpu_group
     if group is None:
-        raise ValueError("%s group is not initialized. Use comm.init_process_group() to initialize it"
-                         % device.type.upper())
+        raise ValueError(
+            "%s group is not initialized. Use comm.init_process_group() to initialize it"
+            % device.type.upper()
+        )
     return group
 
 
@@ -244,7 +246,7 @@ def cat(obj, dst=None):
     sizes = stack(sizes)
     cated = {}
     for k, value in values.items():
-        size = sizes[k].t().flatten() # sizes[k]: (num_worker, num_obj)
+        size = sizes[k].t().flatten()  # sizes[k]: (num_worker, num_obj)
         dtype = value[0].dtype
         # NCCL can't solve bool. Cast them to byte
         if dtype == torch.bool:
@@ -255,8 +257,8 @@ def cat(obj, dst=None):
         offset = size[:obj_id].sum()
         for v in value:
             assert offset + v.numel() <= len(s)
-            s[offset: offset + v.numel()] = v
-            offset += size[obj_id: obj_id + world_size].sum()
+            s[offset : offset + v.numel()] = v
+            offset += size[obj_id : obj_id + world_size].sum()
             obj_id += world_size
         group = get_group(s.device)
         if dst is None:

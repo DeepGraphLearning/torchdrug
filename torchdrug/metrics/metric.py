@@ -39,7 +39,9 @@ def area_under_prc(pred, target):
     """
     order = pred.argsort(descending=True)
     target = target[order]
-    precision = target.cumsum(0) / torch.arange(1, len(target) + 1, device=target.device)
+    precision = target.cumsum(0) / torch.arange(
+        1, len(target) + 1, device=target.device
+    )
     auprc = precision[target == 1].sum() / ((target == 1).sum() + 1e-10)
     return auprc
 
@@ -197,8 +199,9 @@ def variadic_area_under_roc(pred, target, size):
     total_hit = total_hit.cumsum(0) - total_hit
     hit = target.cumsum(0) - total_hit[index2graph]
     hit = torch.where(target == 0, hit, torch.zeros_like(hit))
-    all = functional.variadic_sum((target == 0).float(), size) * \
-            functional.variadic_sum((target == 1).float(), size)
+    all = functional.variadic_sum(
+        (target == 0).float(), size
+    ) * functional.variadic_sum((target == 1).float(), size)
     auroc = functional.variadic_sum(hit, size) / (all + 1e-10)
     return auroc
 
@@ -225,10 +228,11 @@ def variadic_area_under_prc(pred, target, size):
     total = torch.ones_like(target).cumsum(0) - (size.cumsum(0) - size)[index2graph]
     precision = hit / total
     precision = torch.where(target == 1, precision, torch.zeros_like(precision))
-    auprc = functional.variadic_sum(precision, size) / \
-            (functional.variadic_sum((target == 1).float(), size) + 1e-10)
+    auprc = functional.variadic_sum(precision, size) / (
+        functional.variadic_sum((target == 1).float(), size) + 1e-10
+    )
     return auprc
-    
+
 
 @R.register("metrics.f1_max")
 def f1_max(pred, target):
@@ -251,7 +255,11 @@ def f1_max(pred, target):
     is_start = torch.scatter(is_start, 1, order, is_start)
 
     all_order = pred.flatten().argsort(descending=True)
-    order = order + torch.arange(order.shape[0], device=order.device).unsqueeze(1) * order.shape[1]
+    order = (
+        order
+        + torch.arange(order.shape[0], device=order.device).unsqueeze(1)
+        * order.shape[1]
+    )
     order = order.flatten()
     inv_order = torch.zeros_like(order)
     inv_order[order] = torch.arange(order.shape[0], device=order.device)
@@ -259,15 +267,17 @@ def f1_max(pred, target):
     all_order = inv_order[all_order]
     precision = precision.flatten()
     recall = recall.flatten()
-    all_precision = precision[all_order] - \
-                    torch.where(is_start, torch.zeros_like(precision), precision[all_order - 1])
+    all_precision = precision[all_order] - torch.where(
+        is_start, torch.zeros_like(precision), precision[all_order - 1]
+    )
     all_precision = all_precision.cumsum(0) / is_start.cumsum(0)
-    all_recall = recall[all_order] - \
-                 torch.where(is_start, torch.zeros_like(recall), recall[all_order - 1])
+    all_recall = recall[all_order] - torch.where(
+        is_start, torch.zeros_like(recall), recall[all_order - 1]
+    )
     all_recall = all_recall.cumsum(0) / pred.shape[0]
     all_f1 = 2 * all_precision * all_recall / (all_precision + all_recall + 1e-10)
     return all_f1.max()
-    
+
 
 @R.register("metrics.accuracy")
 def accuracy(pred, target):
@@ -338,7 +348,9 @@ def matthews_corrcoef(pred, target):
     num_class = pred.size(-1)
     pred = pred.argmax(-1)
     ones = torch.ones(len(target), device=pred.device)
-    confusion_matrix = scatter_add(ones, target * num_class + pred, dim=0, dim_size=num_class ** 2)
+    confusion_matrix = scatter_add(
+        ones, target * num_class + pred, dim=0, dim_size=num_class**2
+    )
     confusion_matrix = confusion_matrix.view(num_class, num_class)
     t = confusion_matrix.sum(dim=1)
     p = confusion_matrix.sum(dim=0)
@@ -380,10 +392,14 @@ def spearmanr(pred, target):
         input_set, input_inverse = input.unique(return_inverse=True)
         order = input_inverse.argsort()
         ranking = torch.zeros(len(input_inverse), device=input.device)
-        ranking[order] = torch.arange(1, len(input) + 1, dtype=torch.float, device=input.device)
+        ranking[order] = torch.arange(
+            1, len(input) + 1, dtype=torch.float, device=input.device
+        )
 
         # for elements that have the same value, replace their rankings with the mean of their rankings
-        mean_ranking = scatter_mean(ranking, input_inverse, dim=0, dim_size=len(input_set))
+        mean_ranking = scatter_mean(
+            ranking, input_inverse, dim=0, dim_size=len(input_set)
+        )
         ranking = mean_ranking[input_inverse]
         return ranking
 

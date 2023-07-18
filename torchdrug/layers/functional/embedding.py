@@ -8,12 +8,13 @@ from torchdrug import utils
 backend = "fast"
 
 path = os.path.join(os.path.dirname(__file__), "extension")
-embedding = utils.load_extension("embedding",
-                                 [os.path.join(path, "embedding.cpp"), os.path.join(path, "embedding.cu")])
+embedding = utils.load_extension(
+    "embedding",
+    [os.path.join(path, "embedding.cpp"), os.path.join(path, "embedding.cu")],
+)
 
 
 class TransEFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, entity, relation, h_index, t_index, r_index):
         if entity.device.type == "cuda":
@@ -35,7 +36,6 @@ class TransEFunction(autograd.Function):
 
 
 class DistMultFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, entity, relation, h_index, t_index, r_index):
         if entity.device.type == "cuda":
@@ -57,7 +57,6 @@ class DistMultFunction(autograd.Function):
 
 
 class ComplExFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, entity, relation, h_index, t_index, r_index):
         if entity.device.type == "cuda":
@@ -79,7 +78,6 @@ class ComplExFunction(autograd.Function):
 
 
 class SimplEFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, entity, relation, h_index, t_index, r_index):
         if entity.device.type == "cuda":
@@ -101,7 +99,6 @@ class SimplEFunction(autograd.Function):
 
 
 class RotatEFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, entity, relation, h_index, t_index, r_index):
         if entity.device.type == "cuda":

@@ -38,7 +38,7 @@ def graph_collate(batch):
         it = iter(batch)
         elem_size = len(next(it))
         if not all(len(elem) == elem_size for elem in it):
-            raise RuntimeError('Each element in list of batch should be of equal size')
+            raise RuntimeError("Each element in list of batch should be of equal size")
         return [graph_collate(samples) for samples in zip(*batch)]
 
     raise TypeError("Can't collate data with type `%s`" % type(elem))
@@ -63,14 +63,31 @@ class DataLoader(torch.utils.data.DataLoader):
         collate_fn (callable, optional): merge a list of samples into a mini-batch
         kwargs: keyword arguments for `torch.utils.data.DataLoader`_
     """
-    def __init__(self, dataset, batch_size=1, shuffle=False, sampler=None, batch_sampler=None, num_workers=0,
-                 collate_fn=graph_collate, **kwargs):
-        super(DataLoader, self).__init__(dataset, batch_size, shuffle, sampler, batch_sampler, num_workers, collate_fn,
-                                         **kwargs)
+
+    def __init__(
+        self,
+        dataset,
+        batch_size=1,
+        shuffle=False,
+        sampler=None,
+        batch_sampler=None,
+        num_workers=0,
+        collate_fn=graph_collate,
+        **kwargs
+    ):
+        super(DataLoader, self).__init__(
+            dataset,
+            batch_size,
+            shuffle,
+            sampler,
+            batch_sampler,
+            num_workers,
+            collate_fn,
+            **kwargs
+        )
 
 
 class DataQueue(torch.utils.data.Dataset):
-
     def __init__(self):
         self.queue = deque()
 
@@ -88,9 +105,10 @@ class DataQueue(torch.utils.data.Dataset):
 
 
 class ExperienceReplay(torch.utils.data.DataLoader):
-
     def __init__(self, cache_size, batch_size=1, shuffle=True, **kwargs):
-        super(ExperienceReplay, self).__init__(DataQueue(), batch_size, shuffle, **kwargs)
+        super(ExperienceReplay, self).__init__(
+            DataQueue(), batch_size, shuffle, **kwargs
+        )
         self.cache_size = cache_size
 
     def update(self, items):

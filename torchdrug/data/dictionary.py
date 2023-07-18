@@ -41,7 +41,9 @@ class PerfectHash(object):
         if bias is None:
             bias = torch.randint(0, self.prime, (1,), device=keys.device)
         if sub_weights is None:
-            sub_weights = torch.randint(0, self.prime, (num_input, input_dim), device=keys.device)
+            sub_weights = torch.randint(
+                0, self.prime, (num_input, input_dim), device=keys.device
+            )
         if sub_biases is None:
             sub_biases = torch.randint(0, self.prime, (num_input,), device=keys.device)
 
@@ -60,21 +62,25 @@ class PerfectHash(object):
         index = self.hash(self.keys)
         count = index.bincount(minlength=self.num_output)
         for i in range(self.max_attempt):
-            if (count ** 2).sum() < 4 * self.num_output:
+            if (count**2).sum() < 4 * self.num_output:
                 break
             self._reset_hash()
             index = self.hash(self.keys)
             count = index.bincount(minlength=self.num_output)
         else:
-            raise RuntimeError("Fail to generate a level-1 hash after %d attempts. "
-                               "Are you sure the keys are unique?" % self.max_attempt)
-        self.num_sub_outputs = (count ** 2).clamp(min=1)
+            raise RuntimeError(
+                "Fail to generate a level-1 hash after %d attempts. "
+                "Are you sure the keys are unique?" % self.max_attempt
+            )
+        self.num_sub_outputs = (count**2).clamp(min=1)
         self.num_sub_output = self.num_sub_outputs.sum()
         self.offsets = self.num_sub_outputs.cumsum(0) - self.num_sub_outputs
 
         sub_index = self.sub_hash(self.keys, index)
         count = sub_index.bincount(minlength=self.num_sub_output)
-        has_collision = scatter_max(count, self.second2first, dim_size=self.num_output)[0] > 1
+        has_collision = (
+            scatter_max(count, self.second2first, dim_size=self.num_output)[0] > 1
+        )
         max_attempt = int(self.max_attempt * math.log(self.num_input) / math.log(2))
         for i in range(max_attempt):
             if not has_collision.any():
@@ -82,12 +88,18 @@ class PerfectHash(object):
             self._reset_sub_hash(has_collision)
             sub_index = self.sub_hash(self.keys, index)
             count = sub_index.bincount(minlength=self.num_sub_output)
-            has_collision = scatter_max(count, self.second2first, dim_size=self.num_output)[0] > 1
+            has_collision = (
+                scatter_max(count, self.second2first, dim_size=self.num_output)[0] > 1
+            )
         else:
-            raise RuntimeError("Fail to generate level-2 hashes after %d attempts. "
-                               "Are you sure the keys are unique?" % max_attempt)
+            raise RuntimeError(
+                "Fail to generate level-2 hashes after %d attempts. "
+                "Are you sure the keys are unique?" % max_attempt
+            )
 
-        self.table = -torch.ones(self.num_sub_output, dtype=torch.long, device=self.device)
+        self.table = -torch.ones(
+            self.num_sub_output, dtype=torch.long, device=self.device
+        )
         self.table[sub_index] = torch.arange(self.num_input, device=self.device)
 
     def __call__(self, keys):
@@ -105,7 +117,9 @@ class PerfectHash(object):
         found = final_index != -1
         found_index = final_index[found]
         equal = (keys[found] == self.keys[final_index[found]]).all(dim=-1)
-        final_index[found] = torch.where(equal, found_index, -torch.ones_like(found_index))
+        final_index[found] = torch.where(
+            equal, found_index, -torch.ones_like(found_index)
+        )
         return final_index
 
     def _reset_hash(self):
@@ -117,8 +131,12 @@ class PerfectHash(object):
             self.sub_weights = torch.randint_like(self.sub_weights, 0, self.prime)
             self.sub_biases = torch.randint_like(self.sub_biases, 0, self.prime)
         else:
-            self.sub_weights[mask] = torch.randint_like(self.sub_weights[mask], 0, self.prime)
-            self.sub_biases[mask] = torch.randint_like(self.sub_biases[mask], 0, self.prime)
+            self.sub_weights[mask] = torch.randint_like(
+                self.sub_weights[mask], 0, self.prime
+            )
+            self.sub_biases[mask] = torch.randint_like(
+                self.sub_biases[mask], 0, self.prime
+            )
 
     def hash(self, keys):
         """Apply the level-1 hash function to the keys."""
@@ -165,8 +183,13 @@ class PerfectHash(object):
         if keys is self.keys:
             return self
         else:
-            return type(self)(keys, weight=self.weight.cpu(), bias=self.bias.cpu(),
-                              sub_weights=self.sub_weights.cpu(), sub_biases=self.sub_biases.cpu())
+            return type(self)(
+                keys,
+                weight=self.weight.cpu(),
+                bias=self.bias.cpu(),
+                sub_weights=self.sub_weights.cpu(),
+                sub_biases=self.sub_biases.cpu(),
+            )
 
     def cuda(self, *args, **kwargs):
         """
@@ -179,10 +202,13 @@ class PerfectHash(object):
         if keys is self.keys:
             return self
         else:
-            return type(self)(keys, weight=self.weight.cuda(*args, **kwargs),
-                              bias=self.bias.cuda(*args, **kwargs),
-                              sub_weights=self.sub_weights.cuda(*args, **kwargs),
-                              sub_biases=self.sub_biases.cuda(*args, **kwargs))
+            return type(self)(
+                keys,
+                weight=self.weight.cuda(*args, **kwargs),
+                bias=self.bias.cuda(*args, **kwargs),
+                sub_weights=self.sub_weights.cuda(*args, **kwargs),
+                sub_biases=self.sub_biases.cuda(*args, **kwargs),
+            )
 
 
 class Dictionary(object):
@@ -204,6 +230,7 @@ class Dictionary(object):
         values (Tensor): values of shape :math:`(N, ...)`
         hash (PerfectHash, optional): hash function for keys
     """
+
     def __init__(self, keys, values, hash=None):
         self.keys = keys
         self.values = values
@@ -234,7 +261,9 @@ class Dictionary(object):
         default = torch.as_tensor(default, dtype=self.values.dtype, device=self.device)
         index = self.hash(keys)
         shape = list(index.shape) + list(self.values.shape[1:])
-        values = torch.ones(shape, dtype=self.values.dtype, device=self.device) * default
+        values = (
+            torch.ones(shape, dtype=self.values.dtype, device=self.device) * default
+        )
         found = index != -1
         values[found] = self.values[index[found]]
         return values
@@ -282,4 +311,8 @@ class Dictionary(object):
         if keys is self.keys:
             return self
         else:
-            return type(self)(keys, self.values.cuda(*args, **kwargs), hash=self.hash.cuda(*args, **kwargs))
+            return type(self)(
+                keys,
+                self.values.cuda(*args, **kwargs),
+                hash=self.hash.cuda(*args, **kwargs),
+            )

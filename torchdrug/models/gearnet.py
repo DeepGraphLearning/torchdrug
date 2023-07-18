@@ -32,8 +32,19 @@ class GeometryAwareRelationalGraphNeuralNetwork(nn.Module, core.Configurable):
         readout (str, optional): readout function. Available functions are ``sum`` and ``mean``.
     """
 
-    def __init__(self, input_dim, hidden_dims, num_relation, edge_input_dim=None, num_angle_bin=None,
-                 short_cut=False, batch_norm=False, activation="relu", concat_hidden=False, readout="sum"):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dims,
+        num_relation,
+        edge_input_dim=None,
+        num_angle_bin=None,
+        short_cut=False,
+        batch_norm=False,
+        activation="relu",
+        concat_hidden=False,
+        readout="sum",
+    ):
         super(GeometryAwareRelationalGraphNeuralNetwork, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -50,14 +61,30 @@ class GeometryAwareRelationalGraphNeuralNetwork(nn.Module, core.Configurable):
 
         self.layers = nn.ModuleList()
         for i in range(len(self.dims) - 1):
-            self.layers.append(layers.GeometricRelationalGraphConv(self.dims[i], self.dims[i + 1], num_relation,
-                                                                   None, batch_norm, activation))
+            self.layers.append(
+                layers.GeometricRelationalGraphConv(
+                    self.dims[i],
+                    self.dims[i + 1],
+                    num_relation,
+                    None,
+                    batch_norm,
+                    activation,
+                )
+            )
         if num_angle_bin:
             self.spatial_line_graph = layers.SpatialLineGraph(num_angle_bin)
             self.edge_layers = nn.ModuleList()
             for i in range(len(self.edge_dims) - 1):
-                self.edge_layers.append(layers.GeometricRelationalGraphConv(
-                    self.edge_dims[i], self.edge_dims[i + 1], num_angle_bin, None, batch_norm, activation))
+                self.edge_layers.append(
+                    layers.GeometricRelationalGraphConv(
+                        self.edge_dims[i],
+                        self.edge_dims[i + 1],
+                        num_angle_bin,
+                        None,
+                        batch_norm,
+                        activation,
+                    )
+                )
 
         if batch_norm:
             self.batch_norms = nn.ModuleList()
@@ -98,10 +125,18 @@ class GeometryAwareRelationalGraphNeuralNetwork(nn.Module, core.Configurable):
             if self.num_angle_bin:
                 edge_hidden = self.edge_layers[i](line_graph, edge_input)
                 edge_weight = graph.edge_weight.unsqueeze(-1)
-                node_out = graph.edge_list[:, 1] * self.num_relation + graph.edge_list[:, 2]
-                update = scatter_add(edge_hidden * edge_weight, node_out, dim=0,
-                                     dim_size=graph.num_node * self.num_relation)
-                update = update.view(graph.num_node, self.num_relation * edge_hidden.shape[1])
+                node_out = (
+                    graph.edge_list[:, 1] * self.num_relation + graph.edge_list[:, 2]
+                )
+                update = scatter_add(
+                    edge_hidden * edge_weight,
+                    node_out,
+                    dim=0,
+                    dim_size=graph.num_node * self.num_relation,
+                )
+                update = update.view(
+                    graph.num_node, self.num_relation * edge_hidden.shape[1]
+                )
                 update = self.layers[i].linear(update)
                 update = self.layers[i].activation(update)
                 hidden = hidden + update
@@ -117,7 +152,4 @@ class GeometryAwareRelationalGraphNeuralNetwork(nn.Module, core.Configurable):
             node_feature = hiddens[-1]
         graph_feature = self.readout(graph, node_feature)
 
-        return {
-            "graph_feature": graph_feature,
-            "node_feature": node_feature
-        }
+        return {"graph_feature": graph_feature, "node_feature": node_feature}

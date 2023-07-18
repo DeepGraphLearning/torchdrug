@@ -33,8 +33,12 @@ class PubMed(data.NodeClassificationDataset):
         self.path = path
 
         zip_file = utils.download(self.url, path, md5=self.md5)
-        node_file = utils.extract(zip_file, "Pubmed-Diabetes/data/Pubmed-Diabetes.NODE.paper.tab")
-        edge_file = utils.extract(zip_file, "Pubmed-Diabetes/data/Pubmed-Diabetes.DIRECTED.cites.tab")
+        node_file = utils.extract(
+            zip_file, "Pubmed-Diabetes/data/Pubmed-Diabetes.NODE.paper.tab"
+        )
+        edge_file = utils.extract(
+            zip_file, "Pubmed-Diabetes/data/Pubmed-Diabetes.DIRECTED.cites.tab"
+        )
 
         inv_node_vocab = {}
         node_feature = []
@@ -43,10 +47,16 @@ class PubMed(data.NodeClassificationDataset):
         with open(node_file, "r") as fin:
             reader = csv.reader(fin, delimiter="\t")
             if verbose:
-                reader = iter(tqdm(reader, "Loading %s" % node_file, utils.get_line_count(node_file)))
+                reader = iter(
+                    tqdm(
+                        reader,
+                        "Loading %s" % node_file,
+                        utils.get_line_count(node_file),
+                    )
+                )
             _ = next(reader)
             fields = next(reader)
-            group, = re.match(r"cat=(\S+):label", fields[0]).groups()
+            (group,) = re.match(r"cat=(\S+):label", fields[0]).groups()
             label_tokens = group.split(",")
             inv_label_vocab = {token: i for i, token in enumerate(label_tokens)}
             inv_feature_vocab = {}
@@ -54,12 +64,12 @@ class PubMed(data.NodeClassificationDataset):
                 match = re.match(r"numeric:(\S+):0\.0", field)
                 if not match:
                     continue
-                feature_token, = match.groups()
+                (feature_token,) = match.groups()
                 inv_feature_vocab[feature_token] = len(inv_feature_vocab)
 
             for tokens in reader:
                 node_token = tokens[0]
-                label_token, = re.match(r"label=(\S+)", tokens[1]).groups()
+                (label_token,) = re.match(r"label=(\S+)", tokens[1]).groups()
                 feature = [0] * len(inv_feature_vocab)
                 inv_node_vocab[node_token] = len(inv_node_vocab)
                 for token in tokens[2:]:
@@ -67,7 +77,9 @@ class PubMed(data.NodeClassificationDataset):
                     if not match:
                         continue
                     feature_token, value = match.groups()
-                    feature[inv_feature_vocab[feature_token]] = utils.literal_eval(value)
+                    feature[inv_feature_vocab[feature_token]] = utils.literal_eval(
+                        value
+                    )
                 label = inv_label_vocab[label_token]
                 node_feature.append(feature)
                 node_label.append(label)
@@ -77,12 +89,18 @@ class PubMed(data.NodeClassificationDataset):
         with open(edge_file, "r") as fin:
             reader = csv.reader(fin, delimiter="\t")
             if verbose:
-                reader = iter(tqdm(reader, "Loading %s" % edge_file, utils.get_line_count(edge_file)))
+                reader = iter(
+                    tqdm(
+                        reader,
+                        "Loading %s" % edge_file,
+                        utils.get_line_count(edge_file),
+                    )
+                )
             _ = next(reader)
             _ = next(reader)
             for tokens in reader:
-                h_token, = re.match(r"paper:(\S+)", tokens[1]).groups()
-                t_token, = re.match(r"paper:(\S+)", tokens[3]).groups()
+                (h_token,) = re.match(r"paper:(\S+)", tokens[1]).groups()
+                (t_token,) = re.match(r"paper:(\S+)", tokens[3]).groups()
                 if h_token not in inv_node_vocab:
                     inv_node_vocab[h_token] = len(inv_node_vocab)
                 h = inv_node_vocab[h_token]
@@ -91,5 +109,10 @@ class PubMed(data.NodeClassificationDataset):
                 t = inv_node_vocab[t_token]
                 edge_list.append((h, t))
 
-        self.load_edge(edge_list, node_feature, node_label, inv_node_vocab=inv_node_vocab,
-                       inv_label_vocab=inv_label_vocab)
+        self.load_edge(
+            edge_list,
+            node_feature,
+            node_label,
+            inv_node_vocab=inv_node_vocab,
+            inv_label_vocab=inv_label_vocab,
+        )

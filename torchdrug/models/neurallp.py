@@ -57,7 +57,7 @@ class NeuralLogicProgramming(nn.Module, core.Configurable):
 
         for i in range(self.num_step):
             key = hidden[i]
-            value = hidden[:i + 1]
+            value = hidden[: i + 1]
             x = torch.einsum("bd, tbd -> bt", key, value)
             attention = F.softmax(x, dim=-1)
             input = torch.einsum("bt, tbn -> nb", attention, memory)
@@ -67,8 +67,11 @@ class NeuralLogicProgramming(nn.Module, core.Configurable):
             if graph.num_node * graph.num_relation < graph.num_edge:
                 # O(|V|d) memory
                 node_out = node_out * graph.num_relation + relation
-                adjacency = utils.sparse_coo_tensor(torch.stack([node_in, node_out]), graph.edge_weight,
-                                                    (graph.num_node, graph.num_node * graph.num_relation))
+                adjacency = utils.sparse_coo_tensor(
+                    torch.stack([node_in, node_out]),
+                    graph.edge_weight,
+                    (graph.num_node, graph.num_node * graph.num_relation),
+                )
                 output = adjacency.t() @ input
                 output = output.view(graph.num_node, graph.num_relation, -1)
                 output = (output * weight).sum(dim=1)
@@ -77,7 +80,9 @@ class NeuralLogicProgramming(nn.Module, core.Configurable):
                 message = input[node_in]
                 message = message * weight[relation]
                 edge_weight = graph.edge_weight.unsqueeze(-1)
-                output = scatter_add(message * edge_weight, node_out, dim=0, dim_size=graph.num_node)
+                output = scatter_add(
+                    message * edge_weight, node_out, dim=0, dim_size=graph.num_node
+                )
             output = output / output.sum(dim=0, keepdim=True).clamp(self.eps)
 
             memory = torch.cat([memory, output.t().unsqueeze(0)])
@@ -99,7 +104,9 @@ class NeuralLogicProgramming(nn.Module, core.Configurable):
         assert graph.num_relation == self.num_relation
         graph = graph.undirected(add_inverse=True)
 
-        h_index, t_index, r_index = self.negative_sample_to_tail(h_index, t_index, r_index)
+        h_index, t_index, r_index = self.negative_sample_to_tail(
+            h_index, t_index, r_index
+        )
         hr_index = h_index * graph.num_relation + r_index
         hr_index_set, hr_inverse = hr_index.unique(return_inverse=True)
         h_index_set = torch.div(hr_index_set, graph.num_relation, rounding_mode="floor")

@@ -13,8 +13,8 @@ from torchdrug.core import Registry as R
 @utils.copy_args(data.ProteinDataset.load_pdbs)
 class GeneOntology(data.ProteinDataset):
     """
-    A set of proteins with their 3D structures and GO terms. These terms classify proteins 
-    into hierarchically related functional classes organized into three ontologies: molecular 
+    A set of proteins with their 3D structures and GO terms. These terms classify proteins
+    into hierarchically related functional classes organized into three ontologies: molecular
     function (MF), biological process (BP) and cellular component (CC).
 
     Statistics (test_cutoff=0.95):
@@ -45,13 +45,15 @@ class GeneOntology(data.ProteinDataset):
             raise ValueError("Unknown branch `%s` for GeneOntology dataset" % branch)
         self.branch = branch
         if test_cutoff not in self.test_cutoffs:
-            raise ValueError("Unknown test cutoff `%.2f` for GeneOntology dataset" % test_cutoff)
+            raise ValueError(
+                "Unknown test cutoff `%.2f` for GeneOntology dataset" % test_cutoff
+            )
         self.test_cutoff = test_cutoff
 
         zip_file = utils.download(self.url, path, md5=self.md5)
         path = os.path.join(utils.extract(zip_file), "GeneOntology")
         pkl_file = os.path.join(path, self.processed_file)
-        
+
         csv_file = os.path.join(path, "nrPDB-GO_test.csv")
         pdb_ids = []
         with open(csv_file, "r") as fin:
@@ -75,18 +77,28 @@ class GeneOntology(data.ProteinDataset):
             self.filter_pdb(pdb_ids)
 
         tsv_file = os.path.join(path, "nrPDB-GO_annot.tsv")
-        pdb_ids = [os.path.basename(pdb_file).split("_")[0] for pdb_file in self.pdb_files]
+        pdb_ids = [
+            os.path.basename(pdb_file).split("_")[0] for pdb_file in self.pdb_files
+        ]
         self.load_annotation(tsv_file, pdb_ids)
 
-        splits = [os.path.basename(os.path.dirname(pdb_file)) for pdb_file in self.pdb_files]
-        self.num_samples = [splits.count("train"), splits.count("valid"), splits.count("test")]
+        splits = [
+            os.path.basename(os.path.dirname(pdb_file)) for pdb_file in self.pdb_files
+        ]
+        self.num_samples = [
+            splits.count("train"),
+            splits.count("valid"),
+            splits.count("test"),
+        ]
 
     def filter_pdb(self, pdb_ids):
         pdb_ids = set(pdb_ids)
         sequences = []
         pdb_files = []
         data = []
-        for sequence, pdb_file, protein in zip(self.sequences, self.pdb_files, self.data):
+        for sequence, pdb_file, protein in zip(
+            self.sequences, self.pdb_files, self.data
+        ):
             if os.path.basename(pdb_file).split("_")[0] in pdb_ids:
                 continue
             sequences.append(sequence)
@@ -108,8 +120,13 @@ class GeneOntology(data.ProteinDataset):
             _ = next(reader)
             pos_targets = {}
             for line in reader:
-                pdb_id, pos_target = line[0], line[idx + 1] if idx + 1 < len(line) else None
-                pos_target = [task2id[t] for t in pos_target.split(",")] if pos_target else []
+                pdb_id, pos_target = (
+                    line[0],
+                    line[idx + 1] if idx + 1 < len(line) else None,
+                )
+                pos_target = (
+                    [task2id[t] for t in pos_target.split(",")] if pos_target else []
+                )
                 pos_target = torch.LongTensor(pos_target)
                 pos_targets[pdb_id] = pos_target
 
@@ -141,5 +158,7 @@ class GeneOntology(data.ProteinDataset):
             item = self.transform(item)
         indices = self.pos_targets[index].unsqueeze(0)
         values = torch.ones(len(self.pos_targets[index]))
-        item["targets"] = utils.sparse_coo_tensor(indices, values, (len(self.tasks),)).to_dense()
+        item["targets"] = utils.sparse_coo_tensor(
+            indices, values, (len(self.tasks),)
+        ).to_dense()
         return item

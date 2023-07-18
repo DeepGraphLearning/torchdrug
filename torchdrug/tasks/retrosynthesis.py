@@ -13,6 +13,7 @@ from torchdrug.core import Registry as R
 from torchdrug import layers
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -35,7 +36,9 @@ class CenterIdentification(tasks.Task, core.Configurable):
 
     _option_members = {"feature"}
 
-    def __init__(self, model, feature=("reaction", "graph", "atom", "bond"), num_mlp_layer=2):
+    def __init__(
+        self, model, feature=("reaction", "graph", "atom", "bond"), num_mlp_layer=2
+    ):
         super(CenterIdentification, self).__init__()
         self.model = model
         self.num_mlp_layer = num_mlp_layer
@@ -68,8 +71,8 @@ class CenterIdentification(tasks.Task, core.Configurable):
             else:
                 raise ValueError("Unknown feature `%s`" % _feature)
 
-        node_dim += graph_dim # inherit graph features
-        edge_dim += node_dim * 2 # inherit node features
+        node_dim += graph_dim  # inherit graph features
+        edge_dim += node_dim * 2  # inherit node features
 
         hidden_dims = [self.model.output_dim] * (self.num_mlp_layer - 1)
         self.edge_mlp = layers.MLP(edge_dim, hidden_dims + [1])
@@ -96,8 +99,12 @@ class CenterIdentification(tasks.Task, core.Configurable):
         return all_loss, metric
 
     def _collate(self, edge_data, node_data, graph):
-        new_data = torch.zeros(len(edge_data) + len(node_data), *edge_data.shape[1:],
-                               dtype=edge_data.dtype, device=edge_data.device)
+        new_data = torch.zeros(
+            len(edge_data) + len(node_data),
+            *edge_data.shape[1:],
+            dtype=edge_data.dtype,
+            device=edge_data.device
+        )
         num_cum_xs = graph.num_cum_edges + graph.num_cum_nodes
         num_xs = graph.num_edges + graph.num_nodes
         starts = num_cum_xs - num_xs
@@ -126,7 +133,12 @@ class CenterIdentification(tasks.Task, core.Configurable):
         graph_feature = []
         for _feature in sorted(self.feature):
             if _feature == "reaction":
-                reaction_feature = torch.zeros(len(graph), self.num_reaction, dtype=torch.float32, device=self.device)
+                reaction_feature = torch.zeros(
+                    len(graph),
+                    self.num_reaction,
+                    dtype=torch.float32,
+                    device=self.device,
+                )
                 reaction_feature.scatter_(1, batch["reaction"].unsqueeze(-1), 1)
                 graph_feature.append(reaction_feature)
             elif _feature == "graph":
@@ -145,7 +157,7 @@ class CenterIdentification(tasks.Task, core.Configurable):
         # inherit node features
         edge_feature.append(node_feature[graph.edge_list[:, :2]].flatten(1))
         edge_feature = torch.cat(edge_feature, dim=-1)
-        
+
         edge_pred = self.edge_mlp(edge_feature).squeeze(-1)
         node_pred = self.node_mlp(node_feature).squeeze(-1)
 
@@ -198,18 +210,29 @@ class CenterIdentification(tasks.Task, core.Configurable):
         center_topk = center_topk.flatten()
 
         is_edge = center_topk < graph.num_edges
-        node_index = center_topk + graph.num_cum_nodes - graph.num_nodes - graph.num_edges
+        node_index = (
+            center_topk + graph.num_cum_nodes - graph.num_nodes - graph.num_edges
+        )
         edge_index = center_topk + graph.num_cum_edges - graph.num_edges
-        center_topk_shifted = torch.cat([-torch.ones(1, dtype=torch.long, device=self.device),
-                                         center_topk[:-1]])
-        product_id_shifted = torch.cat([-torch.ones(1, dtype=torch.long, device=self.device),
-                                        graph.product_id[:-1]])
-        is_duplicate = (center_topk == center_topk_shifted) & (graph.product_id == product_id_shifted)
+        center_topk_shifted = torch.cat(
+            [-torch.ones(1, dtype=torch.long, device=self.device), center_topk[:-1]]
+        )
+        product_id_shifted = torch.cat(
+            [
+                -torch.ones(1, dtype=torch.long, device=self.device),
+                graph.product_id[:-1],
+            ]
+        )
+        is_duplicate = (center_topk == center_topk_shifted) & (
+            graph.product_id == product_id_shifted
+        )
         node_index = node_index[~is_edge]
         edge_index = edge_index[is_edge]
         edge_mask = ~functional.as_mask(edge_index, graph.num_edge)
 
-        reaction_center = torch.zeros(len(graph), 2, dtype=torch.long, device=self.device)
+        reaction_center = torch.zeros(
+            len(graph), 2, dtype=torch.long, device=self.device
+        )
         reaction_center[is_edge] = graph.atom_map[graph.edge_list[edge_index, :2]]
         reaction_center[~is_edge, 0] = graph.atom_map[node_index]
 
@@ -220,7 +243,7 @@ class CenterIdentification(tasks.Task, core.Configurable):
         logp = logp[~is_duplicate]
         reaction = reaction[~is_duplicate]
         synthon, num_synthon = graph.connected_components()
-        synthon = synthon.undirected() # (< num_graph * k)
+        synthon = synthon.undirected()  # (< num_graph * k)
 
         result = {
             "synthon": synthon,
@@ -234,7 +257,6 @@ class CenterIdentification(tasks.Task, core.Configurable):
 
 
 class RandomBFSOrder(object):
-
     def __call__(self, item):
         assert hasattr(item["graph"][0], "reaction_center")
         reactant, synthon = item["graph"]
@@ -247,8 +269,12 @@ class RandomBFSOrder(object):
 
         # select a mapped atom as BFS root
         reactant2id = reactant.atom_map
-        id2synthon = -torch.ones(synthon.atom_map.max() + 1, dtype=torch.long, device=synthon.device)
-        id2synthon[synthon.atom_map] = torch.arange(synthon.num_node, device=synthon.device)
+        id2synthon = -torch.ones(
+            synthon.atom_map.max() + 1, dtype=torch.long, device=synthon.device
+        )
+        id2synthon[synthon.atom_map] = torch.arange(
+            synthon.num_node, device=synthon.device
+        )
         reactant2synthon = id2synthon[reactant2id]
 
         candidate = (reactant2synthon != -1).nonzero().squeeze(-1)
@@ -272,7 +298,9 @@ class RandomBFSOrder(object):
             node_large = node_index.max(dim=-1)[0]
             node_small = node_index.min(dim=-1)[0]
             undirected_edge_id = node_large * (node_large + 1) + node_small
-            undirected_edge_id = undirected_edge_id * 2 + (node_index[:, 0] > node_index[:, 1])
+            undirected_edge_id = undirected_edge_id * 2 + (
+                node_index[:, 0] > node_index[:, 1]
+            )
 
             # rearrange edges into autoregressive order
             edge_order = undirected_edge_id.argsort()
@@ -337,10 +365,12 @@ class SynthonCompletion(tasks.Task, core.Configurable):
             dataset = train_set.dataset
         else:
             dataset = train_set
-        dataset.transform = transforms.Compose([
-            dataset.transform,
-            RandomBFSOrder(),
-        ])
+        dataset.transform = transforms.Compose(
+            [
+                dataset.transform,
+                RandomBFSOrder(),
+            ]
+        )
         sig = inspect.signature(data.PackedMolecule.from_molecule)
         keys = set(sig.parameters.keys())
         kwargs = dataset.config_dict()
@@ -383,10 +413,18 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         valid = torch.tensor(valid, device=graphs.device)
         new_graphs = type(graphs).from_molecule(mols, **self.feature_kwargs)
 
-        node_feature = torch.zeros(graphs.num_node, *new_graphs.node_feature.shape[1:],
-                                   dtype=new_graphs.node_feature.dtype, device=graphs.device)
-        edge_feature = torch.zeros(graphs.num_edge, *new_graphs.edge_feature.shape[1:],
-                                   dtype=new_graphs.edge_feature.dtype, device=graphs.device)
+        node_feature = torch.zeros(
+            graphs.num_node,
+            *new_graphs.node_feature.shape[1:],
+            dtype=new_graphs.node_feature.dtype,
+            device=graphs.device
+        )
+        edge_feature = torch.zeros(
+            graphs.num_edge,
+            *new_graphs.edge_feature.shape[1:],
+            dtype=new_graphs.edge_feature.dtype,
+            device=graphs.device
+        )
         bond_type = torch.zeros_like(graphs.bond_type)
         node_mask = valid[graphs.node2graph]
         edge_mask = valid[graphs.edge2graph]
@@ -439,7 +477,6 @@ class SynthonCompletion(tasks.Task, core.Configurable):
 
     @torch.no_grad()
     def _get_reaction_feature(self, reactant, synthon):
-
         def get_edge_map(graph, num_nodes):
             node_in, node_out = graph.edge_list.t()[:2]
             node_in2id = graph.atom_map[node_in]
@@ -457,7 +494,9 @@ class SynthonCompletion(tasks.Task, core.Configurable):
             reactant2id = reactant_x + offset[reactant_x2graph]
             synthon2id = synthon_x + offset[synthon_x2graph]
             assert synthon2id.min() > 0
-            id2synthon = -torch.ones(num_cum_xs[-1], dtype=torch.long, device=self.device)
+            id2synthon = -torch.ones(
+                num_cum_xs[-1], dtype=torch.long, device=self.device
+            )
             id2synthon[synthon2id] = torch.arange(len(synthon2id), device=self.device)
             reactant2synthon = id2synthon[reactant2id]
 
@@ -469,23 +508,43 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         reactant_edge_map = get_edge_map(reactant, reactant.num_nodes)
         synthon_edge_map = get_edge_map(synthon, reactant.num_nodes)
 
-        node_r2s = get_mapping(reactant.atom_map, synthon.atom_map, reactant.node2graph, synthon.node2graph)
-        edge_r2s = get_mapping(reactant_edge_map, synthon_edge_map, reactant.edge2graph, synthon.edge2graph)
+        node_r2s = get_mapping(
+            reactant.atom_map, synthon.atom_map, reactant.node2graph, synthon.node2graph
+        )
+        edge_r2s = get_mapping(
+            reactant_edge_map, synthon_edge_map, reactant.edge2graph, synthon.edge2graph
+        )
 
         is_new_node = node_r2s == -1
         is_new_edge = edge_r2s == -1
-        is_modified_edge = (edge_r2s != -1) & (reactant.bond_type != synthon.bond_type[edge_r2s])
-        is_reaction_center = (reactant.atom_map > 0) & \
-                             (reactant.atom_map.unsqueeze(-1) ==
-                              reactant.reaction_center[reactant.node2graph]).any(dim=-1)
+        is_modified_edge = (edge_r2s != -1) & (
+            reactant.bond_type != synthon.bond_type[edge_r2s]
+        )
+        is_reaction_center = (reactant.atom_map > 0) & (
+            reactant.atom_map.unsqueeze(-1)
+            == reactant.reaction_center[reactant.node2graph]
+        ).any(dim=-1)
 
-        return node_r2s, edge_r2s, is_new_node, is_new_edge, is_modified_edge, is_reaction_center
+        return (
+            node_r2s,
+            edge_r2s,
+            is_new_node,
+            is_new_edge,
+            is_modified_edge,
+            is_reaction_center,
+        )
 
     @torch.no_grad()
     def all_edge(self, reactant, synthon):
         graph = reactant.clone()
-        node_r2s, edge_r2s, is_new_node, is_new_edge, is_modified_edge, is_reaction_center = \
-            self._get_reaction_feature(reactant, synthon)
+        (
+            node_r2s,
+            edge_r2s,
+            is_new_node,
+            is_new_edge,
+            is_modified_edge,
+            is_reaction_center,
+        ) = self._get_reaction_feature(reactant, synthon)
         with graph.node():
             graph.node_r2s = node_r2s
             graph.is_new_node = is_new_node
@@ -509,11 +568,17 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         # i.e. bond types in synthons
         unmodified = ~condition_mask & graph.is_modified_edge
         unmodified = unmodified.nonzero().squeeze(-1)
-        assert not (graph.bond_type[unmodified] == synthon.bond_type[graph.edge_r2s[unmodified]]).any()
-        graph.edge_list[unmodified, 2] = synthon.edge_list[graph.edge_r2s[unmodified], 2]
+        assert not (
+            graph.bond_type[unmodified] == synthon.bond_type[graph.edge_r2s[unmodified]]
+        ).any()
+        graph.edge_list[unmodified, 2] = synthon.edge_list[
+            graph.edge_r2s[unmodified], 2
+        ]
 
         reverse_target = graph.edge_list[ends][:, [1, 0, 2]]
-        is_reverse_target = (graph.edge_list == reverse_target[graph.edge2graph]).all(dim=-1)
+        is_reverse_target = (graph.edge_list == reverse_target[graph.edge2graph]).all(
+            dim=-1
+        )
         # keep edges that exist in the synthon
         # remove the reverse of new target edges
         edge_mask = (condition_mask & ~is_reverse_target) | ~graph.is_new_edge
@@ -522,17 +587,22 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         atom_out = graph.atom_type[node_out]
         # keep one supervision for undirected edges
         # remove samples that try to predict existing edges
-        valid &= (node_in < node_out) & (graph.is_new_edge[ends] | graph.is_modified_edge[ends])
+        valid &= (node_in < node_out) & (
+            graph.is_new_edge[ends] | graph.is_modified_edge[ends]
+        )
         graph = graph.edge_mask(edge_mask)
 
         # sanitize the molecules
         # this will change atom index, so we manually remap the target nodes
-        compact_mapping = -torch.ones(graph.num_node, dtype=torch.long, device=self.device)
+        compact_mapping = -torch.ones(
+            graph.num_node, dtype=torch.long, device=self.device
+        )
         node_mask = graph.degree_in + graph.degree_out > 0
         # special case: for graphs without any edge, the first node should be kept
         index = torch.arange(graph.num_node, device=self.device)
-        single_node_mask = (graph.num_edges == 0)[graph.node2graph] & \
-                           (index == (graph.num_cum_nodes - graph.num_nodes)[graph.node2graph])
+        single_node_mask = (graph.num_edges == 0)[graph.node2graph] & (
+            index == (graph.num_cum_nodes - graph.num_nodes)[graph.node2graph]
+        )
         node_index = (node_mask | single_node_mask).nonzero().squeeze(-1)
         compact_mapping[node_index] = torch.arange(len(node_index), device=self.device)
         node_in = compact_mapping[node_in]
@@ -540,10 +610,15 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         graph = graph.subgraph(node_index)
 
         node_in_target = node_in - graph.num_cum_nodes + graph.num_nodes
-        assert (node_in_target[valid] < graph.num_nodes[valid]).all() and (node_in_target[valid] >= 0).all()
+        assert (node_in_target[valid] < graph.num_nodes[valid]).all() and (
+            node_in_target[valid] >= 0
+        ).all()
         # node2 might be a new node
-        node_out_target = torch.where(node_out == -1, self.atom2id[atom_out] + graph.num_nodes,
-                                  node_out - graph.num_cum_nodes + graph.num_nodes)
+        node_out_target = torch.where(
+            node_out == -1,
+            self.atom2id[atom_out] + graph.num_nodes,
+            node_out - graph.num_cum_nodes + graph.num_nodes,
+        )
         stop_target = torch.zeros(len(node_in_target), device=self.device)
 
         graph = graph[valid]
@@ -556,14 +631,25 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         # node / edge features may change because we mask some nodes / edges
         graph, feature_valid = self._update_molecule_feature(graph)
 
-        return graph[feature_valid], node_in_target[feature_valid], node_out_target[feature_valid], \
-               bond_target[feature_valid], stop_target[feature_valid]
+        return (
+            graph[feature_valid],
+            node_in_target[feature_valid],
+            node_out_target[feature_valid],
+            bond_target[feature_valid],
+            stop_target[feature_valid],
+        )
 
     @torch.no_grad()
     def all_stop(self, reactant, synthon):
         graph = reactant.clone()
-        node_r2s, edge_r2s, is_new_node, is_new_edge, is_modified_edge, is_reaction_center = \
-            self._get_reaction_feature(reactant, synthon)
+        (
+            node_r2s,
+            edge_r2s,
+            is_new_node,
+            is_new_edge,
+            is_modified_edge,
+            is_reaction_center,
+        ) = self._get_reaction_feature(reactant, synthon)
         with graph.node():
             graph.node_r2s = node_r2s
             graph.is_new_node = is_new_node
@@ -581,8 +667,13 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         # keep consistent with other training data
         graph, feature_valid = self._update_molecule_feature(graph)
 
-        return graph[feature_valid], node_in_target[feature_valid], node_out_target[feature_valid], \
-               bond_target[feature_valid], stop_target[feature_valid]
+        return (
+            graph[feature_valid],
+            node_in_target[feature_valid],
+            node_out_target[feature_valid],
+            bond_target[feature_valid],
+            stop_target[feature_valid],
+        )
 
     def forward(self, batch):
         """"""
@@ -593,12 +684,16 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         node_in_pred, node_out_pred, bond_pred, stop_pred = pred
         node_in_target, node_out_target, bond_target, stop_target, size = target
 
-        loss = functional.variadic_cross_entropy(node_in_pred, node_in_target, size, reduction="none")
+        loss = functional.variadic_cross_entropy(
+            node_in_pred, node_in_target, size, reduction="none"
+        )
         loss = functional.masked_mean(loss, stop_target == 0)
         metric["node in ce loss"] = loss
         all_loss += loss
 
-        loss = functional.variadic_cross_entropy(node_out_pred, node_out_target, size, reduction="none")
+        loss = functional.variadic_cross_entropy(
+            node_out_pred, node_out_target, size, reduction="none"
+        )
         loss = functional.masked_mean(loss, stop_target == 0)
         metric["node out ce loss"] = loss
         all_loss += loss
@@ -639,7 +734,12 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         stop_acc = ((stop_pred > 0.5) == (stop_target > 0.5)).float()
         metric["stop accuracy"] = stop_acc.mean()
 
-        total_acc = (node_in_acc > 0.5) & (node_out_acc > 0.5) & (bond_acc > 0.5) & (stop_acc > 0.5)
+        total_acc = (
+            (node_in_acc > 0.5)
+            & (node_out_acc > 0.5)
+            & (bond_acc > 0.5)
+            & (stop_acc > 0.5)
+        )
         total_acc = torch.where(stop_target == 0, total_acc, stop_acc > 0.5).float()
         metric["total accuracy"] = total_acc.mean()
 
@@ -655,8 +755,11 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         pack_num_edges = torch.stack([graph.num_edge for graph in graphs])
         pack_num_cum_edges = pack_num_edges.cumsum(0)
         graph_index = pack_num_cum_edges < len(edge_list)
-        pack_offsets = scatter_add(pack_num_nodes[graph_index], pack_num_cum_edges[graph_index],
-                                   dim_size=len(edge_list))
+        pack_offsets = scatter_add(
+            pack_num_nodes[graph_index],
+            pack_num_cum_edges[graph_index],
+            dim_size=len(edge_list),
+        )
         pack_offsets = pack_offsets.cumsum(0)
 
         edge_list[:, :2] += pack_offsets.unsqueeze(-1)
@@ -678,15 +781,34 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         for k in keys:
             data_dict[k] = torch.cat([graph.data_dict[k] for graph in graphs])
 
-        return type(graphs[0])(edge_list, edge_weight=edge_weight,
-                               num_nodes=num_nodes, num_edges=num_edges, num_relation=num_relation, offsets=offsets,
-                               meta_dict=meta_dict, **data_dict)
+        return type(graphs[0])(
+            edge_list,
+            edge_weight=edge_weight,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_relation=num_relation,
+            offsets=offsets,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def target(self, batch):
         reactant, synthon = batch["graph"]
 
-        graph1, node_in_target1, node_out_target1, bond_target1, stop_target1 = self.all_edge(reactant, synthon)
-        graph2, node_in_target2, node_out_target2, bond_target2, stop_target2 = self.all_stop(reactant, synthon)
+        (
+            graph1,
+            node_in_target1,
+            node_out_target1,
+            bond_target1,
+            stop_target1,
+        ) = self.all_edge(reactant, synthon)
+        (
+            graph2,
+            node_in_target2,
+            node_out_target2,
+            bond_target2,
+            stop_target2,
+        ) = self.all_stop(reactant, synthon)
 
         node_in_target = torch.cat([node_in_target1, node_in_target2])
         node_out_target = torch.cat([node_out_target1, node_out_target2])
@@ -699,7 +821,9 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         return node_in_target, node_out_target, bond_target, stop_target, size_ext
 
     def _topk_action(self, graph, k):
-        synthon_feature = torch.stack([graph.is_new_node, graph.is_reaction_center], dim=-1).float()
+        synthon_feature = torch.stack(
+            [graph.is_new_node, graph.is_reaction_center], dim=-1
+        ).float()
         node_feature = graph.node_feature.float() + self.input_linear(synthon_feature)
         output = self.model(graph, node_feature)
 
@@ -707,7 +831,12 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         graph_feature = []
         for _feature in sorted(self.feature):
             if _feature == "reaction":
-                reaction_feature = torch.zeros(len(graph), self.num_reaction, dtype=torch.float32, device=self.device)
+                reaction_feature = torch.zeros(
+                    len(graph),
+                    self.num_reaction,
+                    dtype=torch.float32,
+                    device=self.device,
+                )
                 reaction_feature.scatter_(1, graph.reaction.unsqueeze(-1), 1)
                 graph_feature.append(reaction_feature)
             elif _feature == "graph":
@@ -723,9 +852,13 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         node_feature = torch.cat(node_feature, dim=-1)
 
         new_node_feature = self.new_atom_feature.weight.repeat(len(graph), 1)
-        new_graph_feature = graph_feature.unsqueeze(1).repeat(1, self.num_atom_type, 1).flatten(0, 1)
+        new_graph_feature = (
+            graph_feature.unsqueeze(1).repeat(1, self.num_atom_type, 1).flatten(0, 1)
+        )
         new_node_feature = torch.cat([new_node_feature, new_graph_feature], dim=-1)
-        node_feature, num_nodes_ext = self._extend(node_feature, graph.num_nodes, new_node_feature)
+        node_feature, num_nodes_ext = self._extend(
+            node_feature, graph.num_nodes, new_node_feature
+        )
 
         node2graph_ext = functional._size_to_index(num_nodes_ext)
         num_cum_nodes_ext = num_nodes_ext.cumsum(0)
@@ -739,16 +872,27 @@ class SynthonCompletion(tasks.Task, core.Configurable):
 
         # mask out node-in prediction on new atoms
         node_in_pred[is_new_node] = -infinity
-        node_in_logp = functional.variadic_log_softmax(node_in_pred, num_nodes_ext) # (num_node,)
+        node_in_logp = functional.variadic_log_softmax(
+            node_in_pred, num_nodes_ext
+        )  # (num_node,)
         stop_logp = F.logsigmoid(stop_pred)
         act_logp = F.logsigmoid(-stop_pred)
         node_in_topk = functional.variadic_topk(node_in_logp, num_nodes_ext, k)[1]
-        assert (node_in_topk >= 0).all() and (node_in_topk < num_nodes_ext.unsqueeze(-1)).all()
-        node_in = node_in_topk + (num_cum_nodes_ext - num_nodes_ext).unsqueeze(-1) # (num_graph, k)
+        assert (node_in_topk >= 0).all() and (
+            node_in_topk < num_nodes_ext.unsqueeze(-1)
+        ).all()
+        node_in = node_in_topk + (num_cum_nodes_ext - num_nodes_ext).unsqueeze(
+            -1
+        )  # (num_graph, k)
 
         # (num_node, node_in_k, feature_dim)
-        node_out_feature = torch.cat([node_feature[node_in][node2graph_ext],
-                                      node_feature.unsqueeze(1).expand(-1, k, -1)], dim=-1)
+        node_out_feature = torch.cat(
+            [
+                node_feature[node_in][node2graph_ext],
+                node_feature.unsqueeze(1).expand(-1, k, -1),
+            ],
+            dim=-1,
+        )
         node_out_pred = self.node_out_mlp(node_out_feature).squeeze(-1)
         # mask out node-out prediction on self-loops
         node_out_pred.scatter_(0, node_in, -infinity)
@@ -756,27 +900,36 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         node_out_logp = functional.variadic_log_softmax(node_out_pred, num_nodes_ext)
         # (num_graph, node_out_k, node_in_k)
         node_out_topk = functional.variadic_topk(node_out_logp, num_nodes_ext, k)[1]
-        assert (node_out_topk >= 0).all() and (node_out_topk < num_nodes_ext.view(-1, 1, 1)).all()
+        assert (node_out_topk >= 0).all() and (
+            node_out_topk < num_nodes_ext.view(-1, 1, 1)
+        ).all()
         node_out = node_out_topk + (num_cum_nodes_ext - num_nodes_ext).view(-1, 1, 1)
 
         # (num_graph, node_out_k, node_in_k, feature_dim * 2)
         edge = torch.stack([node_in.unsqueeze(1).expand_as(node_out), node_out], dim=-1)
         bond_feature = node_feature[edge].flatten(-2)
         bond_pred = self.bond_mlp(bond_feature).squeeze(-1)
-        bond_logp = F.log_softmax(bond_pred, dim=-1) # (num_graph, node_out_k, node_in_k, num_relation)
+        bond_logp = F.log_softmax(
+            bond_pred, dim=-1
+        )  # (num_graph, node_out_k, node_in_k, num_relation)
         bond_type = torch.arange(bond_pred.shape[-1], device=self.device)
         bond_type = bond_type.view(1, 1, 1, -1).expand_as(bond_logp)
 
         # (num_graph, node_out_k, node_in_k, num_relation)
         node_in_logp = node_in_logp.gather(0, node_in.flatten(0, 1)).view(-1, 1, k, 1)
-        node_out_logp = node_out_logp.gather(0, node_out.flatten(0, 1)).view(-1, k, k, 1)
+        node_out_logp = node_out_logp.gather(0, node_out.flatten(0, 1)).view(
+            -1, k, k, 1
+        )
         act_logp = act_logp.view(-1, 1, 1, 1)
         logp = node_in_logp + node_out_logp + bond_logp + act_logp
 
         # (num_graph, node_out_k, node_in_k, num_relation, 4)
         node_in_topk = node_in_topk.view(-1, 1, k, 1).expand_as(logp)
         node_out_topk = node_out_topk.view(-1, k, k, 1).expand_as(logp)
-        action = torch.stack([node_in_topk, node_out_topk, bond_type, torch.zeros_like(bond_type)], dim=-1)
+        action = torch.stack(
+            [node_in_topk, node_out_topk, bond_type, torch.zeros_like(bond_type)],
+            dim=-1,
+        )
 
         # add stop action
         logp = torch.cat([logp.flatten(1), stop_logp.unsqueeze(-1)], dim=1)
@@ -785,7 +938,9 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         action = torch.cat([action.flatten(1, -2), stop], dim=1)
         topk = logp.topk(k, dim=-1)[1]
 
-        return action.gather(1, topk.unsqueeze(-1).expand(-1, -1, 4)), logp.gather(1, topk)
+        return action.gather(1, topk.unsqueeze(-1).expand(-1, -1, 4)), logp.gather(
+            1, topk
+        )
 
     def _apply_action(self, graph, action, logp):
         # only support non-variadic k-actions
@@ -794,19 +949,29 @@ class SynthonCompletion(tasks.Task, core.Configurable):
 
         graph = graph.repeat_interleave(num_action)
 
-        action = action.flatten(0, 1) # (num_graph * k, 4)
-        logp = logp.flatten(0, 1) # (num_graph * k)
+        action = action.flatten(0, 1)  # (num_graph * k, 4)
+        logp = logp.flatten(0, 1)  # (num_graph * k)
         new_node_in, new_node_out, new_bond_type, stop = action.t()
 
         # add new nodes
         has_new_node = (new_node_out >= graph.num_nodes) & (stop == 0)
         new_atom_id = (new_node_out - graph.num_nodes)[has_new_node]
         new_atom_type = self.id2atom[new_atom_id]
-        is_new_node = torch.ones(len(new_atom_type), dtype=torch.bool, device=self.device)
-        is_reaction_center = torch.zeros(len(new_atom_type), dtype=torch.bool, device=self.device)
-        atom_type, num_nodes = functional._extend(graph.atom_type, graph.num_nodes, new_atom_type, has_new_node)
-        is_new_node = functional._extend(graph.is_new_node, graph.num_nodes, is_new_node, has_new_node)[0]
-        is_reaction_center = functional._extend(graph.is_reaction_center, graph.num_nodes, is_reaction_center, has_new_node)[0]
+        is_new_node = torch.ones(
+            len(new_atom_type), dtype=torch.bool, device=self.device
+        )
+        is_reaction_center = torch.zeros(
+            len(new_atom_type), dtype=torch.bool, device=self.device
+        )
+        atom_type, num_nodes = functional._extend(
+            graph.atom_type, graph.num_nodes, new_atom_type, has_new_node
+        )
+        is_new_node = functional._extend(
+            graph.is_new_node, graph.num_nodes, is_new_node, has_new_node
+        )[0]
+        is_reaction_center = functional._extend(
+            graph.is_reaction_center, graph.num_nodes, is_reaction_center, has_new_node
+        )[0]
 
         # cast to regular node ids
         new_node_out = torch.where(has_new_node, graph.num_nodes, new_node_out)
@@ -816,50 +981,88 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         edge_list = graph.edge_list.clone()
         bond_type = graph.bond_type.clone()
         edge_list[:, :2] -= graph._offsets.unsqueeze(-1)
-        is_modified_edge = (edge_list[:, :2] == new_edge[graph.edge2graph]).all(dim=-1) & \
-                           (stop[graph.edge2graph] == 0)
-        has_modified_edge = scatter_max(is_modified_edge.long(), graph.edge2graph, dim_size=len(graph))[0] > 0
+        is_modified_edge = (edge_list[:, :2] == new_edge[graph.edge2graph]).all(
+            dim=-1
+        ) & (stop[graph.edge2graph] == 0)
+        has_modified_edge = (
+            scatter_max(is_modified_edge.long(), graph.edge2graph, dim_size=len(graph))[
+                0
+            ]
+            > 0
+        )
         bond_type[is_modified_edge] = new_bond_type[has_modified_edge]
         edge_list[is_modified_edge, 2] = new_bond_type[has_modified_edge]
         # modify reverse edges
         new_edge = new_edge.flip(-1)
-        is_modified_edge = (edge_list[:, :2] == new_edge[graph.edge2graph]).all(dim=-1) & \
-                           (stop[graph.edge2graph] == 0)
+        is_modified_edge = (edge_list[:, :2] == new_edge[graph.edge2graph]).all(
+            dim=-1
+        ) & (stop[graph.edge2graph] == 0)
         bond_type[is_modified_edge] = new_bond_type[has_modified_edge]
         edge_list[is_modified_edge, 2] = new_bond_type[has_modified_edge]
 
         # add new edges
         has_new_edge = (~has_modified_edge) & (stop == 0)
-        new_edge_list = torch.stack([new_node_in, new_node_out, new_bond_type], dim=-1)[has_new_edge]
-        bond_type = functional._extend(bond_type, graph.num_edges, new_bond_type[has_new_edge], has_new_edge)[0]
-        edge_list, num_edges = functional._extend(edge_list, graph.num_edges, new_edge_list, has_new_edge)
+        new_edge_list = torch.stack([new_node_in, new_node_out, new_bond_type], dim=-1)[
+            has_new_edge
+        ]
+        bond_type = functional._extend(
+            bond_type, graph.num_edges, new_bond_type[has_new_edge], has_new_edge
+        )[0]
+        edge_list, num_edges = functional._extend(
+            edge_list, graph.num_edges, new_edge_list, has_new_edge
+        )
         # add reverse edges
-        new_edge_list = torch.stack([new_node_out, new_node_in, new_bond_type], dim=-1)[has_new_edge]
-        bond_type = functional._extend(bond_type, num_edges, new_bond_type[has_new_edge], has_new_edge)[0]
-        edge_list, num_edges = functional._extend(edge_list, num_edges, new_edge_list, has_new_edge)
+        new_edge_list = torch.stack([new_node_out, new_node_in, new_bond_type], dim=-1)[
+            has_new_edge
+        ]
+        bond_type = functional._extend(
+            bond_type, num_edges, new_bond_type[has_new_edge], has_new_edge
+        )[0]
+        edge_list, num_edges = functional._extend(
+            edge_list, num_edges, new_edge_list, has_new_edge
+        )
 
         logp = logp + graph.logp
 
         # inherit attributes
         data_dict = graph.data_dict
         meta_dict = graph.meta_dict
-        for key in ["atom_type", "bond_type", "is_new_node", "is_reaction_center", "logp"]:
+        for key in [
+            "atom_type",
+            "bond_type",
+            "is_new_node",
+            "is_reaction_center",
+            "logp",
+        ]:
             data_dict.pop(key)
         # pad 0 for node / edge attributes
         for k, v in data_dict.items():
             if "node" in meta_dict[k]:
                 shape = (len(new_atom_type), *v.shape[1:])
                 new_data = torch.zeros(shape, dtype=v.dtype, device=self.device)
-                data_dict[k] = functional._extend(v, graph.num_nodes, new_data, has_new_node)[0]
+                data_dict[k] = functional._extend(
+                    v, graph.num_nodes, new_data, has_new_node
+                )[0]
             if "edge" in meta_dict[k]:
                 shape = (len(new_edge_list) * 2, *v.shape[1:])
                 new_data = torch.zeros(shape, dtype=v.dtype, device=self.device)
-                data_dict[k] = functional._extend(v, graph.num_edges, new_data, has_new_edge * 2)[0]
+                data_dict[k] = functional._extend(
+                    v, graph.num_edges, new_data, has_new_edge * 2
+                )[0]
 
-        new_graph = type(graph)(edge_list, atom_type=atom_type, bond_type=bond_type, num_nodes=num_nodes,
-                                num_edges=num_edges, num_relation=graph.num_relation,
-                                is_new_node=is_new_node, is_reaction_center=is_reaction_center, logp=logp,
-                                meta_dict=meta_dict, **data_dict)
+        new_graph = type(graph)(
+            edge_list,
+            atom_type=atom_type,
+            bond_type=bond_type,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_relation=graph.num_relation,
+            is_new_node=is_new_node,
+            is_reaction_center=is_reaction_center,
+            logp=logp,
+            meta_dict=meta_dict,
+            **data_dict
+        )
         with new_graph.graph():
             new_graph.is_stopped = stop == 1
         valid = logp > float("-inf")
@@ -893,10 +1096,12 @@ class SynthonCompletion(tasks.Task, core.Configurable):
             if not hasattr(graph, "logp"):
                 graph.logp = torch.zeros(len(graph), device=graph.device)
         with graph.node():
-            graph.is_new_node = torch.zeros(graph.num_node, dtype=torch.bool, device=graph.device)
-            graph.is_reaction_center = (graph.atom_map > 0) & \
-                                       (graph.atom_map.unsqueeze(-1) ==
-                                        graph.reaction_center[graph.node2graph]).any(dim=-1)
+            graph.is_new_node = torch.zeros(
+                graph.num_node, dtype=torch.bool, device=graph.device
+            )
+            graph.is_reaction_center = (graph.atom_map > 0) & (
+                graph.atom_map.unsqueeze(-1) == graph.reaction_center[graph.node2graph]
+            ).any(dim=-1)
 
         result = []
         num_prediction = torch.zeros(len(synthon), dtype=torch.long, device=self.device)
@@ -920,11 +1125,15 @@ class SynthonCompletion(tasks.Task, core.Configurable):
             topk_index = torch.unique(topk_index)
             new_graph = new_graph[topk_index]
             result.append(new_graph[new_graph.is_stopped])
-            num_added = scatter_add(new_graph.is_stopped.long(), new_graph.synthon_id, dim_size=len(synthon))
+            num_added = scatter_add(
+                new_graph.is_stopped.long(), new_graph.synthon_id, dim_size=len(synthon)
+            )
             num_prediction += num_added
 
             # remove samples that already hit max prediction
-            is_continue = (~new_graph.is_stopped) & (num_prediction[new_graph.synthon_id] < max_prediction)
+            is_continue = (~new_graph.is_stopped) & (
+                num_prediction[new_graph.synthon_id] < max_prediction
+            )
             graph = new_graph[is_continue]
             if len(graph) == 0:
                 break
@@ -952,11 +1161,13 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         topk = functional.variadic_topk(result.logp, num_prediction, max_prediction)[1]
         topk_index = topk + (num_prediction.cumsum(0) - num_prediction).unsqueeze(-1)
         topk_index = topk_index.flatten(0)
-        topk_index_shifted = torch.cat([-torch.ones(1, dtype=torch.long, device=self.device), topk_index[:-1]])
+        topk_index_shifted = torch.cat(
+            [-torch.ones(1, dtype=torch.long, device=self.device), topk_index[:-1]]
+        )
         is_duplicate = topk_index == topk_index_shifted
         result = result[topk_index[~is_duplicate]]
 
-        return result # (< num_graph * max_prediction)
+        return result  # (< num_graph * max_prediction)
 
     def _extend(self, data, num_xs, input, input2graph=None):
         if input2graph is None:
@@ -967,7 +1178,9 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         new_num_xs = num_xs + num_inputs
         new_num_cum_xs = new_num_xs.cumsum(0)
         new_num_x = new_num_cum_xs[-1].item()
-        new_data = torch.zeros(new_num_x, *data.shape[1:], dtype=data.dtype, device=data.device)
+        new_data = torch.zeros(
+            new_num_x, *data.shape[1:], dtype=data.dtype, device=data.device
+        )
         starts = new_num_cum_xs - new_num_xs
         ends = starts + num_xs
         index = functional.multi_slice_mask(starts, ends, new_num_x)
@@ -981,8 +1194,20 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         with reactant.graph():
             reactant.reaction = batch["reaction"]
 
-        graph1, node_in_target1, node_out_target1, bond_target1, stop_target1 = self.all_edge(reactant, synthon)
-        graph2, node_in_target2, node_out_target2, bond_target2, stop_target2 = self.all_stop(reactant, synthon)
+        (
+            graph1,
+            node_in_target1,
+            node_out_target1,
+            bond_target1,
+            stop_target1,
+        ) = self.all_edge(reactant, synthon)
+        (
+            graph2,
+            node_in_target2,
+            node_out_target2,
+            bond_target2,
+            stop_target2,
+        ) = self.all_stop(reactant, synthon)
 
         graph = self._cat([graph1, graph2])
 
@@ -994,7 +1219,9 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         # add new atom candidates into the size of each graph
         size_ext = size + self.num_atom_type
 
-        synthon_feature = torch.stack([graph.is_new_node, graph.is_reaction_center], dim=-1).float()
+        synthon_feature = torch.stack(
+            [graph.is_new_node, graph.is_reaction_center], dim=-1
+        ).float()
         node_feature = graph.node_feature.float() + self.input_linear(synthon_feature)
         output = self.model(graph, node_feature, all_loss, metric)
 
@@ -1002,7 +1229,12 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         graph_feature = []
         for _feature in sorted(self.feature):
             if _feature == "reaction":
-                reaction_feature = torch.zeros(len(graph), self.num_reaction, dtype=torch.float32, device=self.device)
+                reaction_feature = torch.zeros(
+                    len(graph),
+                    self.num_reaction,
+                    dtype=torch.float32,
+                    device=self.device,
+                )
                 reaction_feature.scatter_(1, graph.reaction.unsqueeze(-1), 1)
                 graph_feature.append(reaction_feature)
             elif _feature == "graph":
@@ -1018,9 +1250,13 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         node_feature = torch.cat(node_feature, dim=-1)
 
         new_node_feature = self.new_atom_feature.weight.repeat(len(graph), 1)
-        new_graph_feature = graph_feature.unsqueeze(1).repeat(1, self.num_atom_type, 1).flatten(0, 1)
+        new_graph_feature = (
+            graph_feature.unsqueeze(1).repeat(1, self.num_atom_type, 1).flatten(0, 1)
+        )
         new_node_feature = torch.cat([new_node_feature, new_graph_feature], dim=-1)
-        node_feature, num_nodes_ext = self._extend(node_feature, graph.num_nodes, new_node_feature)
+        node_feature, num_nodes_ext = self._extend(
+            node_feature, graph.num_nodes, new_node_feature
+        )
         assert (num_nodes_ext == size_ext).all()
 
         node2graph_ext = functional._size_to_index(num_nodes_ext)
@@ -1033,7 +1269,9 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         node_out = node_out_target + num_cum_nodes_ext - num_nodes_ext
         edge = torch.stack([node_in, node_out], dim=-1)
 
-        node_out_feature = torch.cat([node_feature[node_in][node2graph_ext], node_feature], dim=-1)
+        node_out_feature = torch.cat(
+            [node_feature[node_in][node2graph_ext], node_feature], dim=-1
+        )
         bond_feature = node_feature[edge].flatten(-2)
         node_in_pred = self.node_in_mlp(node_feature).squeeze(-1)
         node_out_pred = self.node_out_mlp(node_out_feature).squeeze(-1)
@@ -1046,8 +1284,13 @@ class SynthonCompletion(tasks.Task, core.Configurable):
         # mask out node-out prediction on self-loops
         node_out_pred[node_in] = -infinity
 
-        return (node_in_pred, node_out_pred, bond_pred, stop_pred), \
-               (node_in_target, node_out_target, bond_target, stop_target, size_ext)
+        return (node_in_pred, node_out_pred, bond_pred, stop_pred), (
+            node_in_target,
+            node_out_target,
+            bond_target,
+            stop_target,
+            size_ext,
+        )
 
 
 @R.register("tasks.Retrosynthesis")
@@ -1068,8 +1311,15 @@ class Retrosynthesis(tasks.Task, core.Configurable):
 
     _option_members = {"metric"}
 
-    def __init__(self, center_identification, synthon_completion, center_topk=2, num_synthon_beam=10, max_prediction=20,
-                 metric=("top-1", "top-3", "top-5", "top-10")):
+    def __init__(
+        self,
+        center_identification,
+        synthon_completion,
+        center_topk=2,
+        num_synthon_beam=10,
+        max_prediction=20,
+        metric=("top-1", "top-3", "top-5", "top-10"),
+    ):
         super(Retrosynthesis, self).__init__()
         self.center_identification = center_identification
         self.synthon_completion = synthon_completion
@@ -1080,7 +1330,9 @@ class Retrosynthesis(tasks.Task, core.Configurable):
 
     def load_state_dict(self, state_dict, strict=True):
         if not strict:
-            raise ValueError("Retrosynthesis only supports load_state_dict() with strict=True")
+            raise ValueError(
+                "Retrosynthesis only supports load_state_dict() with strict=True"
+            )
         keys = set(state_dict.keys())
         for model in [self.center_identification, self.synthon_completion]:
             if set(model.state_dict().keys()) == keys:
@@ -1088,7 +1340,9 @@ class Retrosynthesis(tasks.Task, core.Configurable):
         raise RuntimeError("Neither of sub modules matches with state_dict")
 
     def predict(self, batch, all_loss=None, metric=None):
-        synthon_batch = self.center_identification.predict_synthon(batch, self.center_topk)
+        synthon_batch = self.center_identification.predict_synthon(
+            batch, self.center_topk
+        )
 
         synthon = synthon_batch["synthon"]
         num_synthon = synthon_batch["num_synthon"]
@@ -1098,7 +1352,9 @@ class Retrosynthesis(tasks.Task, core.Configurable):
             synthon.reaction_center = synthon_batch["reaction_center"][synthon2split]
             synthon.split_logp = synthon_batch["log_likelihood"][synthon2split]
 
-        reactant = self.synthon_completion.predict_reactant(synthon_batch, self.num_synthon_beam, self.max_prediction)
+        reactant = self.synthon_completion.predict_reactant(
+            synthon_batch, self.num_synthon_beam, self.max_prediction
+        )
 
         logps = []
         reactant_ids = []
@@ -1110,22 +1366,32 @@ class Retrosynthesis(tasks.Task, core.Configurable):
         logps.append(reactant.split_logp[reactant_id] + reactant.logp[reactant_id])
         product_ids.append(reactant.product_id[reactant_id])
         # pad -1
-        reactant_ids.append(torch.stack([reactant_id, -torch.ones_like(reactant_id)], dim=-1))
+        reactant_ids.append(
+            torch.stack([reactant_id, -torch.ones_like(reactant_id)], dim=-1)
+        )
 
         # case 2: two synthons
         # use proposal to avoid O(n^2) complexity
         reactant1 = torch.arange(len(reactant), device=self.device)
         reactant1 = reactant1.unsqueeze(-1).expand(-1, self.max_prediction * 2)
-        reactant2 = reactant1 + torch.arange(self.max_prediction * 2, device=self.device)
+        reactant2 = reactant1 + torch.arange(
+            self.max_prediction * 2, device=self.device
+        )
         valid = reactant2 < len(reactant)
         reactant1 = reactant1[valid]
         reactant2 = reactant2[valid]
         synthon1 = reactant.synthon_id[reactant1]
         synthon2 = reactant.synthon_id[reactant2]
-        valid = (synthon1 < synthon2) & (synthon2split[synthon1] == synthon2split[synthon2])
+        valid = (synthon1 < synthon2) & (
+            synthon2split[synthon1] == synthon2split[synthon2]
+        )
         reactant1 = reactant1[valid]
         reactant2 = reactant2[valid]
-        logps.append(reactant.split_logp[reactant1] + reactant.logp[reactant1] + reactant.logp[reactant2])
+        logps.append(
+            reactant.split_logp[reactant1]
+            + reactant.logp[reactant1]
+            + reactant.logp[reactant2]
+        )
         product_ids.append(reactant.product_id[reactant1])
         reactant_ids.append(torch.stack([reactant1, reactant2], dim=-1))
 
@@ -1138,12 +1404,19 @@ class Retrosynthesis(tasks.Task, core.Configurable):
         logps = logps[order]
         reactant_ids = reactant_ids[order]
         num_prediction = product_ids.bincount()
-        logps, topk = functional.variadic_topk(logps, num_prediction, self.max_prediction)
+        logps, topk = functional.variadic_topk(
+            logps, num_prediction, self.max_prediction
+        )
         topk_index = topk + (num_prediction.cumsum(0) - num_prediction).unsqueeze(-1)
-        topk_index_shifted = torch.cat([-torch.ones(len(topk_index), 1, dtype=torch.long, device=self.device),
-                                        topk_index[:, :-1]], dim=-1)
+        topk_index_shifted = torch.cat(
+            [
+                -torch.ones(len(topk_index), 1, dtype=torch.long, device=self.device),
+                topk_index[:, :-1],
+            ],
+            dim=-1,
+        )
         is_duplicate = topk_index == topk_index_shifted
-        reactant_id = reactant_ids[topk_index] # (num_graph, k, 2)
+        reactant_id = reactant_ids[topk_index]  # (num_graph, k, 2)
 
         # why we need to repeat the graph?
         # because reactant_id may be duplicated, which is not directly supported by graph indexing
@@ -1170,7 +1443,7 @@ class Retrosynthesis(tasks.Task, core.Configurable):
 
         num_prediction = reactant.product_id.bincount()
 
-        return reactant, num_prediction # (num_graph * k)
+        return reactant, num_prediction  # (num_graph * k)
 
     def target(self, batch):
         reactant, product = batch["graph"]
@@ -1186,10 +1459,14 @@ class Retrosynthesis(tasks.Task, core.Configurable):
         # any better solution for parallel graph isomorphism?
         num_cum_prediction = num_prediction.cumsum(0)
         for i in range(len(target)):
-            target_smiles = target[i].to_smiles(isomeric=False, atom_map=False, canonical=True)
+            target_smiles = target[i].to_smiles(
+                isomeric=False, atom_map=False, canonical=True
+            )
             offset = (num_cum_prediction[i] - num_prediction[i]).item()
             for j in range(num_prediction[i]):
-                pred_smiles = pred[offset + j].to_smiles(isomeric=False, atom_map=False, canonical=True)
+                pred_smiles = pred[offset + j].to_smiles(
+                    isomeric=False, atom_map=False, canonical=True
+                )
                 if pred_smiles == target_smiles:
                     break
             else:

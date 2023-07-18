@@ -9,10 +9,13 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.PDBBind")
-@utils.copy_args(data.ProteinLigandDataset.load_lmdbs, ignore=("sequence_field", "smiles_field", "target_fields"))
+@utils.copy_args(
+    data.ProteinLigandDataset.load_lmdbs,
+    ignore=("sequence_field", "smiles_field", "target_fields"),
+)
 class PDBBind(data.ProteinLigandDataset):
     """
-    The PDBbind-2019 dataset with binding affinity indicating the interaction strength 
+    The PDBbind-2019 dataset with binding affinity indicating the interaction strength
     between pairs of protein and ligand.
 
     Statistics:
@@ -39,11 +42,19 @@ class PDBBind(data.ProteinLigandDataset):
 
         zip_file = utils.download(self.url, path, md5=self.md5)
         data_path = utils.extract(zip_file)
-        lmdb_files = [os.path.join(data_path, "pdbind/pdbind_%s.lmdb" % split)
-                      for split in self.splits]
+        lmdb_files = [
+            os.path.join(data_path, "pdbind/pdbind_%s.lmdb" % split)
+            for split in self.splits
+        ]
 
-        self.load_lmdbs(lmdb_files, sequence_field="target", smiles_field="drug",
-                        target_fields=self.target_fields, verbose=verbose, **kwargs)
+        self.load_lmdbs(
+            lmdb_files,
+            sequence_field="target",
+            smiles_field="drug",
+            target_fields=self.target_fields,
+            verbose=verbose,
+            **kwargs
+        )
 
     def split(self, keys=None):
         keys = keys or self.splits

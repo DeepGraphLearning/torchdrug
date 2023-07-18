@@ -45,30 +45,46 @@ class GraphConstruction(nn.Module, core.Configurable):
 
     def edge_residue_type(self, graph, edge_list):
         node_in, node_out, _ = edge_list.t()
-        residue_in, residue_out = graph.atom2residue[node_in], graph.atom2residue[node_out]
+        residue_in, residue_out = (
+            graph.atom2residue[node_in],
+            graph.atom2residue[node_out],
+        )
         in_residue_type = graph.residue_type[residue_in]
         out_residue_type = graph.residue_type[residue_out]
 
-        return torch.cat([
-            functional.one_hot(in_residue_type, len(data.Protein.residue2id)),
-            functional.one_hot(out_residue_type, len(data.Protein.residue2id))
-        ], dim=-1)
+        return torch.cat(
+            [
+                functional.one_hot(in_residue_type, len(data.Protein.residue2id)),
+                functional.one_hot(out_residue_type, len(data.Protein.residue2id)),
+            ],
+            dim=-1,
+        )
 
     def edge_gearnet(self, graph, edge_list, num_relation):
         node_in, node_out, r = edge_list.t()
-        residue_in, residue_out = graph.atom2residue[node_in], graph.atom2residue[node_out]
+        residue_in, residue_out = (
+            graph.atom2residue[node_in],
+            graph.atom2residue[node_out],
+        )
         in_residue_type = graph.residue_type[residue_in]
         out_residue_type = graph.residue_type[residue_out]
         sequential_dist = torch.abs(residue_in - residue_out)
-        spatial_dist = (graph.node_position[node_in] - graph.node_position[node_out]).norm(dim=-1)
+        spatial_dist = (
+            graph.node_position[node_in] - graph.node_position[node_out]
+        ).norm(dim=-1)
 
-        return torch.cat([
-            functional.one_hot(in_residue_type, len(data.Protein.residue2id)),
-            functional.one_hot(out_residue_type, len(data.Protein.residue2id)),
-            functional.one_hot(r, num_relation),
-            functional.one_hot(sequential_dist.clamp(max=self.max_seq_dist), self.max_seq_dist + 1),
-            spatial_dist.unsqueeze(-1)
-        ], dim=-1)
+        return torch.cat(
+            [
+                functional.one_hot(in_residue_type, len(data.Protein.residue2id)),
+                functional.one_hot(out_residue_type, len(data.Protein.residue2id)),
+                functional.one_hot(r, num_relation),
+                functional.one_hot(
+                    sequential_dist.clamp(max=self.max_seq_dist), self.max_seq_dist + 1
+                ),
+                spatial_dist.unsqueeze(-1),
+            ],
+            dim=-1,
+        )
 
     def apply_node_layer(self, graph):
         for layer in self.node_layers:
@@ -111,17 +127,25 @@ class GraphConstruction(nn.Module, core.Configurable):
             edge_feature = None
         else:
             raise ValueError("Unknown edge feature `%s`" % self.edge_feature)
-        data_dict, meta_dict = graph.data_by_meta(include=(
-            "node", "residue", "node reference", "residue reference", "graph"
-        ))
-        
+        data_dict, meta_dict = graph.data_by_meta(
+            include=("node", "residue", "node reference", "residue reference", "graph")
+        )
+
         if isinstance(graph, data.PackedProtein):
             data_dict["num_residues"] = graph.num_residues
         if isinstance(graph, data.PackedMolecule):
             data_dict["bond_type"] = torch.zeros_like(edge_list[:, 2])
-        return type(graph)(edge_list, num_nodes=graph.num_nodes, num_edges=num_edges, num_relation=num_relation,
-                           view=graph.view, offsets=offsets, edge_feature=edge_feature,
-                           meta_dict=meta_dict, **data_dict)
+        return type(graph)(
+            edge_list,
+            num_nodes=graph.num_nodes,
+            num_edges=num_edges,
+            num_relation=num_relation,
+            view=graph.view,
+            offsets=offsets,
+            edge_feature=edge_feature,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def forward(self, graph):
         """
@@ -181,6 +205,12 @@ class SpatialLineGraph(nn.Module, core.Configurable):
         relation = (angle / math.pi * self.num_angle_bin).long()
         edge_list = torch.cat([line_graph.edge_list, relation.unsqueeze(-1)], dim=-1)
 
-        return type(line_graph)(edge_list, num_nodes=line_graph.num_nodes, offsets=line_graph._offsets,
-                                num_edges=line_graph.num_edges, num_relation=self.num_angle_bin,
-                                meta_dict=line_graph.meta_dict, **line_graph.data_dict)
+        return type(line_graph)(
+            edge_list,
+            num_nodes=line_graph.num_nodes,
+            offsets=line_graph._offsets,
+            num_edges=line_graph.num_edges,
+            num_relation=self.num_angle_bin,
+            meta_dict=line_graph.meta_dict,
+            **line_graph.data_dict
+        )

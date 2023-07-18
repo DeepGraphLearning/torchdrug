@@ -12,7 +12,9 @@ from torchdrug.core import Registry as R
 
 
 @R.register("datasets.QM9")
-@utils.copy_args(data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields"))
+@utils.copy_args(
+    data.MoleculeDataset.load_csv, ignore=("smiles_field", "target_fields")
+)
 class QM9(data.MoleculeDataset):
     """
     Geometric, energetic, electronic and thermodynamic properties of DFT-modeled small molecules.
@@ -28,10 +30,22 @@ class QM9(data.MoleculeDataset):
         verbose (int, optional): output verbose level
         **kwargs
     """
-    
+
     url = "http://deepchem.io.s3-website-us-west-1.amazonaws.com/datasets/gdb9.tar.gz"
     md5 = "560f62d8e6c992ca0cf8ed8d013f9131"
-    target_fields = ["mu", "alpha", "homo", "lumo", "gap", "r2", "zpve", "u0", "u298", "h298", "g298"]
+    target_fields = [
+        "mu",
+        "alpha",
+        "homo",
+        "lumo",
+        "gap",
+        "r2",
+        "zpve",
+        "u0",
+        "u298",
+        "h298",
+        "g298",
+    ]
 
     def __init__(self, path, node_position=False, verbose=1, **kwargs):
         path = os.path.expanduser(path)
@@ -43,7 +57,12 @@ class QM9(data.MoleculeDataset):
         sdf_file = utils.extract(zip_file, "gdb9.sdf")
         csv_file = utils.extract(zip_file, "gdb9.sdf.csv")
 
-        self.load_csv(csv_file, smiles_field=None, target_fields=self.target_fields, verbose=verbose)
+        self.load_csv(
+            csv_file,
+            smiles_field=None,
+            target_fields=self.target_fields,
+            verbose=verbose,
+        )
 
         with utils.no_rdkit_log():
             molecules = Chem.SDMolSupplier(sdf_file, True, True, False)
@@ -65,7 +84,9 @@ class QM9(data.MoleculeDataset):
             d = data.Molecule.from_molecule(mol, **kwargs)
             if node_position:
                 with d.node():
-                    d.node_position = torch.tensor([feature.atom_position(atom) for atom in mol.GetAtoms()])
+                    d.node_position = torch.tensor(
+                        [feature.atom_position(atom) for atom in mol.GetAtoms()]
+                    )
             self.data.append(d)
             for k in targets:
                 self.targets[k].append(targets[k][i])

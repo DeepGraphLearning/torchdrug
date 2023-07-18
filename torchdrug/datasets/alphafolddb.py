@@ -18,10 +18,10 @@ class AlphaFoldDB(data.ProteinDataset):
     Parameters:
         path (str): path to store the dataset
         species_id (int, optional): the id of species to be loaded. The species are numbered
-            by the order appeared on https://alphafold.ebi.ac.uk/download (0-20 for model 
+            by the order appeared on https://alphafold.ebi.ac.uk/download (0-20 for model
             organism proteomes, 21 for Swiss-Prot)
-        split_id (int, optional): the id of split to be loaded. To avoid large memory consumption 
-            for one dataset, we have cut each species into several splits, each of which contains 
+        split_id (int, optional): the id of split to be loaded. To avoid large memory consumption
+            for one dataset, we have cut each species into several splits, each of which contains
             at most 22000 proteins.
         verbose (int, optional): output verbose level
         **kwargs
@@ -81,25 +81,87 @@ class AlphaFoldDB(data.ProteinDataset):
         "https://ftp.ebi.ac.uk/pub/databases/alphafold/v2/UP000030665_36087_TRITR_v2.tar",
         "https://ftp.ebi.ac.uk/pub/databases/alphafold/v2/UP000008524_185431_TRYB2_v2.tar",
         "https://ftp.ebi.ac.uk/pub/databases/alphafold/v2/UP000002296_353153_TRYCC_v2.tar",
-        "https://ftp.ebi.ac.uk/pub/databases/alphafold/v2/UP000270924_6293_WUCBA_v2.tar"
+        "https://ftp.ebi.ac.uk/pub/databases/alphafold/v2/UP000270924_6293_WUCBA_v2.tar",
     ]
     md5s = [
-        "4cd5f596ebfc3d45d9f6b647dc5684af", "9e26602ba2d9f233ef4fcf82703ddb59",
-        "60a09db1e1c47a98763d09879784f536", "a0ab562b7372f149673c4518f949501f", 
-        "6205138b14fb7e7ec09b366e3e4f294b", "31f31359cd7254f82304e3886440bdd3", 
-        "a590096e65461ed4eb092b2147b97f0b", "8f1e120f372995644a7101ad58e5b2ae", 
-        "9a659c4aed2a8b833478dcd5fffc5fd8", "95d775f2ae271cf50a101c73335cd250", 
-        "e5b12da43f5bd77298ca50e19706bdeb", "90e953abba9c8fe202e0adf825c0dfcc", 
-        "38a11553c7e2d00482281e74f7daf321", "2bcdfe2c37154a355fe4e8150c279c13", 
-        "580a55e56a44fed935f0101c37a8c4ab", "b8d08a9033d111429fadb4e25820f9f7", 
-        "59d1167f414a86cbccfb204791fea0eb", "dfde6b44026f19a88f1abc8ac2798ce6", 
-        "a1c2047a16130d61cac4db23b2f5b560", "e4d4b72df8d075aeb607dcb095210304", 
-        "5cdad48c799ffd723636cae26433f1f9", "98a7c13987f578277bfb66ac48a1e242", 
+        "4cd5f596ebfc3d45d9f6b647dc5684af",
+        "9e26602ba2d9f233ef4fcf82703ddb59",
+        "60a09db1e1c47a98763d09879784f536",
+        "a0ab562b7372f149673c4518f949501f",
+        "6205138b14fb7e7ec09b366e3e4f294b",
+        "31f31359cd7254f82304e3886440bdd3",
+        "a590096e65461ed4eb092b2147b97f0b",
+        "8f1e120f372995644a7101ad58e5b2ae",
+        "9a659c4aed2a8b833478dcd5fffc5fd8",
+        "95d775f2ae271cf50a101c73335cd250",
+        "e5b12da43f5bd77298ca50e19706bdeb",
+        "90e953abba9c8fe202e0adf825c0dfcc",
+        "38a11553c7e2d00482281e74f7daf321",
+        "2bcdfe2c37154a355fe4e8150c279c13",
+        "580a55e56a44fed935f0101c37a8c4ab",
+        "b8d08a9033d111429fadb4e25820f9f7",
+        "59d1167f414a86cbccfb204791fea0eb",
+        "dfde6b44026f19a88f1abc8ac2798ce6",
+        "a1c2047a16130d61cac4db23b2f5b560",
+        "e4d4b72df8d075aeb607dcb095210304",
+        "5cdad48c799ffd723636cae26433f1f9",
+        "98a7c13987f578277bfb66ac48a1e242",
     ]
     species_nsplit = [
-        2, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 20,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+        2,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        3,
+        2,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        20,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
     ]
     split_length = 22000
 
@@ -111,19 +173,25 @@ class AlphaFoldDB(data.ProteinDataset):
 
         species_name = os.path.basename(self.urls[species_id])[:-4]
         if split_id >= self.species_nsplit[species_id]:
-            raise ValueError("Split id %d should be less than %d in species %s" % 
-                            (split_id, self.species_nsplit[species_id], species_name))
+            raise ValueError(
+                "Split id %d should be less than %d in species %s"
+                % (split_id, self.species_nsplit[species_id], species_name)
+            )
         self.processed_file = "%s_%d.pkl.gz" % (species_name, split_id)
         pkl_file = os.path.join(path, self.processed_file)
 
         if os.path.exists(pkl_file):
             self.load_pickle(pkl_file, verbose=verbose, **kwargs)
         else:
-            tar_file = utils.download(self.urls[species_id], path, md5=self.md5s[species_id])
+            tar_file = utils.download(
+                self.urls[species_id], path, md5=self.md5s[species_id]
+            )
             pdb_path = utils.extract(tar_file)
             gz_files = sorted(glob.glob(os.path.join(pdb_path, "*.pdb.gz")))
             pdb_files = []
-            index = slice(split_id * self.split_length, (split_id + 1) * self.split_length)
+            index = slice(
+                split_id * self.split_length, (split_id + 1) * self.split_length
+            )
             for gz_file in gz_files[index]:
                 pdb_files.append(utils.extract(gz_file))
             self.load_pdbs(pdb_files, verbose=verbose, **kwargs)

@@ -41,33 +41,156 @@ class Protein(Molecule):
         chain_id (array_like, optional): chain ids of shape :math:`(|V_{res}|,)`
     """
 
-    _meta_types = {"node", "edge", "residue", "graph",
-                   "node reference", "edge reference", "residue reference", "graph reference"}
+    _meta_types = {
+        "node",
+        "edge",
+        "residue",
+        "graph",
+        "node reference",
+        "edge reference",
+        "residue reference",
+        "graph reference",
+    }
     dummy_protein = Chem.MolFromSequence("G")
     dummy_atom = dummy_protein.GetAtomWithIdx(0)
 
     # TODO: rdkit isn't compatible with X in the sequence
-    residue2id = {"GLY": 0, "ALA": 1, "SER": 2, "PRO": 3, "VAL": 4, "THR": 5, "CYS": 6, "ILE": 7, "LEU": 8,
-                  "ASN": 9, "ASP": 10, "GLN": 11, "LYS": 12, "GLU": 13, "MET": 14, "HIS": 15, "PHE": 16,
-                  "ARG": 17, "TYR": 18, "TRP": 19}
-    atom_name2id = {"C": 0, "CA": 1, "CB": 2, "CD": 3, "CD1": 4, "CD2": 5, "CE": 6, "CE1": 7, "CE2": 8,
-                    "CE3": 9, "CG": 10, "CG1": 11, "CG2": 12, "CH2": 13, "CZ": 14, "CZ2": 15, "CZ3": 16,
-                    "N": 17, "ND1": 18, "ND2": 19, "NE": 20, "NE1": 21, "NE2": 22, "NH1": 23, "NH2": 24,
-                    "NZ": 25, "O": 26, "OD1": 27, "OD2": 28, "OE1": 29, "OE2": 30, "OG": 31, "OG1": 32,
-                    "OH": 33, "OXT": 34, "SD": 35, "SG": 36, "UNK": 37}
-    alphabet2id = {" ": 0, "A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "G": 7, "H": 8, "I": 9, "J": 10,
-                   "K": 11, "L": 12, "M": 13, "N": 14, "O": 15, "P": 16, "Q": 17, "R": 18, "S": 19, "T": 20,
-                   "U": 21, "V": 22, "W": 23, "X": 24, "Y": 25, "Z": 26}
+    residue2id = {
+        "GLY": 0,
+        "ALA": 1,
+        "SER": 2,
+        "PRO": 3,
+        "VAL": 4,
+        "THR": 5,
+        "CYS": 6,
+        "ILE": 7,
+        "LEU": 8,
+        "ASN": 9,
+        "ASP": 10,
+        "GLN": 11,
+        "LYS": 12,
+        "GLU": 13,
+        "MET": 14,
+        "HIS": 15,
+        "PHE": 16,
+        "ARG": 17,
+        "TYR": 18,
+        "TRP": 19,
+    }
+    atom_name2id = {
+        "C": 0,
+        "CA": 1,
+        "CB": 2,
+        "CD": 3,
+        "CD1": 4,
+        "CD2": 5,
+        "CE": 6,
+        "CE1": 7,
+        "CE2": 8,
+        "CE3": 9,
+        "CG": 10,
+        "CG1": 11,
+        "CG2": 12,
+        "CH2": 13,
+        "CZ": 14,
+        "CZ2": 15,
+        "CZ3": 16,
+        "N": 17,
+        "ND1": 18,
+        "ND2": 19,
+        "NE": 20,
+        "NE1": 21,
+        "NE2": 22,
+        "NH1": 23,
+        "NH2": 24,
+        "NZ": 25,
+        "O": 26,
+        "OD1": 27,
+        "OD2": 28,
+        "OE1": 29,
+        "OE2": 30,
+        "OG": 31,
+        "OG1": 32,
+        "OH": 33,
+        "OXT": 34,
+        "SD": 35,
+        "SG": 36,
+        "UNK": 37,
+    }
+    alphabet2id = {
+        " ": 0,
+        "A": 1,
+        "B": 2,
+        "C": 3,
+        "D": 4,
+        "E": 5,
+        "F": 6,
+        "G": 7,
+        "H": 8,
+        "I": 9,
+        "J": 10,
+        "K": 11,
+        "L": 12,
+        "M": 13,
+        "N": 14,
+        "O": 15,
+        "P": 16,
+        "Q": 17,
+        "R": 18,
+        "S": 19,
+        "T": 20,
+        "U": 21,
+        "V": 22,
+        "W": 23,
+        "X": 24,
+        "Y": 25,
+        "Z": 26,
+    }
     id2residue = {v: k for k, v in residue2id.items()}
-    id2residue_symbol = {0: "G", 1: "A", 2: "S", 3: "P", 4: "V", 5: "T", 6: "C", 7: "I", 8: "L", 9: "N",
-                         10: "D", 11: "Q", 12: "K", 13: "E", 14: "M", 15: "H", 16: "F", 17: "R", 18: "Y", 19: "W"}
+    id2residue_symbol = {
+        0: "G",
+        1: "A",
+        2: "S",
+        3: "P",
+        4: "V",
+        5: "T",
+        6: "C",
+        7: "I",
+        8: "L",
+        9: "N",
+        10: "D",
+        11: "Q",
+        12: "K",
+        13: "E",
+        14: "M",
+        15: "H",
+        16: "F",
+        17: "R",
+        18: "Y",
+        19: "W",
+    }
     residue_symbol2id = {v: k for k, v in id2residue_symbol.items()}
     id2atom_name = {v: k for k, v in atom_name2id.items()}
     id2alphabet = {v: k for k, v in alphabet2id.items()}
 
-    def __init__(self, edge_list=None, atom_type=None, bond_type=None, residue_type=None, view=None,
-                 atom_name=None, atom2residue=None, residue_feature=None, is_hetero_atom=None, occupancy=None,
-                 b_factor=None, residue_number=None, insertion_code=None, chain_id=None, **kwargs):
+    def __init__(
+        self,
+        edge_list=None,
+        atom_type=None,
+        bond_type=None,
+        residue_type=None,
+        view=None,
+        atom_name=None,
+        atom2residue=None,
+        residue_feature=None,
+        is_hetero_atom=None,
+        occupancy=None,
+        b_factor=None,
+        residue_number=None,
+        insertion_code=None,
+        chain_id=None,
+        **kwargs
+    ):
         super(Protein, self).__init__(edge_list, atom_type, bond_type, **kwargs)
         residue_type, num_residue = self._standarize_num_residue(residue_type)
         self.num_residue = num_residue
@@ -75,9 +198,15 @@ class Protein(Molecule):
 
         atom_name = self._standarize_attribute(atom_name, self.num_node)
         atom2residue = self._standarize_attribute(atom2residue, self.num_node)
-        is_hetero_atom = self._standarize_attribute(is_hetero_atom, self.num_node, dtype=torch.bool)
-        occupancy = self._standarize_attribute(occupancy, self.num_node, dtype=torch.float, default=1)
-        b_factor = self._standarize_attribute(b_factor, self.num_node, dtype=torch.float)
+        is_hetero_atom = self._standarize_attribute(
+            is_hetero_atom, self.num_node, dtype=torch.bool
+        )
+        occupancy = self._standarize_attribute(
+            occupancy, self.num_node, dtype=torch.float, default=1
+        )
+        b_factor = self._standarize_attribute(
+            b_factor, self.num_node, dtype=torch.float
+        )
         residue_number = self._standarize_attribute(residue_number, self.num_residue)
         insertion_code = self._standarize_attribute(insertion_code, self.num_residue)
         chain_id = self._standarize_attribute(chain_id, self.num_residue)
@@ -93,7 +222,9 @@ class Protein(Molecule):
         with self.residue():
             self.residue_type = residue_type
             if residue_feature is not None:
-                self.residue_feature = torch.as_tensor(residue_feature, device=self.device)
+                self.residue_feature = torch.as_tensor(
+                    residue_feature, device=self.device
+                )
             self.residue_number = residue_number
             self.insertion_code = insertion_code
             self.chain_id = chain_id
@@ -134,26 +265,34 @@ class Protein(Molecule):
         for type in self._meta_contexts:
             if type == "residue":
                 if len(value) != self.num_residue:
-                    raise ValueError("Expect residue attribute `%s` to have shape (%d, *), but found %s" %
-                                     (key, self.num_residue, value.shape))
+                    raise ValueError(
+                        "Expect residue attribute `%s` to have shape (%d, *), but found %s"
+                        % (key, self.num_residue, value.shape)
+                    )
             elif type == "residue reference":
                 is_valid = (value >= -1) & (value < self.num_residue)
                 if not is_valid.all():
                     error_value = value[~is_valid]
-                    raise ValueError("Expect residue reference in [-1, %d), but found %d" %
-                                     (self.num_residue, error_value[0]))
+                    raise ValueError(
+                        "Expect residue reference in [-1, %d), but found %d"
+                        % (self.num_residue, error_value[0])
+                    )
 
     def _standarize_num_residue(self, residue_type):
         if residue_type is None:
             raise ValueError("`residue_type` should be provided")
 
-        residue_type = torch.as_tensor(residue_type, dtype=torch.long, device=self.device)
+        residue_type = torch.as_tensor(
+            residue_type, dtype=torch.long, device=self.device
+        )
         num_residue = torch.tensor(len(residue_type), device=self.device)
         return residue_type, num_residue
 
     def __setattr__(self, key, value):
         if key == "view" and value not in ["atom", "residue"]:
-            raise ValueError("Expect `view` to be either `atom` or `residue`, but found `%s`" % value)
+            raise ValueError(
+                "Expect `view` to be either `atom` or `residue`, but found `%s`" % value
+            )
         return super(Protein, self).__setattr__(key, value)
 
     def _standarize_view(self, view):
@@ -165,9 +304,20 @@ class Protein(Molecule):
         return view
 
     @classmethod
-    @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
-    def from_molecule(cls, mol, atom_feature="default", bond_feature="default", residue_feature="default",
-                      mol_feature=None, kekulize=False):
+    @utils.deprecated_alias(
+        node_feature="atom_feature",
+        edge_feature="bond_feature",
+        graph_feature="mol_feature",
+    )
+    def from_molecule(
+        cls,
+        mol,
+        atom_feature="default",
+        bond_feature="default",
+        residue_feature="default",
+        mol_feature=None,
+        kekulize=False,
+    ):
         """
         Create a protein from an RDKit object.
 
@@ -182,8 +332,14 @@ class Protein(Molecule):
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
         """
-        protein = Molecule.from_molecule(mol, atom_feature=atom_feature, bond_feature=bond_feature,
-                                         mol_feature=mol_feature, with_hydrogen=False, kekulize=kekulize)
+        protein = Molecule.from_molecule(
+            mol,
+            atom_feature=atom_feature,
+            bond_feature=bond_feature,
+            mol_feature=mol_feature,
+            with_hydrogen=False,
+            kekulize=kekulize,
+        )
         residue_feature = cls._standarize_option(residue_feature)
 
         if kekulize:
@@ -200,7 +356,9 @@ class Protein(Molecule):
         chain_id = []
         _residue_feature = []
         last_residue = None
-        atoms = [mol.GetAtomWithIdx(i) for i in range(mol.GetNumAtoms())] + [cls.dummy_atom]
+        atoms = [mol.GetAtomWithIdx(i) for i in range(mol.GetNumAtoms())] + [
+            cls.dummy_atom
+        ]
         for atom in atoms:
             pdbinfo = atom.GetPDBResidueInfo()
             number = pdbinfo.GetResidueNumber()
@@ -214,7 +372,10 @@ class Protein(Molecule):
                     type = "GLY"
                 residue_type.append(cls.residue2id[type])
                 residue_number.append(number)
-                if pdbinfo.GetInsertionCode() not in cls.alphabet2id or pdbinfo.GetChainId() not in cls.alphabet2id:
+                if (
+                    pdbinfo.GetInsertionCode() not in cls.alphabet2id
+                    or pdbinfo.GetChainId() not in cls.alphabet2id
+                ):
                     return None
                 insertion_code.append(cls.alphabet2id[pdbinfo.GetInsertionCode()])
                 chain_id.append(cls.alphabet2id[pdbinfo.GetChainId()])
@@ -245,11 +406,22 @@ class Protein(Molecule):
         else:
             _residue_feature = None
 
-        return cls(protein.edge_list, num_node=protein.num_node, residue_type=residue_type,
-                   atom_name=atom_name, atom2residue=atom2residue, residue_feature=_residue_feature,
-                   is_hetero_atom=is_hetero_atom, occupancy=occupancy, b_factor=b_factor,
-                   residue_number=residue_number, insertion_code=insertion_code, chain_id=chain_id,
-                   meta_dict=protein.meta_dict, **protein.data_dict)
+        return cls(
+            protein.edge_list,
+            num_node=protein.num_node,
+            residue_type=residue_type,
+            atom_name=atom_name,
+            atom2residue=atom2residue,
+            residue_feature=_residue_feature,
+            is_hetero_atom=is_hetero_atom,
+            occupancy=occupancy,
+            b_factor=b_factor,
+            residue_number=residue_number,
+            insertion_code=insertion_code,
+            chain_id=chain_id,
+            meta_dict=protein.meta_dict,
+            **protein.data_dict
+        )
 
     @classmethod
     def _residue_from_sequence(cls, sequence):
@@ -261,18 +433,37 @@ class Protein(Molecule):
                 warnings.warn("Unknown residue symbol `%s`. Treat as glycine" % residue)
                 residue = "G"
             residue_type.append(cls.residue_symbol2id[residue])
-            residue_feature.append(feature.onehot(residue, cls.residue_symbol2id, allow_unknown=True))
+            residue_feature.append(
+                feature.onehot(residue, cls.residue_symbol2id, allow_unknown=True)
+            )
 
         residue_type = residue_type[:-1]
         residue_feature = torch.tensor(residue_feature)[:-1]
 
-        return cls(edge_list=None, atom_type=[], bond_type=[], num_node=0, residue_type=residue_type,
-                   residue_feature=residue_feature)
+        return cls(
+            edge_list=None,
+            atom_type=[],
+            bond_type=[],
+            num_node=0,
+            residue_type=residue_type,
+            residue_feature=residue_feature,
+        )
 
     @classmethod
-    @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
-    def from_sequence(cls, sequence, atom_feature="default", bond_feature="default", residue_feature="default",
-                      mol_feature=None, kekulize=False):
+    @utils.deprecated_alias(
+        node_feature="atom_feature",
+        edge_feature="bond_feature",
+        graph_feature="mol_feature",
+    )
+    def from_sequence(
+        cls,
+        sequence,
+        atom_feature="default",
+        bond_feature="default",
+        residue_feature="default",
+        mol_feature=None,
+        kekulize=False,
+    ):
         """
         Create a protein from a sequence.
 
@@ -293,19 +484,36 @@ class Protein(Molecule):
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
         """
-        if atom_feature is None and bond_feature is None and residue_feature == "default":
+        if (
+            atom_feature is None
+            and bond_feature is None
+            and residue_feature == "default"
+        ):
             return cls._residue_from_sequence(sequence)
-        
+
         mol = Chem.MolFromSequence(sequence)
         if mol is None:
             raise ValueError("Invalid sequence `%s`" % sequence)
 
-        return cls.from_molecule(mol, atom_feature, bond_feature, residue_feature, mol_feature, kekulize)
+        return cls.from_molecule(
+            mol, atom_feature, bond_feature, residue_feature, mol_feature, kekulize
+        )
 
     @classmethod
-    @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
-    def from_pdb(cls, pdb_file, atom_feature="default", bond_feature="default", residue_feature="default",
-                 mol_feature=None, kekulize=False):
+    @utils.deprecated_alias(
+        node_feature="atom_feature",
+        edge_feature="bond_feature",
+        graph_feature="mol_feature",
+    )
+    def from_pdb(
+        cls,
+        pdb_file,
+        atom_feature="default",
+        bond_feature="default",
+        residue_feature="default",
+        mol_feature=None,
+        kekulize=False,
+    ):
         """
         Create a protein from a PDB file.
 
@@ -325,7 +533,9 @@ class Protein(Molecule):
         mol = Chem.MolFromPDBFile(pdb_file)
         if mol is None:
             raise ValueError("RDKit cannot read PDB file `%s`" % pdb_file)
-        return cls.from_molecule(mol, atom_feature, bond_feature, residue_feature, mol_feature, kekulize)
+        return cls.from_molecule(
+            mol, atom_feature, bond_feature, residue_feature, mol_feature, kekulize
+        )
 
     def to_molecule(self, ignore_error=False):
         """
@@ -422,19 +632,35 @@ class Protein(Molecule):
 
         num_nodes = node2graph.bincount(minlength=num_graph)
         num_edges = edge2graph[edge_index].bincount(minlength=num_graph)
-        num_cum_residues = scatter_max(atom2residue, node2graph[index], dim_size=num_graph)[0] + 1
+        num_cum_residues = (
+            scatter_max(atom2residue, node2graph[index], dim_size=num_graph)[0] + 1
+        )
         prepend = torch.tensor([0], device=self.device)
         num_residues = torch.diff(num_cum_residues, prepend=prepend)
 
         num_cum_nodes = num_nodes.cumsum(0)
         offsets = (num_cum_nodes - num_nodes)[edge2graph[edge_index]]
 
-        data_dict, meta_dict = self.data_mask(index, edge_index, residue_index, graph_index,
-                                              exclude=("residue reference", "graph reference"))
+        data_dict, meta_dict = self.data_mask(
+            index,
+            edge_index,
+            residue_index,
+            graph_index,
+            exclude=("residue reference", "graph reference"),
+        )
 
-        return self.packed_type(edge_list[edge_index], edge_weight=self.edge_weight[edge_index],
-                                num_nodes=num_nodes, num_edges=num_edges, num_residues=num_residues, view=self.view,
-                                offsets=offsets, atom2residue=atom2residue, meta_dict=meta_dict, **data_dict)
+        return self.packed_type(
+            edge_list[edge_index],
+            edge_weight=self.edge_weight[edge_index],
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_residues=num_residues,
+            view=self.view,
+            offsets=offsets,
+            atom2residue=atom2residue,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     @classmethod
     def pack(cls, graphs):
@@ -478,9 +704,17 @@ class Protein(Molecule):
         edge_weight = torch.cat(edge_weight)
         data_dict = {k: torch.cat(v) for k, v in data_dict.items()}
 
-        return cls.packed_type(edge_list, edge_weight=edge_weight, num_relation=graphs[0].num_relation,
-                               num_nodes=num_nodes, num_edges=num_edges, num_residues=num_residues, view=view,
-                               meta_dict=meta_dict, **data_dict)
+        return cls.packed_type(
+            edge_list,
+            edge_weight=edge_weight,
+            num_relation=graphs[0].num_relation,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_residues=num_residues,
+            view=view,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def repeat(self, count):
         edge_list = self.edge_list.repeat(count, 1)
@@ -513,9 +747,17 @@ class Protein(Molecule):
                     v = v + offsets.repeat_interleave(length)
             data_dict[k] = v
 
-        return self.packed_type(edge_list, edge_weight=edge_weight,
-                                num_nodes=num_nodes, num_edges=num_edges, num_residues=num_residues, view=self.view,
-                                num_relation=num_relation, meta_dict=self.meta_dict, **data_dict)
+        return self.packed_type(
+            edge_list,
+            edge_weight=edge_weight,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_residues=num_residues,
+            view=self.view,
+            num_relation=num_relation,
+            meta_dict=self.meta_dict,
+            **data_dict
+        )
 
     def residue2atom(self, residue_index):
         """Map residue ids to atom ids."""
@@ -549,14 +791,28 @@ class Protein(Molecule):
             index = (index,)
 
         if len(index) > 1:
-            raise ValueError("Protein has only 1 axis, but %d axis is indexed" % len(index))
+            raise ValueError(
+                "Protein has only 1 axis, but %d axis is indexed" % len(index)
+            )
 
         return self.residue_mask(index[0], compact=True)
 
-    def data_mask(self, node_index=None, edge_index=None, residue_index=None, graph_index=None, include=None,
-                  exclude=None):
-        data_dict, meta_dict = super(Protein, self).data_mask(node_index, edge_index, graph_index=graph_index,
-                                                              include=include, exclude=exclude)
+    def data_mask(
+        self,
+        node_index=None,
+        edge_index=None,
+        residue_index=None,
+        graph_index=None,
+        include=None,
+        exclude=None,
+    ):
+        data_dict, meta_dict = super(Protein, self).data_mask(
+            node_index,
+            edge_index,
+            graph_index=graph_index,
+            include=include,
+            exclude=exclude,
+        )
         residue_mapping = None
         for k, v in data_dict.items():
             for type in meta_dict[k]:
@@ -567,7 +823,9 @@ class Protein(Molecule):
                         v = v[residue_index]
                 elif type == "residue reference" and residue_index is not None:
                     if residue_mapping is None:
-                        residue_mapping = self._get_mapping(residue_index, self.num_residue)
+                        residue_mapping = self._get_mapping(
+                            residue_index, self.num_residue
+                        )
                     v = residue_mapping[v]
             data_dict[k] = v
 
@@ -588,9 +846,13 @@ class Protein(Molecule):
         """
         index = self._standarize_index(index, self.num_residue)
         if (torch.diff(index) <= 0).any():
-            warnings.warn("`residue_mask()` is called to re-order the residues. This will change the protein sequence. "
-                          "If this is not desired, you might have passed a wrong index to this function.")
-        residue_mapping = -torch.ones(self.num_residue, dtype=torch.long, device=self.device)
+            warnings.warn(
+                "`residue_mask()` is called to re-order the residues. This will change the protein sequence. "
+                "If this is not desired, you might have passed a wrong index to this function."
+            )
+        residue_mapping = -torch.ones(
+            self.num_residue, dtype=torch.long, device=self.device
+        )
         residue_mapping[index] = torch.arange(len(index), device=self.device)
 
         node_index = residue_mapping[self.atom2residue] >= 0
@@ -609,12 +871,20 @@ class Protein(Molecule):
         edge_index = self._standarize_index(edge_index, self.num_edge)
 
         if compact:
-            data_dict, meta_dict = self.data_mask(node_index, edge_index, residue_index=index)
+            data_dict, meta_dict = self.data_mask(
+                node_index, edge_index, residue_index=index
+            )
         else:
             data_dict, meta_dict = self.data_mask(edge_index=edge_index)
 
-        return type(self)(edge_list[edge_index], edge_weight=self.edge_weight[edge_index], num_node=num_node,
-                          view=self.view, meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            edge_list[edge_index],
+            edge_weight=self.edge_weight[edge_index],
+            num_node=num_node,
+            view=self.view,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def subresidue(self, index):
         """
@@ -641,24 +911,33 @@ class Protein(Molecule):
     def connected_component_id(self):
         """Connected component id of each residue."""
         node_in, node_out = self.edge_list.t()[:2]
-        residue_in, residue_out = self.atom2residue[node_in], self.atom2residue[node_out]
+        residue_in, residue_out = (
+            self.atom2residue[node_in],
+            self.atom2residue[node_out],
+        )
         mask = residue_in != residue_out
         residue_in, residue_out = residue_in[mask], residue_out[mask]
         range = torch.arange(self.num_residue, device=self.device)
-        residue_in, residue_out = torch.cat([residue_in, residue_out, range]), \
-                                  torch.cat([residue_out, residue_in, range])
+        residue_in, residue_out = torch.cat(
+            [residue_in, residue_out, range]
+        ), torch.cat([residue_out, residue_in, range])
 
         min_neighbor = torch.arange(self.num_residue, device=self.device)
         last = torch.zeros_like(min_neighbor)
         while not torch.equal(min_neighbor, last):
             last = min_neighbor
-            min_neighbor = scatter_min(min_neighbor[residue_out], residue_in, dim_size=self.num_residue)[0]
+            min_neighbor = scatter_min(
+                min_neighbor[residue_out], residue_in, dim_size=self.num_residue
+            )[0]
         cc_id = torch.unique(min_neighbor, return_inverse=True)[1]
         return cc_id
 
     def __repr__(self):
-        fields = ["num_atom=%d" % self.num_node, "num_bond=%d" % self.num_edge,
-                  "num_residue=%d" % self.num_residue]
+        fields = [
+            "num_atom=%d" % self.num_node,
+            "num_bond=%d" % self.num_edge,
+            "num_residue=%d" % self.num_residue,
+        ]
         if self.device.type != "cpu":
             fields.append("device='%s'" % self.device)
         return "%s(%s)" % (self.__class__.__name__, ", ".join(fields))
@@ -695,11 +974,30 @@ class PackedProtein(PackedMolecule, Protein):
     unpacked_type = Protein
     _check_attribute = Protein._check_attribute
 
-    def __init__(self, edge_list=None, atom_type=None, bond_type=None, residue_type=None, view=None, num_nodes=None,
-                 num_edges=None, num_residues=None, offsets=None, **kwargs):
-        super(PackedProtein, self).__init__(edge_list=edge_list, num_nodes=num_nodes, num_edges=num_edges,
-                                            offsets=offsets, atom_type=atom_type, bond_type=bond_type,
-                                            residue_type=residue_type, view=view, **kwargs)
+    def __init__(
+        self,
+        edge_list=None,
+        atom_type=None,
+        bond_type=None,
+        residue_type=None,
+        view=None,
+        num_nodes=None,
+        num_edges=None,
+        num_residues=None,
+        offsets=None,
+        **kwargs
+    ):
+        super(PackedProtein, self).__init__(
+            edge_list=edge_list,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            offsets=offsets,
+            atom_type=atom_type,
+            bond_type=bond_type,
+            residue_type=residue_type,
+            view=view,
+            **kwargs
+        )
 
         num_residues = torch.as_tensor(num_residues, device=self.device)
         num_cum_residues = num_residues.cumsum(0)
@@ -715,10 +1013,22 @@ class PackedProtein(PackedMolecule, Protein):
     def num_nodes(self, value):
         self.num_atoms = value
 
-    def data_mask(self, node_index=None, edge_index=None, residue_index=None, graph_index=None, include=None,
-                  exclude=None):
-        data_dict, meta_dict = super(PackedProtein, self).data_mask(node_index, edge_index, graph_index=graph_index,
-                                                                    include=include, exclude=exclude)
+    def data_mask(
+        self,
+        node_index=None,
+        edge_index=None,
+        residue_index=None,
+        graph_index=None,
+        include=None,
+        exclude=None,
+    ):
+        data_dict, meta_dict = super(PackedProtein, self).data_mask(
+            node_index,
+            edge_index,
+            graph_index=graph_index,
+            include=include,
+            exclude=exclude,
+        )
         residue_mapping = None
         for k, v in data_dict.items():
             for type in meta_dict[k]:
@@ -729,7 +1039,9 @@ class PackedProtein(PackedMolecule, Protein):
                         v = v[residue_index]
                 elif type == "residue reference" and residue_index is not None:
                     if residue_mapping is None:
-                        residue_mapping = self._get_mapping(residue_index, self.num_residue)
+                        residue_mapping = self._get_mapping(
+                            residue_index, self.num_residue
+                        )
                     v = residue_mapping[v]
             data_dict[k] = v
 
@@ -757,20 +1069,36 @@ class PackedProtein(PackedMolecule, Protein):
         else:
             data_dict, meta_dict = self.data_mask(edge_index=edge_index)
 
-        return type(self)(edge_list[edge_index], edge_weight=self.edge_weight[edge_index],
-                          num_nodes=num_nodes, num_edges=num_edges, num_residues=self.num_residues,
-                          view=self.view, num_relation=self.num_relation, offsets=offsets[edge_index],
-                          meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            edge_list[edge_index],
+            edge_weight=self.edge_weight[edge_index],
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_residues=self.num_residues,
+            view=self.view,
+            num_relation=self.num_relation,
+            offsets=offsets[edge_index],
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def edge_mask(self, index):
         index = self._standarize_index(index, self.num_edge)
         data_dict, meta_dict = self.data_mask(edge_index=index)
         num_edges = self._get_num_xs(index, self.num_cum_edges)
 
-        return type(self)(self.edge_list[index], edge_weight=self.edge_weight[index],
-                          num_nodes=self.num_nodes, num_edges=num_edges, num_residues=self.num_residues,
-                          view=self.view, num_relation=self.num_relation, offsets=self._offsets[index],
-                          meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            self.edge_list[index],
+            edge_weight=self.edge_weight[index],
+            num_nodes=self.num_nodes,
+            num_edges=num_edges,
+            num_residues=self.num_residues,
+            view=self.view,
+            num_relation=self.num_relation,
+            offsets=self._offsets[index],
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def residue_mask(self, index, compact=False):
         """
@@ -786,7 +1114,9 @@ class PackedProtein(PackedMolecule, Protein):
             PackedProtein
         """
         index = self._standarize_index(index, self.num_residue)
-        residue_mapping = -torch.ones(self.num_residue, dtype=torch.long, device=self.device)
+        residue_mapping = -torch.ones(
+            self.num_residue, dtype=torch.long, device=self.device
+        )
         residue_mapping[index] = torch.arange(len(index), device=self.device)
 
         node_index = residue_mapping[self.atom2residue] >= 0
@@ -809,18 +1139,30 @@ class PackedProtein(PackedMolecule, Protein):
         offsets = self._get_offsets(num_nodes, num_edges)
 
         if compact:
-            data_dict, meta_dict = self.data_mask(node_index, edge_index, residue_index=index)
+            data_dict, meta_dict = self.data_mask(
+                node_index, edge_index, residue_index=index
+            )
         else:
             data_dict, meta_dict = self.data_mask(edge_index=edge_index)
 
-        return type(self)(edge_list[edge_index], edge_weight=self.edge_weight[edge_index],
-                          num_nodes=num_nodes, num_edges=num_edges, num_residues=num_residues,
-                          view=self.view, num_relation=self.num_relation, offsets=offsets,
-                          meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            edge_list[edge_index],
+            edge_weight=self.edge_weight[edge_index],
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_residues=num_residues,
+            view=self.view,
+            num_relation=self.num_relation,
+            offsets=offsets,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def graph_mask(self, index, compact=False):
         index = self._standarize_index(index, self.batch_size)
-        graph_mapping = -torch.ones(self.batch_size, dtype=torch.long, device=self.device)
+        graph_mapping = -torch.ones(
+            self.batch_size, dtype=torch.long, device=self.device
+        )
         graph_mapping[index] = torch.arange(len(index), device=self.device)
 
         node_index = graph_mapping[self.node2graph] >= 0
@@ -829,10 +1171,15 @@ class PackedProtein(PackedMolecule, Protein):
         residue_index = self._standarize_index(residue_index, self.num_residue)
         mapping = -torch.ones(self.num_node, dtype=torch.long, device=self.device)
         if compact:
-            key = graph_mapping[self.node2graph[node_index]] * self.num_node + node_index
+            key = (
+                graph_mapping[self.node2graph[node_index]] * self.num_node + node_index
+            )
             order = key.argsort()
             node_index = node_index[order]
-            key = graph_mapping[self.residue2graph[residue_index]] * self.num_residue + residue_index
+            key = (
+                graph_mapping[self.residue2graph[residue_index]] * self.num_residue
+                + residue_index
+            )
             order = key.argsort()
             residue_index = residue_index[order]
             mapping[node_index] = torch.arange(len(node_index), device=self.device)
@@ -850,7 +1197,9 @@ class PackedProtein(PackedMolecule, Protein):
         edge_index = (edge_list[:, :2] >= 0).all(dim=-1)
         edge_index = self._standarize_index(edge_index, self.num_edge)
         if compact:
-            key = graph_mapping[self.edge2graph[edge_index]] * self.num_edge + edge_index
+            key = (
+                graph_mapping[self.edge2graph[edge_index]] * self.num_edge + edge_index
+            )
             order = key.argsort()
             edge_index = edge_index[order]
             num_edges = self.num_edges[index]
@@ -860,36 +1209,72 @@ class PackedProtein(PackedMolecule, Protein):
         offsets = self._get_offsets(num_nodes, num_edges)
 
         if compact:
-            data_dict, meta_dict = self.data_mask(node_index, edge_index,
-                                                  residue_index=residue_index, graph_index=index)
+            data_dict, meta_dict = self.data_mask(
+                node_index, edge_index, residue_index=residue_index, graph_index=index
+            )
         else:
             data_dict, meta_dict = self.data_mask(edge_index=edge_index)
 
-        return type(self)(edge_list[edge_index], edge_weight=self.edge_weight[edge_index],
-                          num_nodes=num_nodes, num_edges=num_edges, num_residues=num_residues,
-                          view=self.view, num_relation=self.num_relation, offsets=offsets,
-                          meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            edge_list[edge_index],
+            edge_weight=self.edge_weight[edge_index],
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_residues=num_residues,
+            view=self.view,
+            num_relation=self.num_relation,
+            offsets=offsets,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def get_item(self, index):
-        node_index = torch.arange(self.num_cum_nodes[index] - self.num_nodes[index], self.num_cum_nodes[index],
-                                  device=self.device)
-        edge_index = torch.arange(self.num_cum_edges[index] - self.num_edges[index], self.num_cum_edges[index],
-                                  device=self.device)
-        residue_index = torch.arange(self.num_cum_residues[index] - self.num_residues[index],
-                                     self.num_cum_residues[index], device=self.device)
+        node_index = torch.arange(
+            self.num_cum_nodes[index] - self.num_nodes[index],
+            self.num_cum_nodes[index],
+            device=self.device,
+        )
+        edge_index = torch.arange(
+            self.num_cum_edges[index] - self.num_edges[index],
+            self.num_cum_edges[index],
+            device=self.device,
+        )
+        residue_index = torch.arange(
+            self.num_cum_residues[index] - self.num_residues[index],
+            self.num_cum_residues[index],
+            device=self.device,
+        )
         graph_index = index
         edge_list = self.edge_list[edge_index].clone()
         edge_list[:, :2] -= self._offsets[edge_index].unsqueeze(-1)
-        data_dict, meta_dict = self.data_mask(node_index, edge_index,
-                                              residue_index=residue_index, graph_index=graph_index)
+        data_dict, meta_dict = self.data_mask(
+            node_index, edge_index, residue_index=residue_index, graph_index=graph_index
+        )
 
-        return self.unpacked_type(edge_list, edge_weight=self.edge_weight[edge_index], num_node=self.num_nodes[index],
-                                  num_relation=self.num_relation, meta_dict=meta_dict, **data_dict)
+        return self.unpacked_type(
+            edge_list,
+            edge_weight=self.edge_weight[edge_index],
+            num_node=self.num_nodes[index],
+            num_relation=self.num_relation,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     @classmethod
-    @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
-    def from_molecule(cls, mols, atom_feature="default", bond_feature="default", residue_feature="default",
-                      mol_feature=None, kekulize=False):
+    @utils.deprecated_alias(
+        node_feature="atom_feature",
+        edge_feature="bond_feature",
+        graph_feature="mol_feature",
+    )
+    def from_molecule(
+        cls,
+        mols,
+        atom_feature="default",
+        bond_feature="default",
+        residue_feature="default",
+        mol_feature=None,
+        kekulize=False,
+    ):
         """
         Create a packed protein from a list of RDKit objects.
 
@@ -904,8 +1289,14 @@ class PackedProtein(PackedMolecule, Protein):
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
         """
-        protein = PackedMolecule.from_molecule(mols, atom_feature=atom_feature, bond_feature=bond_feature,
-                                               mol_feature=mol_feature, with_hydrogen=False, kekulize=kekulize)
+        protein = PackedMolecule.from_molecule(
+            mols,
+            atom_feature=atom_feature,
+            bond_feature=bond_feature,
+            mol_feature=mol_feature,
+            with_hydrogen=False,
+            kekulize=kekulize,
+        )
         residue_feature = cls._standarize_option(residue_feature)
 
         residue_type = []
@@ -978,12 +1369,25 @@ class PackedProtein(PackedMolecule, Protein):
 
         num_residues = num_residues[:-1]
 
-        return cls(protein.edge_list, residue_type=residue_type,
-                   num_nodes=protein.num_nodes, num_edges=protein.num_edges, num_residues=num_residues,
-                   atom_name=atom_name, atom2residue=atom2residue, residue_feature=_residue_feature,
-                   is_hetero_atom=is_hetero_atom, occupancy=occupancy, b_factor=b_factor,
-                   residue_number=residue_number, insertion_code=insertion_code, chain_id=chain_id,
-                   offsets=protein._offsets, meta_dict=protein.meta_dict, **protein.data_dict)
+        return cls(
+            protein.edge_list,
+            residue_type=residue_type,
+            num_nodes=protein.num_nodes,
+            num_edges=protein.num_edges,
+            num_residues=num_residues,
+            atom_name=atom_name,
+            atom2residue=atom2residue,
+            residue_feature=_residue_feature,
+            is_hetero_atom=is_hetero_atom,
+            occupancy=occupancy,
+            b_factor=b_factor,
+            residue_number=residue_number,
+            insertion_code=insertion_code,
+            chain_id=chain_id,
+            offsets=protein._offsets,
+            meta_dict=protein.meta_dict,
+            **protein.data_dict
+        )
 
     @classmethod
     def _residue_from_sequence(cls, sequences):
@@ -994,10 +1398,14 @@ class PackedProtein(PackedMolecule, Protein):
         for sequence in sequences:
             for residue in sequence:
                 if residue not in cls.residue_symbol2id:
-                    warnings.warn("Unknown residue symbol `%s`. Treat as glycine" % residue)
+                    warnings.warn(
+                        "Unknown residue symbol `%s`. Treat as glycine" % residue
+                    )
                     residue = "G"
                 residue_type.append(cls.residue_symbol2id[residue])
-                residue_feature.append(feature.onehot(residue, cls.residue_symbol2id, allow_unknown=True))
+                residue_feature.append(
+                    feature.onehot(residue, cls.residue_symbol2id, allow_unknown=True)
+                )
             num_residues.append(len(sequence))
 
         residue_type = residue_type[:-1]
@@ -1008,14 +1416,32 @@ class PackedProtein(PackedMolecule, Protein):
         num_edges = [0] * (len(sequences) - 1)
         num_residues = num_residues[:-1]
 
-        return cls(edge_list=edge_list, atom_type=[], bond_type=[], residue_type=residue_type,
-                   num_nodes=num_nodes, num_edges=num_edges, num_residues=num_residues,
-                   residue_feature=residue_feature)
+        return cls(
+            edge_list=edge_list,
+            atom_type=[],
+            bond_type=[],
+            residue_type=residue_type,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_residues=num_residues,
+            residue_feature=residue_feature,
+        )
 
     @classmethod
-    @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
-    def from_sequence(cls, sequences, atom_feature="default", bond_feature="default", residue_feature="default",
-                      mol_feature=None, kekulize=False):
+    @utils.deprecated_alias(
+        node_feature="atom_feature",
+        edge_feature="bond_feature",
+        graph_feature="mol_feature",
+    )
+    def from_sequence(
+        cls,
+        sequences,
+        atom_feature="default",
+        bond_feature="default",
+        residue_feature="default",
+        mol_feature=None,
+        kekulize=False,
+    ):
         """
         Create a packed protein from a list of sequences.
 
@@ -1036,7 +1462,11 @@ class PackedProtein(PackedMolecule, Protein):
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
         """
-        if atom_feature is None and bond_feature is None and residue_feature == "default":
+        if (
+            atom_feature is None
+            and bond_feature is None
+            and residue_feature == "default"
+        ):
             return cls._residue_from_sequence(sequences)
 
         mols = []
@@ -1046,12 +1476,25 @@ class PackedProtein(PackedMolecule, Protein):
                 raise ValueError("Invalid sequence `%s`" % sequence)
             mols.append(mol)
 
-        return cls.from_molecule(mols, atom_feature, bond_feature, residue_feature, mol_feature, kekulize)
+        return cls.from_molecule(
+            mols, atom_feature, bond_feature, residue_feature, mol_feature, kekulize
+        )
 
     @classmethod
-    @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
-    def from_pdb(cls, pdb_files, atom_feature="default", bond_feature="default", residue_feature="default",
-                 mol_feature=None, kekulize=False):
+    @utils.deprecated_alias(
+        node_feature="atom_feature",
+        edge_feature="bond_feature",
+        graph_feature="mol_feature",
+    )
+    def from_pdb(
+        cls,
+        pdb_files,
+        atom_feature="default",
+        bond_feature="default",
+        residue_feature="default",
+        mol_feature=None,
+        kekulize=False,
+    ):
         """
         Create a protein from a list of PDB files.
 
@@ -1071,7 +1514,9 @@ class PackedProtein(PackedMolecule, Protein):
             mol = Chem.MolFromPDBFile(pdb_file)
             mols.append(mol)
 
-        return cls.from_molecule(mols, atom_feature, bond_feature, residue_feature, mol_feature, kekulize)
+        return cls.from_molecule(
+            mols, atom_feature, bond_feature, residue_feature, mol_feature, kekulize
+        )
 
     def to_molecule(self, ignore_error=False):
         mols = super(PackedProtein, self).to_molecule(ignore_error)
@@ -1140,7 +1585,9 @@ class PackedProtein(PackedMolecule, Protein):
         # coalesce arbitrary graph IDs to [0, n)
         _, graph2graph = torch.unique(graph2graph, return_inverse=True)
 
-        graph_key = graph2graph * self.batch_size + torch.arange(self.batch_size, device=self.device)
+        graph_key = graph2graph * self.batch_size + torch.arange(
+            self.batch_size, device=self.device
+        )
         graph_index = graph_key.argsort()
         graph = self.subbatch(graph_index)
         graph2graph = graph2graph[graph_index]
@@ -1153,9 +1600,17 @@ class PackedProtein(PackedMolecule, Protein):
 
         data_dict, meta_dict = graph.data_mask(exclude="graph")
 
-        return type(self)(graph.edge_list, edge_weight=graph.edge_weight, num_nodes=num_nodes,
-                          num_edges=num_edges, num_residues=num_residues, view=self.view, offsets=offsets,
-                          meta_dict=meta_dict, **data_dict)
+        return type(self)(
+            graph.edge_list,
+            edge_weight=graph.edge_weight,
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_residues=num_residues,
+            view=self.view,
+            offsets=offsets,
+            meta_dict=meta_dict,
+            **data_dict
+        )
 
     def repeat(self, count):
         num_nodes = self.num_nodes.repeat(count)
@@ -1173,28 +1628,46 @@ class PackedProtein(PackedMolecule, Protein):
             v = v.repeat(shape)
             for _type in self.meta_dict[k]:
                 if _type == "node reference":
-                    pack_offsets = torch.arange(count, device=self.device) * self.num_node
+                    pack_offsets = (
+                        torch.arange(count, device=self.device) * self.num_node
+                    )
                     v = v + pack_offsets.repeat_interleave(length)
                 elif _type == "edge reference":
-                    pack_offsets = torch.arange(count, device=self.device) * self.num_edge
+                    pack_offsets = (
+                        torch.arange(count, device=self.device) * self.num_edge
+                    )
                     v = v + pack_offsets.repeat_interleave(length)
                 elif _type == "residue reference":
-                    pack_offsets = torch.arange(count, device=self.device) * self.num_residue
+                    pack_offsets = (
+                        torch.arange(count, device=self.device) * self.num_residue
+                    )
                     v = v + pack_offsets.repeat_interleave(length)
                 elif _type == "graph reference":
-                    pack_offsets = torch.arange(count, device=self.device) * self.batch_size
+                    pack_offsets = (
+                        torch.arange(count, device=self.device) * self.batch_size
+                    )
                     v = v + pack_offsets.repeat_interleave(length)
             data_dict[k] = v
 
-        return type(self)(edge_list, edge_weight=self.edge_weight.repeat(count),
-                          num_nodes=num_nodes, num_edges=num_edges, num_residues=num_residues, view=self.view,
-                          num_relation=self.num_relation, offsets=offsets,
-                          meta_dict=self.meta_dict, **data_dict)
+        return type(self)(
+            edge_list,
+            edge_weight=self.edge_weight.repeat(count),
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_residues=num_residues,
+            view=self.view,
+            num_relation=self.num_relation,
+            offsets=offsets,
+            meta_dict=self.meta_dict,
+            **data_dict
+        )
 
     def repeat_interleave(self, repeats):
         repeats = torch.as_tensor(repeats, dtype=torch.long, device=self.device)
         if repeats.numel() == 1:
-            repeats = repeats * torch.ones(self.batch_size, dtype=torch.long, device=self.device)
+            repeats = repeats * torch.ones(
+                self.batch_size, dtype=torch.long, device=self.device
+            )
         num_nodes = self.num_nodes.repeat_interleave(repeats)
         num_edges = self.num_edges.repeat_interleave(repeats)
         num_residues = self.num_residues.repeat_interleave(repeats)
@@ -1263,48 +1736,89 @@ class PackedProtein(PackedMolecule, Protein):
                     num_xs = num_graphs
                 elif _type == "node reference":
                     if node_offsets is None:
-                        node_offsets = self._get_repeat_pack_offsets(self.num_nodes, repeats)
+                        node_offsets = self._get_repeat_pack_offsets(
+                            self.num_nodes, repeats
+                        )
                     pack_offsets = node_offsets
                 elif _type == "edge reference":
                     if edge_offsets is None:
-                        edge_offsets = self._get_repeat_pack_offsets(self.num_edges, repeats)
+                        edge_offsets = self._get_repeat_pack_offsets(
+                            self.num_edges, repeats
+                        )
                     pack_offsets = edge_offsets
                 elif _type == "residue reference":
                     if residue_offsets is None:
-                        residue_offsets = self._get_repeat_pack_offsets(self.num_residues, repeats)
+                        residue_offsets = self._get_repeat_pack_offsets(
+                            self.num_residues, repeats
+                        )
                     pack_offsets = residue_offsets
                 elif _type == "graph reference":
                     if graph_offsets is None:
-                        graph_offsets = self._get_repeat_pack_offsets(num_graphs, repeats)
+                        graph_offsets = self._get_repeat_pack_offsets(
+                            num_graphs, repeats
+                        )
                     pack_offsets = graph_offsets
             # add offsets to make references point to indexes in their own graph
             if num_xs is not None and pack_offsets is not None:
                 v = v + pack_offsets.repeat_interleave(num_xs)
             data_dict[k] = v
 
-        return type(self)(edge_list, edge_weight=self.edge_weight[edge_index],
-                          num_nodes=num_nodes, num_edges=num_edges, num_residues=num_residues, view=self.view,
-                          num_relation=self.num_relation, offsets=offsets, meta_dict=self.meta_dict, **data_dict)
+        return type(self)(
+            edge_list,
+            edge_weight=self.edge_weight[edge_index],
+            num_nodes=num_nodes,
+            num_edges=num_edges,
+            num_residues=num_residues,
+            view=self.view,
+            num_relation=self.num_relation,
+            offsets=offsets,
+            meta_dict=self.meta_dict,
+            **data_dict
+        )
 
     def undirected(self, add_inverse=True):
         undirected = PackedMolecule.undirected(self, add_inverse=add_inverse)
 
-        return type(self)(undirected.edge_list, edge_weight=undirected.edge_weight,
-                          num_nodes=undirected.num_nodes, num_edges=undirected.num_edges,
-                          num_residues=self.num_residues, view=self.view, num_relation=undirected.num_relation,
-                          offsets=undirected._offsets, meta_dict=undirected.meta_dict, **undirected.data_dict)
+        return type(self)(
+            undirected.edge_list,
+            edge_weight=undirected.edge_weight,
+            num_nodes=undirected.num_nodes,
+            num_edges=undirected.num_edges,
+            num_residues=self.num_residues,
+            view=self.view,
+            num_relation=undirected.num_relation,
+            offsets=undirected._offsets,
+            meta_dict=undirected.meta_dict,
+            **undirected.data_dict
+        )
 
     def detach(self):
-        return type(self)(self.edge_list.detach(), edge_weight=self.edge_weight.detach(),
-                          num_nodes=self.num_nodes, num_edges=self.num_edges, num_residues=self.num_residues,
-                          view=self.view, num_relation=self.num_relation, offsets=self._offsets,
-                          meta_dict=self.meta_dict, **utils.detach(self.data_dict))
+        return type(self)(
+            self.edge_list.detach(),
+            edge_weight=self.edge_weight.detach(),
+            num_nodes=self.num_nodes,
+            num_edges=self.num_edges,
+            num_residues=self.num_residues,
+            view=self.view,
+            num_relation=self.num_relation,
+            offsets=self._offsets,
+            meta_dict=self.meta_dict,
+            **utils.detach(self.data_dict)
+        )
 
     def clone(self):
-        return type(self)(self.edge_list.clone(), edge_weight=self.edge_weight.clone(),
-                          num_nodes=self.num_nodes, num_edges=self.num_edges, num_residues=self.num_residues,
-                          view=self.view, num_relation=self.num_relation, offsets=self._offsets,
-                          meta_dict=self.meta_dict, **utils.clone(self.data_dict))
+        return type(self)(
+            self.edge_list.clone(),
+            edge_weight=self.edge_weight.clone(),
+            num_nodes=self.num_nodes,
+            num_edges=self.num_edges,
+            num_residues=self.num_residues,
+            view=self.view,
+            num_relation=self.num_relation,
+            offsets=self._offsets,
+            meta_dict=self.meta_dict,
+            **utils.clone(self.data_dict)
+        )
 
     def cuda(self, *args, **kwargs):
         edge_list = self.edge_list.cuda(*args, **kwargs)
@@ -1312,10 +1826,18 @@ class PackedProtein(PackedMolecule, Protein):
         if edge_list is self.edge_list:
             return self
         else:
-            return type(self)(edge_list, edge_weight=self.edge_weight,
-                              num_nodes=self.num_nodes, num_edges=self.num_edges, num_residues=self.num_residues,
-                              view=self.view, num_relation=self.num_relation, offsets=self._offsets,
-                              meta_dict=self.meta_dict, **utils.cuda(self.data_dict, *args, **kwargs))
+            return type(self)(
+                edge_list,
+                edge_weight=self.edge_weight,
+                num_nodes=self.num_nodes,
+                num_edges=self.num_edges,
+                num_residues=self.num_residues,
+                view=self.view,
+                num_relation=self.num_relation,
+                offsets=self._offsets,
+                meta_dict=self.meta_dict,
+                **utils.cuda(self.data_dict, *args, **kwargs)
+            )
 
     def cpu(self):
         edge_list = self.edge_list.cpu()
@@ -1323,10 +1845,18 @@ class PackedProtein(PackedMolecule, Protein):
         if edge_list is self.edge_list:
             return self
         else:
-            return type(self)(edge_list, edge_weight=self.edge_weight,
-                              num_nodes=self.num_nodes, num_edges=self.num_edges, num_residues=self.num_residues,
-                              view=self.view, num_relation=self.num_relation, offsets=self._offsets,
-                              meta_dict=self.meta_dict, **utils.cpu(self.data_dict))
+            return type(self)(
+                edge_list,
+                edge_weight=self.edge_weight,
+                num_nodes=self.num_nodes,
+                num_edges=self.num_edges,
+                num_residues=self.num_residues,
+                view=self.view,
+                num_relation=self.num_relation,
+                offsets=self._offsets,
+                meta_dict=self.meta_dict,
+                **utils.cpu(self.data_dict)
+            )
 
     @utils.cached_property
     def residue2graph(self):
@@ -1338,15 +1868,19 @@ class PackedProtein(PackedMolecule, Protein):
     @utils.cached_property
     def connected_component_id(self):
         cc_id = super(PackedProtein, self).connected_component_id
-        cc_id_offsets = scatter_min(cc_id, self.residue2graph, dim_size=self.num_residue)[0][self.residue2graph]
+        cc_id_offsets = scatter_min(
+            cc_id, self.residue2graph, dim_size=self.num_residue
+        )[0][self.residue2graph]
         cc_id = cc_id - cc_id_offsets
         return cc_id
 
     def __repr__(self):
-        fields = ["batch_size=%d" % self.batch_size,
-                  "num_atoms=%s" % pretty.long_array(self.num_nodes.tolist()),
-                  "num_bonds=%s" % pretty.long_array(self.num_edges.tolist()),
-                  "num_residues=%s" % pretty.long_array(self.num_residues.tolist())]
+        fields = [
+            "batch_size=%d" % self.batch_size,
+            "num_atoms=%s" % pretty.long_array(self.num_nodes.tolist()),
+            "num_bonds=%s" % pretty.long_array(self.num_edges.tolist()),
+            "num_residues=%s" % pretty.long_array(self.num_residues.tolist()),
+        ]
         if self.device.type != "cpu":
             fields.append("device='%s'" % self.device)
         return "%s(%s)" % (self.__class__.__name__, ", ".join(fields))

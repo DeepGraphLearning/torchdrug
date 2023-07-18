@@ -63,7 +63,9 @@ class _MetaContainer(object):
         Context manager for assigning members with a specific meta type.
         """
         if type is not None and self._meta_types and type not in self._meta_types:
-            raise ValueError("Expect context type in %s, but got `%s`" % (self._meta_types, type))
+            raise ValueError(
+                "Expect context type in %s, but got `%s`" % (self._meta_types, type)
+            )
         self._meta_contexts.add(type)
         yield
         self._meta_contexts.remove(type)
@@ -76,9 +78,11 @@ class _MetaContainer(object):
                     if key.startswith(type):
                         types.append(type)
                 if len(types) > 1:
-                    raise ValueError("Auto context found multiple contexts for key `%s`. "
-                                     "If this is desired, set `enable_auto_context` to False "
-                                     "and manually specify the context. " % key)
+                    raise ValueError(
+                        "Auto context found multiple contexts for key `%s`. "
+                        "If this is desired, set `enable_auto_context` to False "
+                        "and manually specify the context. " % key
+                    )
             if types:
                 self.meta_dict[key] = types.copy()
         self._setattr(key, value)
@@ -134,7 +138,6 @@ class _MetaContainer(object):
 
 
 class Tree(defaultdict):
-
     def __init__(self):
         super(Tree, self).__init__(Tree)
 
@@ -189,7 +192,9 @@ class Registry(object):
             for key in keys[:-1]:
                 entry = entry[key]
             if keys[-1] in entry:
-                raise KeyError("`%s` has already been registered by %s" % (name, entry[keys[-1]]))
+                raise KeyError(
+                    "`%s` has already been registered by %s" % (name, entry[keys[-1]])
+                )
 
             entry[keys[-1]] = obj
             obj._registry_key = name
@@ -233,7 +238,6 @@ class Registry(object):
 
 
 class _Configurable(type):
-
     def config_dict(self):
         cls = getattr(self, "_registry_key", self.__class__.__name__)
         config = {"class": cls}
@@ -248,28 +252,35 @@ class _Configurable(type):
     def load_config_dict(cls, config):
         if cls == _Configurable:
             real_cls = Registry.search(config["class"])
-            custom_load_func = real_cls.load_config_dict.__func__ != cls.load_config_dict.__func__
+            custom_load_func = (
+                real_cls.load_config_dict.__func__ != cls.load_config_dict.__func__
+            )
             if custom_load_func:
                 return real_cls.load_config_dict(config)
             cls = real_cls
         elif getattr(cls, "_registry_key", cls.__name__) != config["class"]:
-            raise ValueError("Expect config class to be `%s`, but found `%s`" % (cls.__name__, config["class"]))
+            raise ValueError(
+                "Expect config class to be `%s`, but found `%s`"
+                % (cls.__name__, config["class"])
+            )
 
         new_config = {}
         for k, v in config.items():
             if isinstance(v, dict) and "class" in v:
                 v = _Configurable.load_config_dict(v)
             elif isinstance(v, list):
-                v = [_Configurable.load_config_dict(_v) 
-                        if isinstance(_v, dict) and "class" in _v else _v 
-                            for _v in v]
+                v = [
+                    _Configurable.load_config_dict(_v)
+                    if isinstance(_v, dict) and "class" in _v
+                    else _v
+                    for _v in v
+                ]
             if k != "class":
                 new_config[k] = v
 
         return cls(**new_config)
 
     def __new__(typ, *args, **kwargs):
-
         cls = type.__new__(typ, *args, **kwargs)
 
         @decorator
@@ -279,7 +290,7 @@ class _Configurable(type):
             func.apply_defaults()
             config = {}
             keys = list(sig.parameters.keys())
-            for k, v in zip(keys[1:], func.args[1:]): # exclude self
+            for k, v in zip(keys[1:], func.args[1:]):  # exclude self
                 config[k] = v
             config.update(func.kwargs)
             for k in getattr(self, "_ignore_args", {}):
@@ -294,10 +305,12 @@ class _Configurable(type):
 
         if isinstance(cls.__init__, types.FunctionType):
             cls.__init__ = wrapper(cls.__init__)
-            custom_load_func = hasattr(cls, "load_config_dict") and \
-                          get_function(cls.load_config_dict) != get_function(typ.load_config_dict)
-            custom_config_func = hasattr(cls, "config_dict") and \
-                                 get_function(cls.config_dict) != get_function(typ.config_dict)
+            custom_load_func = hasattr(cls, "load_config_dict") and get_function(
+                cls.load_config_dict
+            ) != get_function(typ.load_config_dict)
+            custom_config_func = hasattr(cls, "config_dict") and get_function(
+                cls.config_dict
+            ) != get_function(typ.config_dict)
             if not custom_load_func:
                 cls.load_config_dict = _Configurable.load_config_dict
             if not custom_config_func:
@@ -338,6 +351,7 @@ class Configurable(metaclass=_Configurable):
     >>> config = models.GCN(128, [128]).config_dict()
     >>> gcn = Configurable.load_config_dict(config)
     """
+
     pass
 
 
@@ -355,10 +369,12 @@ def make_configurable(cls, module=None, ignore_args=()):
     ignore_args = set(ignore_args)
     module = module or cls.__module__
     Metaclass = type(cls)
-    if issubclass(Metaclass, _Configurable): # already a configurable class
+    if issubclass(Metaclass, _Configurable):  # already a configurable class
         return cls
-    if Metaclass != type: # already have a meta class
+    if Metaclass != type:  # already have a meta class
         MetaClass = type(_Configurable.__name__, (Metaclass, _Configurable), {})
     else:
         MetaClass = _Configurable
-    return MetaClass(cls.__name__, (cls,), {"_ignore_args": ignore_args, "__module__": module})
+    return MetaClass(
+        cls.__name__, (cls,), {"_ignore_args": ignore_args, "__module__": module}
+    )

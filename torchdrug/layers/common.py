@@ -24,7 +24,15 @@ class MultiLayerPerceptron(nn.Module):
         dropout (float, optional): dropout rate
     """
 
-    def __init__(self, input_dim, hidden_dims, short_cut=False, batch_norm=False, activation="relu", dropout=0):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dims,
+        short_cut=False,
+        batch_norm=False,
+        activation="relu",
+        dropout=0,
+    ):
         super(MultiLayerPerceptron, self).__init__()
 
         if not isinstance(hidden_dims, Sequence):
@@ -101,7 +109,9 @@ class GaussianSmearing(nn.Module):
         learnable (bool, optional): learnable gaussian parameters or not
     """
 
-    def __init__(self, start=0, stop=5, num_kernel=100, centered=False, learnable=False):
+    def __init__(
+        self, start=0, stop=5, num_kernel=100, centered=False, learnable=False
+    ):
         super(GaussianSmearing, self).__init__()
         if centered:
             mu = torch.zeros(num_kernel)
@@ -153,14 +163,16 @@ class PairNorm(nn.Module):
     def forward(self, graph, input):
         """"""
         if graph.batch_size > 1:
-            warnings.warn("PairNorm is proposed for a single graph, but now applied to a batch of graphs.")
+            warnings.warn(
+                "PairNorm is proposed for a single graph, but now applied to a batch of graphs."
+            )
 
         x = input.flatten(1)
         x = x - x.mean(dim=0)
         if self.scale_individual:
             output = x / (x.norm(dim=-1, keepdim=True) + self.eps)
         else:
-            output = x  * x.shape[0] ** 0.5 / (x.norm() + self.eps)
+            output = x * x.shape[0] ** 0.5 / (x.norm() + self.eps)
         return output.view_as(input)
 
 
@@ -177,6 +189,7 @@ class InstanceNorm(nn.modules.instancenorm._InstanceNorm):
         eps (float, optional): epsilon added to the denominator
         affine (bool, optional): use learnable affine parameters or not
     """
+
     def __init__(self, input_dim, eps=1e-5, affine=False):
         super(InstanceNorm, self).__init__(input_dim, eps, affine=affine)
 
@@ -186,7 +199,9 @@ class InstanceNorm(nn.modules.instancenorm._InstanceNorm):
 
         mean = scatter_mean(input, graph.node2graph, dim=0, dim_size=graph.batch_size)
         centered = input - mean[graph.node2graph]
-        var = scatter_mean(centered ** 2, graph.node2graph, dim=0, dim_size=graph.batch_size)
+        var = scatter_mean(
+            centered**2, graph.node2graph, dim=0, dim_size=graph.batch_size
+        )
         std = (var + self.eps).sqrt()
         output = centered / std[graph.node2graph]
 
@@ -211,8 +226,12 @@ class MutualInformation(nn.Module):
 
     def __init__(self, input_dim, num_mlp_layer=2, activation="relu"):
         super(MutualInformation, self).__init__()
-        self.x_mlp = MultiLayerPerceptron(input_dim, [input_dim] * num_mlp_layer, activation=activation)
-        self.y_mlp = MultiLayerPerceptron(input_dim, [input_dim] * num_mlp_layer, activation=activation)
+        self.x_mlp = MultiLayerPerceptron(
+            input_dim, [input_dim] * num_mlp_layer, activation=activation
+        )
+        self.y_mlp = MultiLayerPerceptron(
+            input_dim, [input_dim] * num_mlp_layer, activation=activation
+        )
 
     def forward(self, x, y, pair_index=None):
         """"""
@@ -223,15 +242,19 @@ class MutualInformation(nn.Module):
 
         if pair_index is None:
             assert len(x) == len(y)
-            pair_index = torch.arange(len(x), device=x.device).unsqueeze(-1).expand(-1, 2)
+            pair_index = (
+                torch.arange(len(x), device=x.device).unsqueeze(-1).expand(-1, 2)
+            )
 
         index = pair_index[:, 0] * len(y) + pair_index[:, 1]
         positive = torch.zeros_like(score, dtype=torch.bool)
         positive[index] = 1
         negative = ~positive
 
-        mutual_info = - functional.shifted_softplus(-score[positive]).mean() \
-                      - functional.shifted_softplus(score[negative]).mean()
+        mutual_info = (
+            -functional.shifted_softplus(-score[positive]).mean()
+            - functional.shifted_softplus(score[negative]).mean()
+        )
         return mutual_info
 
 
@@ -311,7 +334,9 @@ class Sequential(nn.Sequential):
 
             output = module(**kwargs)
 
-            global_kwargs.update({k: v for k, v in kwargs.items() if k in self.global_args})
+            global_kwargs.update(
+                {k: v for k, v in kwargs.items() if k in self.global_args}
+            )
             args = []
             kwargs = {}
             if isinstance(output, dict):
@@ -337,13 +362,19 @@ class SinusoidalPositionEmbedding(nn.Module):
 
     def __init__(self, output_dim):
         super(SinusoidalPositionEmbedding, self).__init__()
-        inverse_frequency = 1 / (10000 ** (torch.arange(0.0, output_dim, 2.0) / output_dim))
+        inverse_frequency = 1 / (
+            10000 ** (torch.arange(0.0, output_dim, 2.0) / output_dim)
+        )
         self.register_buffer("inverse_frequency", inverse_frequency)
 
     def forward(self, input):
         """"""
         # input: [B, L, ...]
-        positions = torch.arange(input.shape[1] - 1, -1, -1.0, dtype=input.dtype, device=input.device)
+        positions = torch.arange(
+            input.shape[1] - 1, -1, -1.0, dtype=input.dtype, device=input.device
+        )
         sinusoidal_input = torch.outer(positions, self.inverse_frequency)
-        position_embedding = torch.cat([sinusoidal_input.sin(), sinusoidal_input.cos()], -1)
+        position_embedding = torch.cat(
+            [sinusoidal_input.sin(), sinusoidal_input.cos()], -1
+        )
         return position_embedding

@@ -9,9 +9,18 @@ from . import decorator, comm
 
 
 class LazyExtensionLoader(object):
-
-    def __init__(self, name, sources, extra_cflags=None, extra_cuda_cflags=None, extra_ldflags=None,
-                 extra_include_paths=None, build_directory=None, verbose=False, **kwargs):
+    def __init__(
+        self,
+        name,
+        sources,
+        extra_cflags=None,
+        extra_cuda_cflags=None,
+        extra_ldflags=None,
+        extra_include_paths=None,
+        build_directory=None,
+        verbose=False,
+        **kwargs
+    ):
         self.name = name
         self.sources = sources
         self.extra_cflags = extra_cflags
@@ -19,7 +28,9 @@ class LazyExtensionLoader(object):
         self.extra_ldflags = extra_ldflags
         self.extra_include_paths = extra_include_paths
         worker_name = "%s_%d" % (name, comm.get_rank())
-        self.build_directory = build_directory or cpp_extension._get_build_directory(worker_name, verbose)
+        self.build_directory = build_directory or cpp_extension._get_build_directory(
+            worker_name, verbose
+        )
         self.verbose = verbose
         self.kwargs = kwargs
 
@@ -28,9 +39,17 @@ class LazyExtensionLoader(object):
 
     @decorator.cached_property
     def module(self):
-        return cpp_extension.load(self.name, self.sources, self.extra_cflags, self.extra_cuda_cflags,
-                                  self.extra_ldflags, self.extra_include_paths, self.build_directory,
-                                  self.verbose, **self.kwargs)
+        return cpp_extension.load(
+            self.name,
+            self.sources,
+            self.extra_cflags,
+            self.extra_cuda_cflags,
+            self.extra_ldflags,
+            self.extra_include_paths,
+            self.build_directory,
+            self.verbose,
+            **self.kwargs
+        )
 
 
 def load_extension(name, sources, extra_cflags=None, extra_cuda_cflags=None, **kwargs):

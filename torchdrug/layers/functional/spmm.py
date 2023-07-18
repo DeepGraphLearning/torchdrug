@@ -9,12 +9,18 @@ from torchdrug import utils
 module = sys.modules[__name__]
 
 path = os.path.join(os.path.dirname(__file__), "extension")
-spmm = utils.load_extension("spmm", [os.path.join(path, "spmm.cpp"), os.path.join(path, "rspmm.cpp"),
-                                     os.path.join(path, "spmm.cu"), os.path.join(path, "rspmm.cu")])
+spmm = utils.load_extension(
+    "spmm",
+    [
+        os.path.join(path, "spmm.cpp"),
+        os.path.join(path, "rspmm.cpp"),
+        os.path.join(path, "spmm.cu"),
+        os.path.join(path, "rspmm.cu"),
+    ],
+)
 
 
 class SPMMAddMulFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, input):
         assert sparse.is_coalesced()
@@ -39,7 +45,6 @@ class SPMMAddMulFunction(autograd.Function):
 
 
 class SPMMMinMulFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, input):
         assert sparse.is_coalesced()
@@ -64,7 +69,6 @@ class SPMMMinMulFunction(autograd.Function):
 
 
 class SPMMMaxMulFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, input):
         assert sparse.is_coalesced()
@@ -89,7 +93,6 @@ class SPMMMaxMulFunction(autograd.Function):
 
 
 class SPMMAddAddFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, input):
         assert sparse.is_coalesced()
@@ -114,7 +117,6 @@ class SPMMAddAddFunction(autograd.Function):
 
 
 class SPMMMinAddFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, input):
         assert sparse.is_coalesced()
@@ -139,7 +141,6 @@ class SPMMMinAddFunction(autograd.Function):
 
 
 class SPMMMaxAddFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, input):
         assert sparse.is_coalesced()
@@ -164,7 +165,6 @@ class SPMMMaxAddFunction(autograd.Function):
 
 
 class RSPMMAddMulFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, relation, input):
         assert sparse.is_coalesced()
@@ -182,14 +182,15 @@ class RSPMMAddMulFunction(autograd.Function):
             backward = spmm.rspmm_add_mul_backward_cuda
         else:
             backward = spmm.rspmm_add_mul_backward_cpu
-        sparse_grad, relation_grad, input_grad = backward(*ctx.saved_tensors, output_grad)
+        sparse_grad, relation_grad, input_grad = backward(
+            *ctx.saved_tensors, output_grad
+        )
         if not ctx.saved_tensors[0].requires_grad:
             sparse_grad = None
         return sparse_grad, relation_grad, input_grad
 
 
 class RSPMMMinMulFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, relation, input):
         assert sparse.is_coalesced()
@@ -207,14 +208,15 @@ class RSPMMMinMulFunction(autograd.Function):
             backward = spmm.rspmm_min_mul_backward_cuda
         else:
             backward = spmm.rspmm_min_mul_backward_cpu
-        sparse_grad, relation_grad, input_grad = backward(*ctx.saved_tensors, output_grad)
+        sparse_grad, relation_grad, input_grad = backward(
+            *ctx.saved_tensors, output_grad
+        )
         if not ctx.saved_tensors[0].requires_grad:
             sparse_grad = None
         return sparse_grad, relation_grad, input_grad
 
 
 class RSPMMMaxMulFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, relation, input):
         assert sparse.is_coalesced()
@@ -232,14 +234,15 @@ class RSPMMMaxMulFunction(autograd.Function):
             backward = spmm.rspmm_max_mul_backward_cuda
         else:
             backward = spmm.rspmm_max_mul_backward_cpu
-        sparse_grad, relation_grad, input_grad = backward(*ctx.saved_tensors, output_grad)
+        sparse_grad, relation_grad, input_grad = backward(
+            *ctx.saved_tensors, output_grad
+        )
         if not ctx.saved_tensors[0].requires_grad:
             sparse_grad = None
         return sparse_grad, relation_grad, input_grad
 
 
 class RSPMMAddAddFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, relation, input):
         assert sparse.is_coalesced()
@@ -257,14 +260,15 @@ class RSPMMAddAddFunction(autograd.Function):
             backward = spmm.rspmm_add_add_backward_cuda
         else:
             backward = spmm.rspmm_add_add_backward_cpu
-        sparse_grad, relation_grad, input_grad = backward(*ctx.saved_tensors, output_grad)
+        sparse_grad, relation_grad, input_grad = backward(
+            *ctx.saved_tensors, output_grad
+        )
         if not ctx.saved_tensors[0].requires_grad:
             sparse_grad = None
         return sparse_grad, relation_grad, input_grad
 
 
 class RSPMMMinAddFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, relation, input):
         assert sparse.is_coalesced()
@@ -282,14 +286,15 @@ class RSPMMMinAddFunction(autograd.Function):
             backward = spmm.rspmm_min_add_backward_cuda
         else:
             backward = spmm.rspmm_min_add_backward_cpu
-        sparse_grad, relation_grad, input_grad = backward(*ctx.saved_tensors, output_grad)
+        sparse_grad, relation_grad, input_grad = backward(
+            *ctx.saved_tensors, output_grad
+        )
         if not ctx.saved_tensors[0].requires_grad:
             sparse_grad = None
         return sparse_grad, relation_grad, input_grad
 
 
 class RSPMMMaxAddFunction(autograd.Function):
-
     @staticmethod
     def forward(ctx, sparse, relation, input):
         assert sparse.is_coalesced()
@@ -307,7 +312,9 @@ class RSPMMMaxAddFunction(autograd.Function):
             backward = spmm.rspmm_max_add_backward_cuda
         else:
             backward = spmm.rspmm_max_add_backward_cpu
-        sparse_grad, relation_grad, input_grad = backward(*ctx.saved_tensors, output_grad)
+        sparse_grad, relation_grad, input_grad = backward(
+            *ctx.saved_tensors, output_grad
+        )
         if not ctx.saved_tensors[0].requires_grad:
             sparse_grad = None
         return sparse_grad, relation_grad, input_grad
@@ -339,8 +346,10 @@ def generalized_spmm(sparse, input, sum="add", mul="mul"):
     """
     name = "SPMM%s%sFunction" % (sum.capitalize(), mul.capitalize())
     if not hasattr(module, name):
-        raise ValueError("No generalized spmm implementation found for summation `%s` and multiplication `%s`"
-                         % (sum, mul))
+        raise ValueError(
+            "No generalized spmm implementation found for summation `%s` and multiplication `%s`"
+            % (sum, mul)
+        )
     Function = getattr(module, name)
     return Function.apply(sparse.coalesce(), input)
 
@@ -372,7 +381,9 @@ def generalized_rspmm(sparse, relation, input, sum="add", mul="mul"):
     """
     name = "RSPMM%s%sFunction" % (sum.capitalize(), mul.capitalize())
     if not hasattr(module, name):
-        raise ValueError("No generalized rspmm implementation found for summation `%s` and multiplication `%s`"
-                         % (sum, mul))
+        raise ValueError(
+            "No generalized rspmm implementation found for summation `%s` and multiplication `%s`"
+            % (sum, mul)
+        )
     Function = getattr(module, name)
     return Function.apply(sparse.coalesce(), relation, input)

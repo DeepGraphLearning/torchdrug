@@ -32,8 +32,11 @@ def copy_args(obj, args=None, ignore=None):
             parameters.pop(0)
         docs = get_param_docs(obj)
         if len(docs) != len(parameters):
-            raise ValueError("Fail to parse the docstring of `%s`. "
-                             "Inconsistent number of parameters in signature and docstring." % obj.__name__)
+            raise ValueError(
+                "Fail to parse the docstring of `%s`. "
+                "Inconsistent number of parameters in signature and docstring."
+                % obj.__name__
+            )
         new_params = []
         new_docs = []
         param_names = {p.name for p in parameters}
@@ -73,7 +76,9 @@ def copy_args(obj, args=None, ignore=None):
     from_args = []
     from_kwargs = []
     for param in parameters:
-        if (args is None or param.name in args) and (ignore is None or param.name not in ignore):
+        if (args is None or param.name in args) and (
+            ignore is None or param.name not in ignore
+        ):
             if param.default == inspect._empty:
                 from_args.append(param)
             else:
@@ -81,8 +86,11 @@ def copy_args(obj, args=None, ignore=None):
 
     from_docs = get_param_docs(from_obj, as_dict=True)
     if len(from_docs) != len(parameters):
-        raise ValueError("Fail to parse the docstring of `%s`. "
-                         "Inconsistent number of parameters in signature and docstring." % from_obj.__name__)
+        raise ValueError(
+            "Fail to parse the docstring of `%s`. "
+            "Inconsistent number of parameters in signature and docstring."
+            % from_obj.__name__
+        )
 
     return wrapper
 
@@ -111,7 +119,6 @@ def cached(forward, debug=False):
 
     @decorator
     def wrapper(forward, self, *args, **kwargs):
-
         def equal(x, y):
             if isinstance(x, nn.Parameter):
                 x = x.data
@@ -122,14 +129,25 @@ def cached(forward, debug=False):
             if isinstance(x, torch.Tensor):
                 return x.shape == y.shape and (x == y).all()
             elif isinstance(x, data.Graph):
-                if x.num_node != y.num_node or x.num_edge != y.num_edge or x.num_relation != y.num_relation:
+                if (
+                    x.num_node != y.num_node
+                    or x.num_edge != y.num_edge
+                    or x.num_relation != y.num_relation
+                ):
                     return False
-                edge_feature = getattr(x, "edge_feature", torch.tensor(0, device=x.device))
-                y_edge_feature = getattr(y, "edge_feature", torch.tensor(0, device=y.device))
+                edge_feature = getattr(
+                    x, "edge_feature", torch.tensor(0, device=x.device)
+                )
+                y_edge_feature = getattr(
+                    y, "edge_feature", torch.tensor(0, device=y.device)
+                )
                 if edge_feature.shape != y_edge_feature.shape:
                     return False
-                return (x.edge_list == y.edge_list).all() and (x.edge_weight == y.edge_weight).all() \
-                       and (edge_feature == y_edge_feature).all()
+                return (
+                    (x.edge_list == y.edge_list).all()
+                    and (x.edge_weight == y.edge_weight).all()
+                    and (edge_feature == y_edge_feature).all()
+                )
             else:
                 return x == y
 
@@ -179,14 +197,19 @@ def deprecated_alias(**alias):
     """
 
     def decorate(obj):
-
         @functools.wraps(obj)
         def wrapper(*args, **kwargs):
             for key, value in alias.items():
                 if key in kwargs:
                     if value in kwargs:
-                        raise TypeError("%s() got values for both `%s` and `%s`" % (obj.__name__, value, key))
-                    warnings.warn("%s(): argument `%s` is deprecated in favor of `%s`" % (obj.__name__, key, value))
+                        raise TypeError(
+                            "%s() got values for both `%s` and `%s`"
+                            % (obj.__name__, value, key)
+                        )
+                    warnings.warn(
+                        "%s(): argument `%s` is deprecated in favor of `%s`"
+                        % (obj.__name__, key, value)
+                    )
                     kwargs[value] = kwargs.pop(key)
 
             return obj(*args, **kwargs)
@@ -198,8 +221,12 @@ def deprecated_alias(**alias):
         alias_params = []
         alias_docs = []
         for key, value in alias.items():
-            param = inspect.Parameter(key, inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                                      default=None, annotation=sig.parameters[value].annotation)
+            param = inspect.Parameter(
+                key,
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                default=None,
+                annotation=sig.parameters[value].annotation,
+            )
             alias_params.append(param)
             param_doc = param_docs[value]
             match = re.search(r" \(.*?\)", param_doc)
@@ -207,7 +234,9 @@ def deprecated_alias(**alias):
                 type_str = match.group()
             else:
                 type_str = ""
-            alias_docs.append("%s%s: deprecated alias of ``%s``" % (key, type_str, value))
+            alias_docs.append(
+                "%s%s: deprecated alias of ``%s``" % (key, type_str, value)
+            )
 
         if parameters[-1].kind == inspect.Parameter.VAR_KEYWORD:
             new_params = parameters[:-1] + alias_params + parameters[-1:]
@@ -260,15 +289,21 @@ def set_param_docs(obj, param_docs):
         for match in re.finditer(r"^(\s*)", doc):
             if indent is None or len(match.group(1)) < len(indent):
                 indent = match.group(1)
-        param_docs = [re.sub("^", indent, doc, re.MULTILINE) for doc in param_docs]  # add indent
+        param_docs = [
+            re.sub("^", indent, doc, re.MULTILINE) for doc in param_docs
+        ]  # add indent
         param_docs = "\n".join(param_docs)
         doc = "\n".join([doc, "%sParameters" % indent, param_docs])
     else:
         begin = match.end()
         indent = re.search(r"\s*", doc[begin:]).group()
-        pattern = r"^%s\S.*(?:\n%s\s+\S.*)*(?:\n%s\S.*(?:\n%s\s+\S.*)*)*" % ((indent,) * 4)
+        pattern = r"^%s\S.*(?:\n%s\s+\S.*)*(?:\n%s\S.*(?:\n%s\s+\S.*)*)*" % (
+            (indent,) * 4
+        )
         end = begin + re.search(pattern, doc[begin:], re.MULTILINE).end()
-        param_docs = [re.sub("^", indent, doc, re.MULTILINE) for doc in param_docs]  # add indent
+        param_docs = [
+            re.sub("^", indent, doc, re.MULTILINE) for doc in param_docs
+        ]  # add indent
         param_docs = "\n".join(param_docs)
         doc = "".join([doc[:begin], param_docs, doc[end:]])
     obj.__doc__ = doc

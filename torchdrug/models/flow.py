@@ -23,7 +23,15 @@ class GraphAutoregressiveFlow(nn.Module, core.Configurable):
         dequantization_noise (float, optional): scale of dequantization noise
     """
 
-    def __init__(self, model, prior, use_edge=False, num_layer=6, num_mlp_layer=2, dequantization_noise=0.9):
+    def __init__(
+        self,
+        model,
+        prior,
+        use_edge=False,
+        num_layer=6,
+        num_mlp_layer=2,
+        dequantization_noise=0.9,
+    ):
         super(GraphAutoregressiveFlow, self).__init__()
         self.model = model
         self.prior = prior
@@ -35,8 +43,13 @@ class GraphAutoregressiveFlow(nn.Module, core.Configurable):
         self.layers = nn.ModuleList()
         for i in range(num_layer):
             condition_dim = model.output_dim * (3 if use_edge else 1)
-            self.layers.append(layers.ConditionalFlow(self.input_dim, condition_dim,
-                                                      [model.output_dim] * (num_mlp_layer - 1)))
+            self.layers.append(
+                layers.ConditionalFlow(
+                    self.input_dim,
+                    condition_dim,
+                    [model.output_dim] * (num_mlp_layer - 1),
+                )
+            )
 
     def _standarize_edge(self, graph, edge):
         if edge is not None:
@@ -68,7 +81,9 @@ class GraphAutoregressiveFlow(nn.Module, core.Configurable):
         node_feature = feature["node_feature"]
         graph_feature = feature["graph_feature"]
         if self.use_edge:
-            condition = torch.cat([node_feature[edge], graph_feature.unsqueeze(1)], dim=1).flatten(1)
+            condition = torch.cat(
+                [node_feature[edge], graph_feature.unsqueeze(1)], dim=1
+            ).flatten(1)
         else:
             condition = graph_feature
 
@@ -85,7 +100,7 @@ class GraphAutoregressiveFlow(nn.Module, core.Configurable):
         log_likelihood = log_prior + log_det
         log_likelihood = log_likelihood.sum(dim=-1)
 
-        return log_likelihood # (batch_size,)
+        return log_likelihood  # (batch_size,)
 
     def sample(self, graph, edge=None, all_loss=None, metric=None):
         """
@@ -108,7 +123,9 @@ class GraphAutoregressiveFlow(nn.Module, core.Configurable):
         node_feature = feature["node_feature"]
         graph_feature = feature["graph_feature"]
         if self.use_edge:
-            condition = torch.cat([node_feature[edge], graph_feature.unsqueeze(1)], dim=1).flatten(1)
+            condition = torch.cat(
+                [node_feature[edge], graph_feature.unsqueeze(1)], dim=1
+            ).flatten(1)
         else:
             condition = graph_feature
 
@@ -118,4 +135,4 @@ class GraphAutoregressiveFlow(nn.Module, core.Configurable):
 
         output = x.argmax(dim=-1)
 
-        return output # (batch_size,)
+        return output  # (batch_size,)

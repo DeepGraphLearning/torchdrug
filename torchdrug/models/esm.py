@@ -28,8 +28,7 @@ class EvolutionaryScaleModeling(nn.Module, core.Configurable):
     url = {
         "ESM-1b": "https://dl.fbaipublicfiles.com/fair-esm/models/esm1b_t33_650M_UR50S.pt",
         "ESM-1v": "https://dl.fbaipublicfiles.com/fair-esm/models/esm1v_t33_650M_UR90S_1.pt",
-        "ESM-1b-regression":
-            "https://dl.fbaipublicfiles.com/fair-esm/regression/esm1b_t33_650M_UR50S-contact-regression.pt",
+        "ESM-1b-regression": "https://dl.fbaipublicfiles.com/fair-esm/regression/esm1b_t33_650M_UR50S-contact-regression.pt",
     }
 
     md5 = {
@@ -73,12 +72,16 @@ class EvolutionaryScaleModeling(nn.Module, core.Configurable):
         model_data = torch.load(model_file, map_location="cpu")
         if model != "ESM-1v":
             regression_model = "%s-regression" % model
-            regression_file = utils.download(self.url[regression_model], path, md5=self.md5[regression_model])
+            regression_file = utils.download(
+                self.url[regression_model], path, md5=self.md5[regression_model]
+            )
             regression_data = torch.load(regression_file, map_location="cpu")
         else:
             regression_data = None
         model_name = os.path.basename(self.url[model])
-        return esm.pretrained.load_model_and_alphabet_core(model_name, model_data, regression_data)
+        return esm.pretrained.load_model_and_alphabet_core(
+            model_name, model_data, regression_data
+        )
 
     def construct_mapping(self, alphabet):
         mapping = [0] * len(data.Protein.id2residue_symbol)
@@ -105,8 +108,10 @@ class EvolutionaryScaleModeling(nn.Module, core.Configurable):
         input = self.mapping[input]
         size = graph.num_residues
         if (size > self.max_input_length).any():
-            warnings.warn("ESM can only encode proteins within %d residues. Truncate the input to fit into ESM."
-                          % self.max_input_length)
+            warnings.warn(
+                "ESM can only encode proteins within %d residues. Truncate the input to fit into ESM."
+                % self.max_input_length
+            )
             starts = size.cumsum(0) - size
             size = size.clamp(max=self.max_input_length)
             ends = starts + size
@@ -115,12 +120,24 @@ class EvolutionaryScaleModeling(nn.Module, core.Configurable):
             graph = graph.subresidue(mask)
         size_ext = size
         if self.alphabet.prepend_bos:
-            bos = torch.ones(graph.batch_size, dtype=torch.long, device=self.device) * self.alphabet.cls_idx
-            input, size_ext = functional._extend(bos, torch.ones_like(size_ext), input, size_ext)
+            bos = (
+                torch.ones(graph.batch_size, dtype=torch.long, device=self.device)
+                * self.alphabet.cls_idx
+            )
+            input, size_ext = functional._extend(
+                bos, torch.ones_like(size_ext), input, size_ext
+            )
         if self.alphabet.append_eos:
-            eos = torch.ones(graph.batch_size, dtype=torch.long, device=self.device) * self.alphabet.eos_idx
-            input, size_ext = functional._extend(input, size_ext, eos, torch.ones_like(size_ext))
-        input = functional.variadic_to_padded(input, size_ext, value=self.alphabet.padding_idx)[0]
+            eos = (
+                torch.ones(graph.batch_size, dtype=torch.long, device=self.device)
+                * self.alphabet.eos_idx
+            )
+            input, size_ext = functional._extend(
+                input, size_ext, eos, torch.ones_like(size_ext)
+            )
+        input = functional.variadic_to_padded(
+            input, size_ext, value=self.alphabet.padding_idx
+        )[0]
 
         output = self.model(input, repr_layers=[33])
         residue_feature = output["representations"][33]
@@ -134,7 +151,4 @@ class EvolutionaryScaleModeling(nn.Module, core.Configurable):
         residue_feature = residue_feature[mask]
         graph_feature = self.readout(graph, residue_feature)
 
-        return {
-            "graph_feature": graph_feature,
-            "residue_feature": residue_feature
-        }
+        return {"graph_feature": graph_feature, "residue_feature": residue_feature}

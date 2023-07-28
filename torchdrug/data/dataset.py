@@ -426,7 +426,7 @@ class NodeClassificationDataset(torch_data.Dataset, core.Configurable):
         self.node_vocab = node_vocab
         self.inv_node_vocab = inv_node_vocab
         self.label_vocab = label_vocab
-        self.inv_node_vocab = inv_label_vocab
+        self.inv_label_vocab = inv_label_vocab
 
     def _standarize_vocab(self, vocab, inverse_vocab):
         if vocab is not None:

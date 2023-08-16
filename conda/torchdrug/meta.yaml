@@ -23,7 +23,7 @@ requirements:
     - ninja
     - jinja2
     - python-lmdb
-    - bio-embeddings-esm
+    - fair-esm
 
 build:
   noarch: python

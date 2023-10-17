@@ -3,7 +3,7 @@
 #include <tuple>
 
 #include <torch/extension.h>
-#include <ATen/SparseTensorUtils.h>
+#include <ATen/native/SparseTensorUtils.h>
 
 #include "rspmm.h"
 

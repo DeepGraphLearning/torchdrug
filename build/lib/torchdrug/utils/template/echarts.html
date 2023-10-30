@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+   <head>
+       <meta charset="utf-8">
+   </head>
+   <body style="height: 100%; margin: 0; overflow: hidden">
+       <div id="container" style="height: 100%"></div>
+       <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+       <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+
+       <script type="text/javascript">
+            var dom = document.getElementById("container");
+            var myChart = echarts.init(dom);
+            var option;
+
+            myChart.showLoading();
+            $.get("{{ data_file }}", function (graph) {
+                myChart.hideLoading();
+                document.title = graph.title;
+                option = {
+                    title: {
+                        text: graph.title,
+                        top: "bottom",
+                        left: "right",
+                    },
+                    tooltip: {
+                        formtter: "{b}",
+                    },
+                    series: [{
+                            type: "graph",
+                            layout: "force",
+                            nodes: graph.nodes,
+                            edges: graph.edges,
+                            autoCurveness: true,
+                            zoom: 2,
+                            roam: true,
+                            label: {
+                                show: {{ show_label }},
+                                position: "bottom",
+                            },
+                            labelLayout: {
+                                hideOverlap: true,
+                            },
+                            force: {
+                                repulsion: 100,
+                            }
+                    }]
+                };
+
+                if ("categories" in graph) {
+                    option.legend = {
+                        data: graph.categories.map(function (c) {
+                            return c.name;
+                        })
+                    };
+                    option.series[0].categories = graph.categories;
+                }
+
+                myChart.setOption(option);
+            });
+       </script>
+   </body>
+</html>

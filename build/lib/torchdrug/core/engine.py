@@ -238,7 +238,7 @@ class Engine(core.Configurable):
             logger.warning("Load checkpoint from %s" % checkpoint)
         checkpoint = os.path.expanduser(checkpoint)
         state = torch.load(checkpoint, map_location=self.device)
-        state["model"].pop("graph")   # Made changes as per Issue #89
+	state["model"].pop("graph")   # Made changes as per Issue #89
         state["model"].pop("fact_graph") # Made changes as per Issue #89
         self.model.load_state_dict(state["model"], strict=False)
 

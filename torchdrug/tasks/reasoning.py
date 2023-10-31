@@ -126,6 +126,7 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
         return all_loss, metric
 
     def predict(self, batch, all_loss=None, metric=None):
+        print('Working in Torchdrug itself...You need to change a lot in here...')
         pos_h_index, pos_t_index, pos_r_index = batch.t()
         batch_size = len(batch)
 
@@ -166,6 +167,7 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
         return pred
 
     def target(self, batch):
+        print('Working in Torchdrug itself...You need to change a lot in here...')
         # test target
         batch_size = len(batch)
         pos_h_index, pos_t_index, pos_r_index = batch.t()
@@ -192,6 +194,7 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
         return mask.cpu(), target.cpu()
 
     def evaluate(self, pred, target):
+        print('Working in Torchdrug itself...You need to change a lot in here...')
         mask, target = target
 
         pos_pred = pred.gather(-1, target.unsqueeze(-1))
@@ -223,6 +226,7 @@ class KnowledgeGraphCompletion(tasks.Task, core.Configurable):
 
     @torch.no_grad()
     def _strict_negative(self, pos_h_index, pos_t_index, pos_r_index):
+        print('Working in Torchdrug itself...You need to change a lot in here...')
         batch_size = len(pos_h_index)
         any = -torch.ones_like(pos_h_index)
 

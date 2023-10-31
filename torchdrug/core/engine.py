@@ -237,7 +237,6 @@ class Engine(core.Configurable):
         if comm.get_rank() == 0:
             logger.warning("Load checkpoint from %s" % checkpoint)
         checkpoint = os.path.expanduser(checkpoint)
-        print('I am working here...')
         state = torch.load(checkpoint, map_location=self.device)
         state["model"].pop("graph")   # Made changes as per Issue #89
         state["model"].pop("fact_graph")   # Made changes as per Issue #89

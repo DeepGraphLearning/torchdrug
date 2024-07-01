@@ -24,7 +24,7 @@ First, let's install PyTorch.
 
 To install ``torch-scatter``, we need to check the version of PyTorch and CUDA.
 
-We can get the version of PyTorch by ``python3 -c "import torch; print(torch.__version__")``.
+We can get the version of PyTorch by ``python3 -c "import torch; print(torch.__version__)"``.
 The version of CUDA can be get by ``nvcc -V``. For example, if our PyTorch is ``1.8.0``
 and CUDA is ``10.2``, the command should be
 

@@ -518,7 +518,7 @@ class Molecule(Graph):
         """A coarse implementation of valence check."""
         # TODO: cross-check by any domain expert
         atom2valence = torch.tensor(float("nan")).repeat(constant.NUM_ATOM)
-        for k, v in self.atom2valence:
+        for k, v in self.atom2valence.items():
             atom2valence[k] = v
         atom2valence = torch.as_tensor(atom2valence, device=self.device)
 

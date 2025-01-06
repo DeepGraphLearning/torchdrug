@@ -309,7 +309,7 @@ class AutoregressiveGeneration(tasks.Task, core.Configurable):
 
     @torch.no_grad()
     def generate(self, num_sample, max_resample=20, off_policy=False, early_stop=False, 
-                 verbose=0, empty_cache_period=10):
+                 verbose=0, empty_cache_period=1):
         assert empty_cache_period>0 and type(empty_cache_period)==int, "empty_cache_period: positive int"
         num_relation = self.num_bond_type - 1
         is_training = self.training
@@ -712,7 +712,7 @@ class GCPNGeneration(tasks.Task, core.Configurable):
 
         self.register_buffer("moving_baseline", torch.zeros(self.max_node + 1))
 
-    def forward(self, batch, empty_cache_period=10):
+    def forward(self, batch, empty_cache_period=5):
         """"""
         assert empty_cache_period>0 and type(empty_cache_period)==int, "empty_cache_period: positive int"
         all_loss = torch.tensor(0, dtype=torch.float32, device=self.device)
@@ -1197,7 +1197,8 @@ class GCPNGeneration(tasks.Task, core.Configurable):
         return stop_pred, node1_pred, node2_pred, edge_pred        
 
     @torch.no_grad()
-    def _apply_action(self, graph, off_policy, max_resample=10, verbose=0, min_node=5):
+    def _apply_action(self, graph, off_policy, max_resample=10, verbose=0, 
+                      min_node=5, empty_cache_period=5):
         # action (num_graph, 4)
 
         # stopped graph is removed, initialize is_valid as False
@@ -1208,6 +1209,10 @@ class GCPNGeneration(tasks.Task, core.Configurable):
         edge_action = torch.zeros(len(graph), dtype=torch.long, device=self.device)
 
         for i in range(max_resample):
+            if i%empty_cache_period==0: 
+                gc.collect()
+                torch.cuda.empty_cache()
+
             # maximal resample time
             mask = ~is_valid
             if max_resample == 1:
@@ -1364,10 +1369,8 @@ class GCPNGeneration(tasks.Task, core.Configurable):
 
         result = []
         for i in range(max_step):
-            if i%empty_cache_period==0: 
-                gc.collect()
-                torch.cuda.empty_cache()
-            new_graph = self._apply_action(graph, off_policy, max_resample, verbose=1)
+            new_graph = self._apply_action(graph, off_policy, max_resample, 
+                                           verbose=1, empty_cache_period=empty_cache_period)
             if i == max_step - 1:
                 # last step, collect all graph that is valid
                 result.append(new_graph[(new_graph.num_nodes <= (self.max_node))])            

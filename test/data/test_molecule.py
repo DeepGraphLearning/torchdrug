@@ -36,6 +36,15 @@ class MoleculeTest(unittest.TestCase):
         mol = data.Molecule.from_smiles(self.smiles, mol_feature="ecfp")
         self.assertTrue((mol.graph_feature > 0).any(), "Incorrect ECFP feature")
 
+    def test_is_valid(self):
+        # carbon has a maximum valence of 4, so a plain alkane is within range
+        mol = data.Molecule.from_smiles("CCC")
+        self.assertTrue(bool(mol.is_valid), "Alkane should pass the valence check")
+
+        # a trivalent oxygen exceeds the maximum valence of 2 for oxygen
+        mol = data.Molecule.from_smiles("[O+](C)(C)C")
+        self.assertFalse(bool(mol.is_valid), "Trivalent oxygen should fail the valence check")
+
 
 if __name__ == "__main__":
     unittest.main()
